@@ -18,12 +18,20 @@ groups:
           summary: OpenBao is sealed
 
       - alert: OpenBaoNotInitialized
-        expr: codestra_openbao_initialized != 1
+        expr: codestra_openbao_initialized != 1 or absent(codestra_openbao_initialized)
         for: 1m
         labels:
           severity: critical
         annotations:
           summary: OpenBao is not initialized or initialization state is ambiguous
+
+      - alert: OpenBaoStatusExportStale
+        expr: time() - codestra_openbao_status_last_success_unixtime > 180 or absent(codestra_openbao_status_last_success_unixtime)
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao status exporter is missing or has stopped reporting
 
       - alert: OpenBaoNoActiveLeader
         expr: max(vault_core_active{job="codestra-openbao"}) != 1

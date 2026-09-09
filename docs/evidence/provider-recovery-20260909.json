@@ -1,0 +1,63 @@
+{
+  "observed_at": "2026-09-09T23:13:48.314525+00:00",
+  "host": "37.27.128.39",
+  "runtime_changed": false,
+  "messages_sent": false,
+  "openbao": {
+    "http_status": 501,
+    "initialized": false,
+    "sealed": true,
+    "docker_health": "healthy",
+    "health_masks_uninitialized": true,
+    "config_writable_by_sentinel": false
+  },
+  "klyrow": {
+    "runtime_source_sha": "da9d85891a4e313748e309aed86662d6c03d26bb",
+    "runtime_reconciliation_available": false,
+    "provider_events": {
+      "DEAD_LETTER": 82,
+      "DELIVERED": 1,
+      "PENDING": 0,
+      "RETRY": 0
+    },
+    "provider_usage_events": {
+      "DEAD_LETTER": 1,
+      "DELIVERED": 1,
+      "PENDING": 0,
+      "RETRY": 0
+    },
+    "dead_letter_groups": {
+      "inbound.received": 81,
+      "message.delivered": 1
+    },
+    "inbound_dispositions": {
+      "QUARANTINE": 78,
+      "ACCEPT_LOCAL": 2,
+      "ACCEPT_ODOO_ACCOUNTING": 1
+    },
+    "sandbox_lifecycle_events": 1,
+    "alertmanager_targets": 0,
+    "callback_tls_verified": true,
+    "callback_head_http_status": 403,
+    "callback_post_delivery": "NOT_TESTED",
+    "active_alerts_since": "2026-09-02T22:38:30.929850283Z"
+  },
+  "central_alertmanager": {
+    "host": "65.109.65.169",
+    "container": "codestra-monitoring-alertmanager-1",
+    "runtime_user": "nobody",
+    "webhook_attempts": 20565,
+    "webhook_failures": 20565,
+    "recent_failure": "permission_denied_reading_receiver_url_file",
+    "klyrow_alerts_present": false,
+    "config_writable_by_sentinel": false,
+    "receiver_mount_check": {
+      "files_checked": 4,
+      "nonempty": 4,
+      "readable": 0,
+      "runtime_user": "nobody",
+      "check_used_runtime_identity": true,
+      "check_mutated_files": false
+    }
+  }
+}

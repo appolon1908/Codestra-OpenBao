@@ -1,0 +1,15 @@
+# Narrow health-check correction for the inventoried loopback HTTP deployment.
+# Merge only with /opt/codestra-openbao/compose.yaml on 37.27.128.39.
+# New native-mTLS deployments use deploy/compose/compose.yaml and bao status.
+services:
+  openbao:
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          wget -q -O /dev/null
+          'http://127.0.0.1:8200/v1/sys/health?standbyok=true&perfstandbyok=true'
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s

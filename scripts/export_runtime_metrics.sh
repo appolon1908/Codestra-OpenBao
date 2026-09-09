@@ -17,6 +17,10 @@ status="$(bao status -format=json 2>/dev/null)"
 status_code=$?
 set -e
 [[ "$status_code" == 0 || "$status_code" == 2 ]]
+# Reject missing, string-valued, and contradictory fields. An ambiguous response
+# must not publish a fresh "unsealed" gauge or refresh the success timestamp.
+jq -e '(.initialized | type == "boolean") and (.sealed | type == "boolean")
+  and (.initialized == true or .sealed == true)' <<<"$status" >/dev/null
 initialized="$(jq -r 'if .initialized == true then 1 else 0 end' <<<"$status")"
 sealed="$(jq -r 'if .sealed == true then 1 else 0 end' <<<"$status")"
 
@@ -38,6 +42,9 @@ partial="${metric_file}.partial.$PPID"
 cleanup() { find "$partial" -type f -delete 2>/dev/null || true; }
 trap cleanup EXIT
 {
+  printf '# HELP codestra_openbao_status_last_success_unixtime Last valid runtime status export.\n'
+  printf '# TYPE codestra_openbao_status_last_success_unixtime gauge\n'
+  printf 'codestra_openbao_status_last_success_unixtime{environment="%s"} %s\n' "$environment" "$(date +%s)"
   printf '# HELP codestra_openbao_initialized Sanitized OpenBao initialization state.\n'
   printf '# TYPE codestra_openbao_initialized gauge\n'
   printf 'codestra_openbao_initialized{environment="%s"} %s\n' "$environment" "$initialized"
