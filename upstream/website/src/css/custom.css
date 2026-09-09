@@ -1,0 +1,174 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #336d5c;
+  --ifm-color-primary-dark: #2e6253;
+  --ifm-color-primary-darker: #2b5d4e;
+  --ifm-color-primary-darkest: #244c40;
+  --ifm-color-primary-light: #387865;
+  --ifm-color-primary-lighter: #3b7d6a;
+  --ifm-color-primary-lightest: #428e78;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme="dark"] {
+  --ifm-color-primary: #79c0ab;
+  --ifm-color-primary-dark: #64b69e;
+  --ifm-color-primary-darker: #59b197;
+  --ifm-color-primary-darkest: #46957e;
+  --ifm-color-primary-light: #8ecab8;
+  --ifm-color-primary-lighter: #99cfbf;
+  --ifm-color-primary-lightest: #b9ded3;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+
+  /*
+   * Fix shadow on all cards in dark mode. This was too light for the display
+   * to view on certain background colors.
+   */
+  --ifm-global-shadow-lw: 0 1px 2px 0 rgba(255, 255, 255, 0.1);
+}
+
+/*
+ * Make our download page cards visually distinct.
+ */
+[data-theme="light"] div.all-downloads div.card {
+  border: 1px solid var(--ifm-color-emphasis-300);
+}
+
+[data-theme="dark"] div.download-card {
+  background-color: var(--ifm-background-color);
+}
+
+/*
+ * Allow buttons to reflow on smaller width screens. Smaller is relative
+ * as even moderately sized screens will cause the buttons to exceed the
+ * size of their container.
+ */
+div.download-card div.button-group--block {
+  flex-wrap: wrap;
+}
+
+div.download-card a.button {
+  padding: 0px 0px !important;
+  border-radius: var(--ifm-button-border-radius) !important;
+}
+
+div.download-card a.button span {
+  display: inline-block;
+  margin:
+    calc(
+      var(--ifm-button-padding-vertical) * var(--ifm-button-size-multiplier) * 1.50
+    )
+    calc(
+      var(--ifm-button-padding-horizontal) * var(--ifm-button-size-multiplier) * 0.50
+    );
+}
+
+div.package-repo {
+  margin-bottom: var(--ifm-spacing-horizontal);
+}
+
+
+/* 
+ * Custom CSS for downloads page
+ */
+
+
+/* Bigger font size for the architecture*/
+.download-card__header-title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* Version is secondary */
+.download-card__version {
+  margin-bottom: 1rem;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.9rem;
+}
+
+/* Flexbox for card contents*/
+.download-card__content-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.download-card__links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.download-card__button-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.download-card__button-icon svg {
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.version-select {
+  background-color: var(--ifm-color-emphasis-100);
+  color: var(--ifm-font-color-base);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-button-border-radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  max-width: 200px;
+}
+
+/*
+ * Make the downloads page responsive
+ */
+@media (max-width: 768px) {
+  .version-select {
+    max-width: 150px;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .downloads-header {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 1rem;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .downloads-header h1 {
+    margin-bottom: 0 !important;
+  }
+
+  div.all-downloads nav.pagination-nav {
+    grid-template-columns: 1fr;
+  }
+
+  div.all-downloads nav.pagination-nav div.download-card {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+  }
+
+  .download-card__content-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .download-card__button-wrapper {
+    display: flex;
+    justify-content: flex-end;
+  }
+}

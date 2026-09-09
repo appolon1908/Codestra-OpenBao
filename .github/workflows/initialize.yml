@@ -1,0 +1,87 @@
+name: OpenBao guarded one-time non-production initialization
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: New isolated non-production cluster
+        required: true
+        type: choice
+        options: [development, test, staging]
+      expected_source_sha:
+        description: Exact current protected environment SHA
+        required: true
+        type: string
+      confirmation:
+        description: INITIALIZE_NEW_<ENVIRONMENT>_CLUSTER
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: openbao-${{ inputs.environment }}-initialization
+  cancel-in-progress: false
+
+jobs:
+  initialize:
+    name: Initialize once into protected offline custody
+    environment: openbao-${{ inputs.environment }}-initialize
+    runs-on: [self-hosted, linux, x64, codestra-openbao]
+    timeout-minutes: 30
+    env:
+      CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      CODESTRA_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+      OPENBAO_APPROVAL_ENVIRONMENT: openbao-${{ inputs.environment }}-initialize
+      OPENBAO_INIT_CONFIRMATION: ${{ inputs.confirmation }}
+      OPENBAO_INIT_CUSTODY_FILE: ${{ vars.OPENBAO_INIT_CUSTODY_FILE }}
+      OPENBAO_OFFLINE_CUSTODY_ACKNOWLEDGED: true
+      OPENBAO_CONTAINER_NAME: ${{ vars.OPENBAO_CONTAINER_NAME }}
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OPERATOR_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OPERATOR_KEY_PATH }}
+    steps:
+      - name: Check out exact protected source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.expected_source_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify source runtime identity and protected approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$(git rev-parse HEAD)" == "$CODESTRA_SOURCE_SHA" ]]
+          [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)" == "$CODESTRA_SOURCE_SHA" ]]
+          [[ "$(jq -r .runtimeApplyAuthorized "config/environments/${CODESTRA_ENVIRONMENT}/environment.json")" == true ]]
+          runtime="$(docker inspect "$OPENBAO_CONTAINER_NAME")"
+          [[ "$(jq -r '.[0].Config.Labels["com.codestra.source-sha"]' <<<"$runtime")" == "$CODESTRA_SOURCE_SHA" ]]
+          [[ "$(jq -r '.[0].State.Running' <<<"$runtime")" == true ]]
+          scripts/verify_environment_approval.sh
+      - name: Initialize once without printing or artifacting custody material
+        run: |
+          export OPENBAO_INITIALIZATION_EVIDENCE="$RUNNER_TEMP/openbao-initialization-evidence/initialization.json"
+          scripts/initialize.sh
+          set +e
+          status="$(bao status -format=json)"
+          status_code=$?
+          set -e
+          [[ "$status_code" == 2 ]]
+          jq -e '.initialized == true and .sealed == true' <<<"$status" >/dev/null
+          umask 077
+          mkdir -p "$(dirname "$OPENBAO_INITIALIZATION_EVIDENCE")"
+          jq -n --arg environment "$CODESTRA_ENVIRONMENT" --arg sourceSha "$CODESTRA_SOURCE_SHA" \
+            --arg completedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{schemaVersion:1,environment:$environment,sourceSha:$sourceSha,initialized:true,sealed:true,recoveryMaterialPrinted:false,rootTokenPrinted:false,custodyArtifactUploaded:false,secretValuesIncluded:false,completedAt:$completedAt}' \
+            > "$OPENBAO_INITIALIZATION_EVIDENCE"
+          chmod 0400 "$OPENBAO_INITIALIZATION_EVIDENCE"
+      - name: Upload only sanitized initialization evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-initialization-${{ inputs.environment }}-${{ inputs.expected_source_sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/openbao-initialization-evidence/initialization.json
+          if-no-files-found: error
+          retention-days: 90

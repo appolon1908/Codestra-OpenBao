@@ -1,0 +1,22 @@
+# Dependencies
+/node_modules
+/.pnpm-store
+
+# Production
+/build
+
+# Generated files
+/.docusaurus
+/.cache-loader
+
+# Misc
+.DS_Store
+.env.*
+
+# Versioned docs
+/api-docs_versioned_docs
+/api-docs_versioned_sidebars
+/api-docs_versions.json
+/versioned_docs
+/versioned_sidebars
+/versions.json

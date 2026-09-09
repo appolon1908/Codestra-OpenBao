@@ -8,8 +8,6 @@ services:
     read_only: true
     cap_drop:
       - ALL
-    cap_add:
-      - IPC_LOCK
     security_opt:
       - no-new-privileges:true
     command:
@@ -23,6 +21,7 @@ services:
     volumes:
       - ./openbao.hcl:/openbao/config/openbao.hcl:ro
       - openbao_data:/openbao/data
+      - ${OPENBAO_PLUGIN_DIR:?mount the exact release plugin directory}:/openbao/plugins:ro
     secrets:
       - openbao_server_cert.pem
       - openbao_server_key.pem

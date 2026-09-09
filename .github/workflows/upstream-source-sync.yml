@@ -1,41 +1,48 @@
-name: Codestra OpenBao Upstream Source Sync
+name: Codestra Upstream Source Sync
 
 on:
   push:
-    branches: [main]
+    branches: [development]
     paths:
       - CODESTRA_UPSTREAM.json
       - .github/workflows/upstream-source-sync.yml
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
 concurrency:
-  group: codestra-openbao-upstream-source-sync
+  group: codestra-upstream-source-sync
   cancel-in-progress: false
 
 jobs:
   sync:
-    if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-24.04
+    if: github.actor != 'github-actions[bot]' && github.ref == 'refs/heads/development'
+    runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
-      - name: Check out Codestra authority
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Checkout Codestra authority
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
+          persist-credentials: true
 
-      - name: Import and deterministically sanitize official upstream source
+      - name: Install checksum-verified fixture scanner
+        run: scripts/install_ci_tools.sh gitleaks
+
+      - name: Import official upstream source snapshot
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
 
           mapfile -t values < <(python3 - <<'PY'
           import json
           from pathlib import Path
-          data = json.loads(Path('CODESTRA_UPSTREAM.json').read_text(encoding='utf-8'))
+          data = json.loads(Path('CODESTRA_UPSTREAM.json').read_text())
           print(data['upstream_clone_url'])
           print(data['upstream_ref'])
           print(data['import_path'])
@@ -47,145 +54,502 @@ jobs:
           IMPORT_PATH="${values[2]}"
 
           [[ "$UPSTREAM_URL" == "https://github.com/openbao/openbao.git" ]] || exit 2
-          [[ "$UPSTREAM_REF" == "main" ]] || exit 2
+          [[ "$UPSTREAM_REF" =~ ^[0-9a-f]{40}$ ]] || exit 2
           [[ "$IMPORT_PATH" == "upstream" ]] || exit 2
 
+          readonly SYNC_BRANCH="sync/openbao-upstream-${UPSTREAM_REF}-${GITHUB_SHA}"
+          existing_sync_branch=0
+          set +e
+          remote_branch="$(
+            git ls-remote --exit-code --heads origin "refs/heads/${SYNC_BRANCH}"
+          )"
+          branch_lookup_status=$?
+          set -e
+          case "$branch_lookup_status" in
+            0)
+              read -r remote_branch_sha remote_branch_ref extra <<<"$remote_branch"
+              [[ "$remote_branch_sha" =~ ^[0-9a-f]{40}$ ]]
+              [[ "$remote_branch_ref" == "refs/heads/${SYNC_BRANCH}" ]]
+              [[ -z "${extra:-}" ]]
+              git fetch --no-tags origin \
+                "refs/heads/${SYNC_BRANCH}:refs/remotes/origin/${SYNC_BRANCH}"
+              [[ "$(git rev-parse "refs/remotes/origin/${SYNC_BRANCH}")" == "$remote_branch_sha" ]]
+              [[ "$(git show -s --format=%P "refs/remotes/origin/${SYNC_BRANCH}")" == "$GITHUB_SHA" ]]
+              mapfile -d '' -t existing_branch_paths < <(
+                git diff --name-only -z "$GITHUB_SHA" \
+                  "refs/remotes/origin/${SYNC_BRANCH}"
+              )
+              (( ${#existing_branch_paths[@]} > 0 ))
+              for changed_path in "${existing_branch_paths[@]}"; do
+                [[ "$changed_path" == CODESTRA_UPSTREAM_LOCK.json || "$changed_path" == CODESTRA_UPSTREAM_SANITIZATION.json || "$changed_path" == upstream/* ]]
+              done
+              git switch --create "$SYNC_BRANCH" --track \
+                "refs/remotes/origin/${SYNC_BRANCH}"
+              existing_sync_branch=1
+              ;;
+            2)
+              git switch --create "$SYNC_BRANCH"
+              ;;
+            *)
+              echo "Sync branch lookup failed with status ${branch_lookup_status}." >&2
+              exit "$branch_lookup_status"
+              ;;
+          esac
+
           rm -rf .codestra-upstream-src "$IMPORT_PATH"
-          GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --branch "$UPSTREAM_REF" "$UPSTREAM_URL" .codestra-upstream-src
+          git init --quiet .codestra-upstream-src
+          git -C .codestra-upstream-src remote add origin "$UPSTREAM_URL"
+          GIT_LFS_SKIP_SMUDGE=1 git -C .codestra-upstream-src fetch --depth 1 --no-tags origin "$UPSTREAM_REF"
+          git -C .codestra-upstream-src checkout --quiet --detach FETCH_HEAD
           UPSTREAM_SHA="$(git -C .codestra-upstream-src rev-parse HEAD)"
+          [[ "$UPSTREAM_SHA" == "$UPSTREAM_REF" ]] || exit 2
+          UPSTREAM_BASELINE_TREE="$(mktemp)"
+          git -C .codestra-upstream-src ls-tree -r -z "$UPSTREAM_SHA" > "$UPSTREAM_BASELINE_TREE"
           rm -rf .codestra-upstream-src/.git
           mv .codestra-upstream-src "$IMPORT_PATH"
 
-          export UPSTREAM_URL UPSTREAM_REF UPSTREAM_SHA
+          export UPSTREAM_URL UPSTREAM_REF UPSTREAM_SHA UPSTREAM_BASELINE_TREE
           python3 - <<'PY'
-          import hashlib
-          import json
-          import os
-          import re
+          import hashlib, json, os, re, subprocess, tempfile
           from datetime import datetime, timezone
           from pathlib import Path
 
-          root = Path('upstream')
-          sanitizations = []
+          sanitizations=[]
+          workspace_root=Path.cwd().resolve(strict=True)
 
-          def record(path: Path, rule: str, replacements: int, hashes: list[str] | None = None) -> None:
-              item = {
-                  'path': path.as_posix(),
-                  'rule': rule,
-                  'replacements': replacements,
-              }
-              if hashes:
-                  item['original_block_sha256'] = hashes
-              sanitizations.append(item)
+          def repository_path(path):
+              candidate=Path(path)
+              resolved=(candidate if candidate.is_absolute() else workspace_root / candidate).resolve(strict=False)
+              try:
+                  return resolved.relative_to(workspace_root).as_posix()
+              except ValueError as exc:
+                  raise RuntimeError(f'evidence path escapes repository: {path}') from exc
 
-          def sanitize_text(path: Path, replacements: list[tuple[str, str]], rule: str) -> None:
-              if not path.exists() or not path.is_file():
+          def record(rule, path, replacements, hashes=None):
+              if replacements:
+                  item={
+                      'rule': rule,
+                      'files_changed': 1,
+                      'replacements': replacements,
+                      'path': repository_path(path),
+                  }
+                  if hashes:
+                      item['original_block_sha256']=sorted(hashes)
+                  sanitizations.append(item)
+
+          def sanitize_text(path, replacements, rule):
+              p=Path(path)
+              if not p.exists() or not p.is_file():
                   return
-              text = path.read_text(encoding='utf-8', errors='surrogateescape')
-              original = text
-              count = 0
-              for pattern, replacement in replacements:
-                  text, changed = re.subn(pattern, replacement, text)
-                  count += changed
+              try:
+                  raw=p.read_bytes()
+                  text=raw.decode('utf-8', errors='surrogateescape')
+              except OSError:
+                  return
+              original=text
+              count=0
+              hashes=[]
+              for pattern,repl,flags in replacements:
+                  compiled=re.compile(pattern,flags)
+                  hashes.extend(
+                      hashlib.sha256(match.group(0).encode('utf-8', errors='surrogateescape')).hexdigest()
+                      for match in compiled.finditer(text)
+                  )
+                  text,n=compiled.subn(repl,text)
+                  count += n
               if text != original:
-                  path.write_text(text, encoding='utf-8', errors='surrogateescape')
-                  record(path, rule, count)
+                  p.write_bytes(text.encode('utf-8', errors='surrogateescape'))
+                  record(rule,p,count,hashes)
 
-          sanitize_text(
-              root / 'ui/tests/unit/lib/console-helpers-test.js',
-              [
-                  (r'AKIA[0-9A-Z]{16}', 'AWS_ACCESS_KEY_ID_TEST_INVALID'),
-                  (
-                      r'(?i)(aws_secret_access_key[\"\']?\s*[:=]\s*[\"\']?)[A-Za-z0-9/+=]{20,}',
-                      r'\1AWS_SECRET_ACCESS_KEY_TEST_INVALID',
-                  ),
-              ],
-              'replace AWS credential-shaped upstream UI test fixtures with explicit invalid placeholders',
+          # GitHub push protection correctly detects realistic credential/token
+          # fixtures shipped in upstream OpenBao tests/docs. Codestra preserves
+          # push protection and only neutralizes fixture material in explicitly
+          # non-production source paths. Production/runtime logic is untouched.
+          # The pinned upstream tree contains one documentation alias. Codestra
+          # repositories reject symlinks during secret scanning, so materialize
+          # only this reviewed, in-tree alias and fail closed on any drift.
+          EXPECTED_UPSTREAM_SYMLINKS = {
+              Path('upstream/CLAUDE.md'): Path('AGENTS.md'),
+          }
+          discovered_symlinks = {
+              p: p.readlink()
+              for p in Path('upstream').rglob('*')
+              if p.is_symlink()
+          }
+          if discovered_symlinks != EXPECTED_UPSTREAM_SYMLINKS:
+              raise RuntimeError('unexpected upstream symlink set')
+          for path, target in EXPECTED_UPSTREAM_SYMLINKS.items():
+              resolved = (path.parent / target).resolve(strict=True)
+              upstream_root = Path('upstream').resolve(strict=True)
+              if upstream_root not in resolved.parents or not resolved.is_file():
+                  raise RuntimeError(f'unsafe upstream symlink target: {path}')
+              contents = resolved.read_bytes()
+              original_hash = hashlib.sha256(path.readlink().as_posix().encode()).hexdigest()
+              path.unlink()
+              path.write_bytes(contents)
+              record('materialize reviewed in-tree upstream documentation symlink', path, 1, [original_hash])
+
+          # The pinned source contains certificate/private-key test fixtures
+          # whose forbidden filenames cannot enter Codestra Git authority.
+          # Preserve the complete path set, but replace every exact reviewed
+          # fixture with a deterministic non-secret archival marker. Any path
+          # drift fails before scanning or committing.
+          FORBIDDEN_SECRET_SUFFIXES = (
+              '.pem', '.key', '.p12', '.pfx', '.jks', '.keystore',
+              '.unseal', '.token', '.secret',
           )
-
-          token_patterns = [
-              (
-                  r'(?<![A-Za-z0-9])(?:hvs|hvr|hvb|hvp)\.[A-Za-z0-9_-]{12,}',
-                  'OPENBAO_SERVICE_TOKEN_TEST_INVALID',
-              ),
-              (
-                  r'(?<![A-Za-z0-9])s\.[A-Za-z0-9_-]{16,}',
-                  'OPENBAO_SERVICE_TOKEN_TEST_INVALID',
-              ),
-          ]
-          for relative in (
-              'website/content/docs/api/system/mfa-validate.mdx',
-              'website/content/docs/agent-and-proxy/agent/caching/index.mdx',
-              'website/content/docs/agent-and-proxy/proxy/caching/index.mdx',
-              'website/content/docs/api/auth/userpass.mdx',
+          EXPECTED_FORBIDDEN_SECRET_FIXTURES = {
+              Path('upstream/api/test-fixtures/keys/bad-cert.pem'),
+              Path('upstream/api/test-fixtures/keys/bad-key.pem'),
+              Path('upstream/api/test-fixtures/keys/cert.pem'),
+              Path('upstream/api/test-fixtures/keys/key.pem'),
+              Path('upstream/api/test-fixtures/root/rootcacert.pem'),
+              Path('upstream/api/test-fixtures/root/rootcakey.pem'),
+              Path('upstream/command/agent/test-fixtures/reload/reload_bar.key'),
+              Path('upstream/command/agent/test-fixtures/reload/reload_bar.pem'),
+              Path('upstream/command/agent/test-fixtures/reload/reload_ca.pem'),
+              Path('upstream/command/agent/test-fixtures/reload/reload_foo.key'),
+              Path('upstream/command/agent/test-fixtures/reload/reload_foo.pem'),
+              Path('upstream/command/agentproxyshared/auth/cert/test-fixtures/keys/cert.pem'),
+              Path('upstream/command/agentproxyshared/auth/cert/test-fixtures/keys/key.pem'),
+              Path('upstream/command/agentproxyshared/auth/cert/test-fixtures/root/rootcacert.pem'),
+              Path('upstream/command/agentproxyshared/auth/cert/test-fixtures/root/rootcakey.pem'),
+              Path('upstream/command/proxy/test-fixtures/reload/reload_bar.key'),
+              Path('upstream/command/proxy/test-fixtures/reload/reload_bar.pem'),
+              Path('upstream/command/proxy/test-fixtures/reload/reload_ca.pem'),
+              Path('upstream/command/proxy/test-fixtures/reload/reload_foo.key'),
+              Path('upstream/command/proxy/test-fixtures/reload/reload_foo.pem'),
+              Path('upstream/command/server/test-fixtures/reload/reload_bar.key'),
+              Path('upstream/command/server/test-fixtures/reload/reload_bar.pem'),
+              Path('upstream/command/server/test-fixtures/reload/reload_ca.pem'),
+              Path('upstream/command/server/test-fixtures/reload/reload_foo.key'),
+              Path('upstream/command/server/test-fixtures/reload/reload_foo.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/chain.crt.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/ecdsa.key'),
+              Path('upstream/vault/diagnose/test-fixtures/expiredcert.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/expiredprivatekey.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/fakecert.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/goodcertbadroot.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/goodcertwithroot.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/goodkey.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/intermediateCert.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/selfSignedCert.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/selfSignedCertKey.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/trailingdatacert.pem'),
+              Path('upstream/vault/diagnose/test-fixtures/twoRootCA.pem'),
+          }
+          discovered_forbidden_secret_fixtures = {
+              path
+              for path in Path('upstream').rglob('*')
+              if path.is_file()
+              and path.name != '.gitignore'
+              and path.name.lower().endswith(FORBIDDEN_SECRET_SUFFIXES)
+          }
+          if discovered_forbidden_secret_fixtures != EXPECTED_FORBIDDEN_SECRET_FIXTURES:
+              missing = sorted(
+                  path.as_posix()
+                  for path in EXPECTED_FORBIDDEN_SECRET_FIXTURES
+                  - discovered_forbidden_secret_fixtures
+              )
+              unexpected = sorted(
+                  path.as_posix()
+                  for path in discovered_forbidden_secret_fixtures
+                  - EXPECTED_FORBIDDEN_SECRET_FIXTURES
+              )
+              raise RuntimeError(
+                  'forbidden upstream secret fixture path drift: '
+                  f'missing={missing} unexpected={unexpected}'
+              )
+          for path in sorted(
+              EXPECTED_FORBIDDEN_SECRET_FIXTURES,
+              key=lambda item: item.as_posix(),
           ):
-              sanitize_text(
-                  root / relative,
-                  token_patterns,
-                  'replace token-shaped upstream documentation examples with explicit invalid placeholders',
+              original_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+              path.write_text(
+                  'OPENBAO_FORBIDDEN_SECRET_FIXTURE_REMOVED_FOR_GITHUB_ARCHIVAL\n',
+                  encoding='utf-8',
+              )
+              record(
+                  'replace exact pinned upstream forbidden-filename test fixture',
+                  path,
+                  1,
+                  [original_hash],
               )
 
-          private_key_pattern = re.compile(
-              r'-----BEGIN (?P<label>(?:OPENSSH |RSA |EC |DSA |ENCRYPTED )?PRIVATE KEY)-----'
-              r'.*?'
-              r'-----END (?P=label)-----',
-              flags=re.DOTALL,
+          fixture_parts={
+              'test','tests','testdata','test-fixtures','fixtures','fixture',
+              'integrationtest','examples','example','docs','website','testhelpers',
+              'testing','mirage'
+          }
+
+          def fixture_eligible(path):
+              rel=path.relative_to('upstream')
+              lower_parts={part.lower() for part in rel.parts}
+              lower_text=str(rel).lower()
+              return (
+                  bool(lower_parts & fixture_parts)
+                  or path.name.lower() == 'testing.go'
+                  or any(token in lower_text for token in ('_test.', '-test.', '/test_', '/tests_', '.md', '.mdx'))
+              )
+
+          CLIENT_SECRET_ASSIGNMENT = re.compile(
+              r'''(?im)^(?P<prefix>[ \t]*(?:export[ \t]+)?(?P<key_quote>["']?)[A-Za-z0-9_]*client_secret(?P=key_quote)[ \t]*(?P<delimiter>[:=])[ \t]*)(?P<value_quote>["'])(?P<value>[^"'\r\n]*)(?P=value_quote)(?P<suffix>[ \t]*(?:[,#].*|\\)?)$'''
           )
-          for path in sorted(root.rglob('*')):
-              if not path.is_file() or path.stat().st_size > 10 * 1024 * 1024:
+
+          def sanitize_client_secret_assignment(match):
+              quote=match.group('value_quote')
+              return (
+                  match.group('prefix')
+                  + quote
+                  + '<CODESTRA_CLIENT_SECRET_FIXTURE_INVALID>'
+                  + quote
+                  + match.group('suffix')
+              )
+
+          common_replacements=[
+              # OpenBao/Vault token-shaped fixtures, including hmac token forms.
+              (r'(?<![A-Za-z0-9])(?:hvs|hvr|hvb|hvp|hvS)\.[A-Za-z0-9_.:-]{8,}', 'OPENBAO_TOKEN_FIXTURE_INVALID', 0),
+              (r'(?<![A-Za-z0-9])s\.[A-Za-z0-9_-]{24}(?![A-Za-z0-9_-])', 'OPENBAO_LEGACY_TOKEN_FIXTURE_INVALID', 0),
+              (r'(?<![A-Za-z0-9])b\.[A-Za-z0-9_-]{64,}', 'OPENBAO_BATCH_TOKEN_FIXTURE_INVALID', 0),
+              (r'''(?i)(["']?Authorization["']?[ \t]*:[ \t]*["']?[ \t]*Bearer[ \t]+)[-A-Za-z0-9._~+/]{16,}=*''', r'\1<CODESTRA_BEARER_TOKEN_FIXTURE_INVALID>', 0),
+              # AWS key-shaped examples not fully covered by the earlier pass.
+              (r'(?:AKIA|ASIA)[0-9A-Z]{12,}', 'AWS_ACCESS_KEY_ID_FIXTURE_INVALID', 0),
+              (r'A3T_PROXY_TASK_TEST', 'AWS_ACCESS_KEY_ID_FIXTURE_INVALID', 0),
+              (r'wJalrXUtnFEMI/K7MDENG/[A-Za-z0-9/+_=.-]*', 'AWS_SECRET_ACCESS_KEY_FIXTURE_INVALID', 0),
+              # Known OAuth/high-entropy upstream test fixture values caught by push protection.
+              (r'xzskezlmu2pstaTZWQ2F', 'OAUTH_CLIENT_SECRET_FIXTURE_INVALID', 0),
+              (r'2BHSOxGaSIY1sI8r2FPs', 'OAUTH_CLIENT_SECRET_FIXTURE_INVALID', 0),
+              (r'AAjWUSXs35ZKWs[A-Za-z0-9/+_=.-]*', 'HIGH_ENTROPY_FIXTURE_INVALID', 0),
+              (r'82994529-1422-946c-7d3c-e7aaa3374a33', 'REKEY_FIXTURE_ID_INVALID', 0),
+              (r'48a2c2f9-0e52-34bc-d7e6-050925c06ced', 'REKEY_FIXTURE_ID_INVALID', 0),
+              # Common provider token shapes used in tests/examples.
+              (r'gh[pousr]_[A-Za-z0-9]{20,}', 'GITHUB_TOKEN_FIXTURE_INVALID', 0),
+              (r'github_pat_[A-Za-z0-9_]{20,}', 'GITHUB_TOKEN_FIXTURE_INVALID', 0),
+              (r'SK[0-9a-fA-F]{32}', 'TWILIO_KEY_FIXTURE_INVALID', 0),
+              (r'xox(?:a|b|p|r|s)-[A-Za-z0-9-]{12,}', 'SLACK_TOKEN_FIXTURE_INVALID', 0),
+              (r'xapp-[A-Za-z0-9-]{12,}', 'SLACK_APP_TOKEN_FIXTURE_INVALID', 0),
+              # Preserve fixture syntax while making generic client-secret
+              # assignments explicitly non-credential material. Only complete,
+              # quoted scalar assignments are rewritten; operators, nulls and
+              # compound expressions remain untouched and fail the secret scan.
+              (CLIENT_SECRET_ASSIGNMENT, sanitize_client_secret_assignment, 0),
+              # Private-key blocks are only neutralized in fixture/docs paths.
+              (r'-----BEGIN [^-\n]*PRIVATE KEY-----.*?-----END [^-\n]*PRIVATE KEY-----', 'PRIVATE_KEY_TEST_FIXTURE_REMOVED', re.DOTALL),
+              (r'-----BEGIN PGP PRIVATE' + r' KEY BLOCK-----.*?-----END PGP PRIVATE' + r' KEY BLOCK-----', 'PGP_PRIVATE_KEY_TEST_FIXTURE_REMOVED', re.DOTALL),
+              (r'-----BEGIN (?:[A-Z0-9][A-Z0-9 -]{0,63} )?PRIVATE KEY(?: BLOCK)?-----', 'PRIVATE_KEY_TEST_FIXTURE_HEADER_REMOVED', 0),
+          ]
+
+          for p in sorted(Path('upstream').rglob('*'), key=lambda item: item.as_posix()):
+              if not p.is_file():
                   continue
-              try:
-                  text = path.read_text(encoding='utf-8', errors='surrogateescape')
-              except OSError:
+              if not fixture_eligible(p):
                   continue
-              hashes = []
+              sanitize_text(
+                  p,
+                  common_replacements,
+                  'neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance'
+              )
 
-              def replace_private_key(match: re.Match[str]) -> str:
-                  block = match.group(0).encode('utf-8', errors='surrogateescape')
-                  digest = hashlib.sha256(block).hexdigest()
-                  hashes.append(digest)
-                  return (
-                      'OPENBAO_PRIVATE_KEY_TEST_FIXTURE_REMOVED_FOR_GITHUB_PUSH_PROTECTION'
-                      f'_SHA256_{digest}'
-                  )
+          # Run the exact pinned scanner used by required CI. Its default rules
+          # cover generic API keys and JWTs beyond the deterministic patterns
+          # above. Only fixture-eligible upstream paths may be rewritten. Exact
+          # runtime false positives remain byte-for-byte upstream and are bound
+          # by path plus line syntax in the reviewed .gitleaks.toml allowlists.
+          gitleaks_config=Path(
+              os.environ.get('CODESTRA_GITLEAKS_CONFIG', '.gitleaks.toml')
+          ).resolve(strict=True)
+          report_handle, report_name=tempfile.mkstemp(prefix='codestra-upstream-gitleaks-', suffix='.json')
+          os.close(report_handle)
+          report_path=Path(report_name)
+          try:
+              result=subprocess.run(
+                  [
+                      'gitleaks', 'dir', '.', '--no-banner',
+                      '--config', str(gitleaks_config),
+                      '--report-format', 'json', '--report-path', str(report_path),
+                  ],
+                  stdout=subprocess.DEVNULL,
+                  stderr=subprocess.PIPE,
+                  text=True,
+                  check=False,
+              )
+              if result.returncode not in (0, 1):
+                  raise RuntimeError(f'gitleaks fixture scan failed with status {result.returncode}')
+              findings=json.loads(report_path.read_text() or '[]')
+          finally:
+              report_path.unlink(missing_ok=True)
 
-              sanitized, count = private_key_pattern.subn(replace_private_key, text)
-              if count:
-                  path.write_text(
-                      sanitized,
-                      encoding='utf-8',
-                      errors='surrogateescape',
-                  )
-                  record(
-                      path,
-                      'replace upstream private-key test fixture blocks with deterministic invalid placeholders',
-                      count,
-                      hashes,
-                  )
+          supported_gitleaks_rules={
+              'curl-auth-header',
+              'generic-api-key',
+              'hashicorp-tf-password',
+              'jwt',
+          }
+          findings_by_path={}
+          upstream_root=Path('upstream').resolve(strict=True)
+          for finding in findings:
+              rule=finding.get('RuleID')
+              secret=finding.get('Secret')
+              raw_path=Path(finding.get('File', ''))
+              path=(raw_path if raw_path.is_absolute() else workspace_root / raw_path).resolve(strict=True)
+              if rule not in supported_gitleaks_rules:
+                  raise RuntimeError(f'unreviewed upstream Gitleaks rule: {rule}')
+              if upstream_root not in path.parents or not fixture_eligible(path.relative_to(workspace_root)):
+                  raise RuntimeError(f'Gitleaks finding outside reviewed fixture paths: {path}')
+              if not isinstance(secret, str) or not secret:
+                  raise RuntimeError('Gitleaks finding omitted the matched fixture value')
+              findings_by_path.setdefault(path, []).append(finding)
 
-          remaining = []
-          for path in root.rglob('*'):
-              if not path.is_file() or path.stat().st_size > 10 * 1024 * 1024:
-                  continue
-              text = path.read_text(encoding='utf-8', errors='surrogateescape')
-              if private_key_pattern.search(text):
-                  remaining.append(path.as_posix())
-          if remaining:
-              raise SystemExit(f'private-key fixture sanitization incomplete: {remaining[:20]}')
+          for path, path_findings in sorted(findings_by_path.items(), key=lambda item: item[0].as_posix()):
+              text=path.read_text(encoding='utf-8', errors='surrogateescape')
+              hashes=[]
+              replacement_count=0
+              rules={finding['RuleID'] for finding in path_findings}
 
-          manifest = {
+              decoded_findings=[
+                  finding for finding in path_findings
+                  if 'decoded:base64' in (finding.get('Tags') or [])
+              ]
+              decoded_lines={}
+              for finding in decoded_findings:
+                  if finding['StartLine'] != finding['EndLine']:
+                      raise RuntimeError(f'multiline decoded Gitleaks fixture is unsupported: {path}')
+                  line_number=finding['StartLine']
+                  coordinates=(finding['StartColumn'], finding['EndColumn'])
+                  existing=decoded_lines.setdefault(line_number, coordinates)
+                  if existing != coordinates:
+                      raise RuntimeError(f'overlapping decoded Gitleaks fixtures are unsupported: {path}')
+
+              if decoded_lines:
+                  lines=text.splitlines(keepends=True)
+                  for line_number, (start_column, end_column) in sorted(decoded_lines.items(), reverse=True):
+                      line=lines[line_number - 1]
+                      start_index=start_column - 1
+                      left=max(line.rfind(quote, 0, start_index + 1) for quote in ('"', "'", '`'))
+                      if left < 0:
+                          raise RuntimeError(f'decoded Gitleaks fixture lacks an opening quote: {path}')
+                      quote=line[left]
+                      right=line.find(quote, max(end_column - 1, left + 1))
+                      if right < 0:
+                          raise RuntimeError(f'decoded Gitleaks fixture lacks a closing quote: {path}')
+                      encoded_fixture=line[left + 1:right]
+                      if len(encoded_fixture) < 16:
+                          raise RuntimeError(f'decoded Gitleaks fixture is unexpectedly short: {path}')
+                      hashes.append(hashlib.sha256(encoded_fixture.encode()).hexdigest())
+                      lines[line_number - 1]=(
+                          line[:left + 1]
+                          + '<CODESTRA_GITLEAKS_FIXTURE_INVALID>'
+                          + line[right:]
+                      )
+                      replacement_count += 1
+                  text=''.join(lines)
+
+              literal_secrets={
+                  finding['Secret']
+                  for finding in path_findings
+                  if 'decoded:base64' not in (finding.get('Tags') or [])
+              }
+              ordered_secrets=sorted(literal_secrets, key=lambda secret: (-len(secret), secret))
+              if any(secret not in text for secret in ordered_secrets):
+                  raise RuntimeError(f'Gitleaks fixture changed before sanitization: {path}')
+              if ordered_secrets:
+                  matcher=re.compile('|'.join(re.escape(secret) for secret in ordered_secrets))
+
+                  def replace_gitleaks_fixture(match):
+                      hashes.append(hashlib.sha256(match.group(0).encode()).hexdigest())
+                      return '<CODESTRA_GITLEAKS_FIXTURE_INVALID>'
+
+                  text,literal_replacement_count=matcher.subn(replace_gitleaks_fixture, text)
+                  replacement_count += literal_replacement_count
+              path.write_text(text, encoding='utf-8', errors='surrogateescape')
+              record(
+                  'neutralize pinned Gitleaks fixture rules: ' + ','.join(sorted(rules)),
+                  path,
+                  replacement_count,
+                  hashes,
+              )
+
+          verification=subprocess.run(
+              ['gitleaks', 'dir', '.', '--no-banner', '--redact', '--config', str(gitleaks_config)],
+              stdout=subprocess.DEVNULL,
+              stderr=subprocess.PIPE,
+              text=True,
+              check=False,
+          )
+          if verification.returncode != 0:
+              raise RuntimeError('sanitized upstream tree did not pass Gitleaks verification')
+
+          sanitization_manifest = {
               'schema_version': '1.0',
               'upstream_clone_url': os.environ['UPSTREAM_URL'],
               'upstream_ref': os.environ['UPSTREAM_REF'],
               'upstream_commit': os.environ['UPSTREAM_SHA'],
               'purpose': 'GitHub push-protection-safe upstream source snapshot',
               'source_behavior_changed': 'test_and_documentation_fixtures_only',
-              'sanitizations': sanitizations,
+              'sanitizations': sorted(sanitizations, key=lambda item: (item['path'], item['rule'])),
           }
+
+          # Prove the import is complete and that every byte or mode change
+          # from the exact pinned upstream tree has a sanitization record.
+          baseline={}
+          baseline_path=Path(os.environ['UPSTREAM_BASELINE_TREE'])
+          for entry in baseline_path.read_bytes().split(b'\0'):
+              if not entry:
+                  continue
+              metadata, raw_path=entry.split(b'\t', 1)
+              mode, kind, oid=metadata.decode().split()
+              if kind != 'blob':
+                  raise RuntimeError(f'unsupported upstream tree entry type: {kind}')
+              path='upstream/' + raw_path.decode('utf-8', errors='surrogateescape')
+              baseline[path]=(mode, oid)
+          baseline_path.unlink(missing_ok=True)
+
+          def git_blob_oid(contents):
+              header=f'blob {len(contents)}\0'.encode()
+              return hashlib.sha1(header + contents).hexdigest()
+
+          imported={}
+          for path in sorted(Path('upstream').rglob('*'), key=lambda item: item.as_posix()):
+              if path.is_symlink():
+                  contents=path.readlink().as_posix().encode()
+                  mode='120000'
+              elif path.is_file():
+                  contents=path.read_bytes()
+                  mode='100755' if path.stat().st_mode & 0o111 else '100644'
+              else:
+                  continue
+              imported[path.as_posix()]=(mode, git_blob_oid(contents))
+
+          if baseline.keys() != imported.keys():
+              missing=len(baseline.keys() - imported.keys())
+              extra=len(imported.keys() - baseline.keys())
+              raise RuntimeError(f'upstream import path mismatch: missing={missing},extra={extra}')
+          changed_paths={path for path in baseline if baseline[path] != imported[path]}
+          manifest_paths={item['path'] for item in sanitization_manifest['sanitizations']}
+          if changed_paths != manifest_paths:
+              unmanifested=len(changed_paths - manifest_paths)
+              unchanged_manifest=len(manifest_paths - changed_paths)
+              raise RuntimeError(
+                  f'upstream provenance mismatch: unmanifested={unmanifested},unchanged_manifest={unchanged_manifest}'
+              )
+
           Path('CODESTRA_UPSTREAM_SANITIZATION.json').write_text(
-              json.dumps(manifest, indent=2, sort_keys=True) + '\n',
-              encoding='utf-8',
+              json.dumps(sanitization_manifest, indent=2, sort_keys=True) + '\n'
           )
+
+          lock_path = Path('CODESTRA_UPSTREAM_LOCK.json')
+          previous_lock = {}
+          if lock_path.is_file():
+              try:
+                  previous_lock = json.loads(lock_path.read_text())
+              except (OSError, ValueError):
+                  previous_lock = {}
+          synchronized_at = datetime.now(timezone.utc).isoformat()
+          if (
+              previous_lock.get('upstream_ref') == os.environ['UPSTREAM_REF']
+              and previous_lock.get('upstream_commit') == os.environ['UPSTREAM_SHA']
+          ):
+              synchronized_at = previous_lock.get('synchronized_at', synchronized_at)
 
           lock = {
               'schema_version': '1.0',
@@ -193,40 +557,65 @@ jobs:
               'upstream_ref': os.environ['UPSTREAM_REF'],
               'upstream_commit': os.environ['UPSTREAM_SHA'],
               'import_path': 'upstream',
-              'synchronized_at': datetime.now(timezone.utc).isoformat(),
+              'synchronized_at': synchronized_at,
               'deployment_enabled': False,
               'secret_material_allowed_in_git': False,
               'sanitization_manifest': 'CODESTRA_UPSTREAM_SANITIZATION.json',
               'sanitization_count': len(sanitizations),
+              'sanitization_scope': 'upstream test/example/documentation fixtures only; production/runtime logic is not intentionally modified',
           }
-          Path('CODESTRA_UPSTREAM_LOCK.json').write_text(
-              json.dumps(lock, indent=2, sort_keys=True) + '\n',
-              encoding='utf-8',
-          )
+          lock_path.write_text(json.dumps(lock, indent=2) + '\n')
           PY
 
           git config user.name 'codestra-upstream-sync'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          SYNC_BRANCH="automation/openbao-upstream-${UPSTREAM_SHA:0:12}"
-          git switch -C "$SYNC_BRANCH"
-          git add -A upstream CODESTRA_UPSTREAM_LOCK.json CODESTRA_UPSTREAM_SANITIZATION.json
-          git diff --cached --quiet && exit 0
-          git commit -m "vendor: sync sanitized official OpenBao upstream ${UPSTREAM_SHA}"
-          git push --force origin "HEAD:${SYNC_BRANCH}"
-          echo "SYNC_BRANCH=${SYNC_BRANCH}" >> "$GITHUB_ENV"
-          echo "UPSTREAM_SHA=${UPSTREAM_SHA}" >> "$GITHUB_ENV"
-
-      - name: Open reviewable upstream-source pull request
-        if: env.SYNC_BRANCH != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          if gh pr list --base development --head "$SYNC_BRANCH" --state open --json number --jq 'length' | grep -qx '0'; then
-            gh pr create \
-              --base development \
-              --head "$SYNC_BRANCH" \
-              --title "vendor(openbao): sync sanitized upstream ${UPSTREAM_SHA:0:12}" \
-              --body "Official OpenBao source snapshot locked to \`${UPSTREAM_SHA}\`. Push-protection-sensitive upstream test/documentation fixtures were replaced by deterministic invalid placeholders; paths and original block hashes are recorded in \`CODESTRA_UPSTREAM_SANITIZATION.json\`. This PR does not deploy or activate OpenBao."
+          [[ "$SYNC_BRANCH" == "sync/openbao-upstream-${UPSTREAM_SHA}-${GITHUB_SHA}" ]]
+          git add -f -- upstream
+          git add -- CODESTRA_UPSTREAM_LOCK.json CODESTRA_UPSTREAM_SANITIZATION.json
+          if git diff --cached --quiet; then
+            (( existing_sync_branch == 1 )) || exit 0
+          else
+            if (( existing_sync_branch == 1 )); then
+              echo 'Existing sync branch differs from deterministic rebuild.' >&2
+              exit 2
+            fi
+            git commit -m "vendor: sync official OpenBao upstream ${UPSTREAM_SHA}"
+            git push origin "HEAD:refs/heads/${SYNC_BRANCH}"
           fi
+          LOCAL_SHA="$(git rev-parse HEAD)"
+          mapfile -t open_prs < <(
+            gh api --method GET "repos/${GITHUB_REPOSITORY}/pulls" \
+              -f state=open \
+              -f base="development" \
+              -f head="${GITHUB_REPOSITORY_OWNER}:${SYNC_BRANCH}" \
+              -f per_page=100 \
+              --paginate \
+              --jq '.[] | [.number,.base.ref,.head.ref,.head.sha,.head.repo.full_name] | @tsv'
+          )
+          case "${#open_prs[@]}" in
+            0)
+              gh pr create \
+                --repo "$GITHUB_REPOSITORY" \
+                --base development \
+                --head "$SYNC_BRANCH" \
+                --title "vendor: sync reviewed OpenBao upstream ${UPSTREAM_SHA}" \
+                --body "Pins and imports the exact OpenBao upstream commit ${UPSTREAM_SHA}. Deployment remains disabled. This PR requires normal source validation and independent review."
+              ;;
+            1)
+              IFS=$'\t' read -r pr_number pr_base pr_head pr_head_sha pr_repository extra <<< "${open_prs[0]}"
+              [[ "$pr_number" =~ ^[1-9][0-9]*$ ]]
+              [[ "$pr_base" == "development" ]]
+              [[ "$pr_head" == "$SYNC_BRANCH" ]]
+              [[ "$pr_head_sha" == "$LOCAL_SHA" ]]
+              [[ "$pr_repository" == "$GITHUB_REPOSITORY" ]]
+              [[ -z "${extra:-}" ]]
+              ;;
+            *)
+              echo 'Multiple open pull requests claim the sync branch.' >&2
+              exit 2
+              ;;
+          esac
+          # Events created with GITHUB_TOKEN do not normally start another
+          # workflow. workflow_dispatch is the documented exception, so bind
+          # validation explicitly to the exact generated sync branch.
+          gh workflow run validate.yml --repo "$GITHUB_REPOSITORY" --ref "$SYNC_BRANCH"

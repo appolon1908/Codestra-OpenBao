@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "name": "codestra-jwt-replay",
+  "version": "v1.1.0",
+  "type": "auth",
+  "command": "codestra-jwt-replay",
+  "protocol": "OpenBao external plugin gRPC multiplex",
+  "upstreamRepository": "openbao/openbao",
+  "upstreamVersion": "2.6.2",
+  "upstreamSha": "dd9c19c37a878cf4a81b18efb8d6f0599c7da923",
+  "upstreamGoVersion": "1.25.8",
+  "goVersion": "1.25.13",
+  "goToolchainSha256": "39042a078ea9ceebe3ecda4a7188f0f5b96e14a071d27923ba7f40b456e85ae3",
+  "upstreamGoModSha256": "3d766e83c9d8abbe8f5f3c5bff11c2c88e43db90c08495921a12568197eecd15",
+  "upstreamGoSumSha256": "d685b923e09d72ade2eb594b40f05b517ac872a1f350bc8ead570d63ed6a4128",
+  "securityDependencyOverrides": [
+    {
+      "module": "golang.org/x/crypto",
+      "upstreamVersion": "v0.53.0",
+      "version": "v0.55.0",
+      "moduleSum": "h1:+KWHjbgOaAQ66dh/YlkZKHlz9ZUlq61AFirAR9ntP8M=",
+      "goModSum": "h1:uq0V9dE/fzQuJtbnL+2EhWOE63vo164FY8xqEnV9xis=",
+      "vcsCommit": "f44d03d253a1503e51b059ca880867c51d878242",
+      "reason": "CVE-2026-56854 fixed dependency override"
+    },
+    {
+      "module": "google.golang.org/grpc",
+      "upstreamVersion": "v1.82.1",
+      "version": "v1.83.1",
+      "moduleSum": "h1:HIO0+BEtBP6soyqvqC8sNUjZ7bTs+0hFQuFF+RAy++Y=",
+      "goModSum": "h1:kDyl6SKsiHKt0uylY5gtn5cEjkrIOhQOGDgIc4JGwzQ=",
+      "vcsCommit": "1550d9e0cddb30ce99e61a2102e8294a49461e5e",
+      "reason": "CVE-2026-84304 fixed dependency override"
+    }
+  ],
+  "resolvedSecurityModules": {
+    "golang.org/x/crypto": "v0.55.0",
+    "google.golang.org/grpc": "v1.83.1",
+    "golang.org/x/mod": "v0.38.0",
+    "golang.org/x/net": "v0.57.0",
+    "golang.org/x/sync": "v0.22.0",
+    "golang.org/x/sys": "v0.47.0",
+    "golang.org/x/term": "v0.45.0",
+    "golang.org/x/text": "v0.41.0",
+    "golang.org/x/tools": "v0.48.0"
+  },
+  "overlayGoModSha256": "2da2e70dac1a46ba1b8901e086aa0312c7fcfdf4be303c75e31b1b47a4862ced",
+  "overlayGoSumSha256": "31914c68c991f927c069c808894c3a4138a547eb32de6051fd69568678b47d46",
+  "platform": "linux/amd64",
+  "binarySha256": "332562de9c3f179b4598104cceb83c4cddf0896428df192697e7d91dc6651508",
+  "reproducibleBuildsVerified": 4,
+  "sequentialReplayTest": "PASS",
+  "concurrentReplayTest": "PASS",
+  "negativeClaimTests": "PASS",
+  "agentStandardLoginForcedThroughCel": true,
+  "agentStandardLoginReplayTest": "PASS",
+  "runtimeApplyAuthorized": false
+}

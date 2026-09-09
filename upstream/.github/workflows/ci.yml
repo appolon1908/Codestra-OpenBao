@@ -1,0 +1,91 @@
+name: CI
+on:
+  merge_group:
+  pull_request:
+    # The default types for pull_request are [ opened, synchronize, reopened ].
+    # This is insufficient for our needs, since we're skipping stuff on PRs in
+    # draft mode.  By adding the ready_for_review type, when a draft pr is marked
+    # ready, we run everything, including the stuff we'd have skipped up until now.
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - "website/**"
+      - "ui/**"
+      - ".github/**"
+  push:
+    branches:
+      - main
+      - release/**
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}-ci
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Setup
+    env:
+      BASE_SHA: ${{ github.event.pull_request.head.sha }}
+    runs-on: ubuntu-latest
+    outputs:
+      go-tags: ""
+      checkout-ref: ${{ steps.checkout-ref-output.outputs.checkout-ref }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Ensure Go modules are cached
+        uses: ./.github/actions/set-up-go
+        with:
+          no-restore: true # don't download them on a cache hit
+      # control checking out head instead of default ref by a GH label
+      # if checkout-head label is added to a PR, checkout HEAD otherwise checkout ref
+      - if: ${{ !contains(github.event.pull_request.labels.*.name, 'checkout-head') }}
+        run: echo "CHECKOUT_REF=${GITHUB_REF}" >> "$GITHUB_ENV"
+      - if: ${{ contains(github.event.pull_request.labels.*.name, 'checkout-head') }}
+        run: echo "CHECKOUT_REF=${BASE_SHA}" >> "$GITHUB_ENV"
+      - id: checkout-ref-output
+        run: echo "checkout-ref=${{ env.CHECKOUT_REF }}" >> "$GITHUB_OUTPUT"
+
+  test-go:
+    name: Run Go tests
+    needs:
+      - setup
+    uses: ./.github/workflows/test-go.yml
+    with:
+      # The regular Go tests use an extra runner to execute the
+      # binary-dependent tests. We isolate them there so that the
+      # other tests aren't slowed down waiting for a binary build.
+      binary-tests: true
+      total-runners: 16
+      go-arch: amd64
+      go-tags: "${{ needs.setup.outputs.go-tags }},deadlock"
+      runs-on: ubuntu-latest
+      checkout-ref: ${{ needs.setup.outputs.checkout-ref }}
+    secrets: inherit
+
+  test-go-race:
+    name: Run Go tests with data race detection
+    needs:
+      - setup
+    # Don't run this job for docs/ui only PRs
+    if: |
+      github.event.pull_request.draft == false
+    uses: ./.github/workflows/test-go.yml
+    with:
+      total-runners: 16
+      extra-flags: "-race"
+      go-arch: amd64
+      go-tags: ${{ needs.setup.outputs.go-tags }}
+      runs-on: ubuntu-latest
+      name: "race"
+      checkout-ref: ${{ needs.setup.outputs.checkout-ref }}
+    secrets: inherit
+
+  tests-completed:
+    needs:
+      - setup
+      - test-go
+    if: always()
+    runs-on: ubuntu-slim
+    steps:
+      - run: |
+          tr -d '\n' <<< '${{ toJSON(needs.*.result) }}' | grep -q -v -E '(failure|cancelled)'

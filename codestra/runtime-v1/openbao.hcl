@@ -1,12 +1,12 @@
 ui = true
 cluster_name = "codestra-openbao"
-disable_mlock = false
 disable_clustering = false
 log_level = "info"
 log_format = "json"
 default_lease_ttl = "15m"
 max_lease_ttl = "1h"
 raw_storage_endpoint = false
+plugin_directory = "/openbao/plugins"
 
 api_addr = "https://bao.codestra.media"
 cluster_addr = "https://codestra-openbao:8201"

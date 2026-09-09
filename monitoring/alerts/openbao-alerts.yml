@@ -1,0 +1,154 @@
+groups:
+  - name: codestra-openbao
+    rules:
+      - alert: OpenBaoMetricsUnavailable
+        expr: up{job="codestra-openbao"} != 1 or absent(up{job="codestra-openbao"})
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao private metrics are unavailable
+
+      - alert: OpenBaoSealed
+        expr: vault_core_unsealed{job="codestra-openbao"} != 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao is sealed
+
+      - alert: OpenBaoNotInitialized
+        expr: codestra_openbao_initialized != 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao is not initialized or initialization state is ambiguous
+
+      - alert: OpenBaoNoActiveLeader
+        expr: max(vault_core_active{job="codestra-openbao"}) != 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: No active OpenBao leader is reporting
+
+      - alert: OpenBaoAuditRequestFailure
+        expr: increase(vault_audit_log_request_failure{job="codestra-openbao"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao audit request delivery failed
+
+      - alert: OpenBaoAuditResponseFailure
+        expr: increase(vault_audit_log_response_failure{job="codestra-openbao"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao audit response delivery failed
+
+      - alert: OpenBaoAuthFailureSurge
+        expr: sum(rate(vault_core_handle_login_request_count{job="codestra-openbao",quantile="0.5"}[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: OpenBao authentication traffic requires audit-log correlation
+
+      - alert: OpenBaoLeadershipChanges
+        expr: increase(vault_core_leadership_lost{job="codestra-openbao"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: OpenBao leadership changed
+
+      - alert: OpenBaoRaftQuorumBelowDesired
+        expr: codestra_openbao_raft_voting_peers < codestra_openbao_raft_desired_voting_peers
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao Raft voting peers are below the protected desired topology
+
+      - alert: OpenBaoExcessiveTokenCreation
+        expr: sum(rate(vault_token_creation{job="codestra-openbao"}[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: OpenBao token creation rate exceeds the reviewed threshold
+
+      - alert: OpenBaoIrrevocableLeases
+        expr: vault_expire_num_irrevocable_leases{job="codestra-openbao"} > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: OpenBao has irrevocable leases
+
+      - alert: OpenBaoBackupStale
+        expr: time() - codestra_openbao_backup_last_success_unixtime > 93600
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Latest encrypted off-host OpenBao backup is too old
+
+      - alert: OpenBaoBackupFailure
+        expr: increase(codestra_openbao_backup_failures_total[24h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao scheduled backup failed
+
+      - alert: OpenBaoRotationFailure
+        expr: increase(codestra_openbao_rotation_failures_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao credential rotation failed
+
+      - alert: OpenBaoRevocationFailure
+        expr: increase(codestra_openbao_revocation_failures_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao lease or identity revocation failed
+
+      - alert: OpenBaoCredentialNearExpiry
+        expr: codestra_openbao_credential_expiry_unixtime - time() < 604800
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: A sanitized credential-family expiry record is within seven days
+
+      - alert: OpenBaoRestartLoop
+        expr: increase(codestra_openbao_container_restarts_total[15m]) > 2
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao restarted more than twice in fifteen minutes
+
+      - alert: OpenBaoFilesystemCapacityLow
+        expr: codestra_openbao_filesystem_free_bytes / codestra_openbao_filesystem_size_bytes < 0.20
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: OpenBao storage filesystem has less than 20 percent free
+
+      - alert: OpenBaoDriftDetected
+        expr: codestra_openbao_drift_detected != 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Sanitized OpenBao runtime state differs from protected Git

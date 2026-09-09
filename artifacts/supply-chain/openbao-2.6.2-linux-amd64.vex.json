@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-02T16:30:00+02:00",
+  "image": "ghcr.io/openbao/openbao@sha256:e29524ba7c3f20d01f562c481e3eccbad6c91df45a2f2531433da4951e408cff",
+  "policy": "zero unresolved exploitable HIGH or CRITICAL vulnerabilities",
+  "statements": [
+    {
+      "vulnerabilityIds": ["CVE-2024-8185", "CVE-2024-9180", "CVE-2025-59043", "CVE-2025-64761", "CVE-2026-45808"],
+      "packageNames": ["github.com/openbao/openbao"],
+      "status": "not_affected",
+      "justification": "inline_mitigations_already_exist",
+      "impact": "Trivy compares the v2.6.2 binary's pseudo-version as v0.0.0. The running binary reports OpenBao v2.6.2 at upstream commit dd9c19c37a878cf4a81b18efb8d6f0599c7da923, which is newer than every listed fixed OpenBao release.",
+      "evidence": "OpenBao v2.6.2 release identity and official OpenBao security advisories",
+      "owner": "platform-security",
+      "reviewedAt": "2026-09-01",
+      "expiresAt": "2026-10-01"
+    },
+    {
+      "vulnerabilityIds": ["CVE-2026-14456"],
+      "packageNames": ["libcrypto3", "libssl3"],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact": "The affected OpenSSL path is QUIC server processing. OpenBao serves HTTP/1.1 and HTTP/2 over TCP/TLS and does not enable a QUIC listener.",
+      "evidence": "production listener contract prohibits QUIC and exposes only TCP 8200/8201 on private networks",
+      "owner": "platform-security",
+      "reviewedAt": "2026-09-01",
+      "expiresAt": "2026-09-15"
+    },
+    {
+      "vulnerabilityIds": ["CVE-2026-17106"],
+      "packageNames": ["github.com/moby/go-archive"],
+      "status": "not_affected",
+      "justification": "vulnerable_code_cannot_be_controlled_by_adversary",
+      "impact": "The affected tar extraction path is not reachable by a workload identity. Runtime plugin installation is disabled; only the protected administrative release process may alter plugin artifacts.",
+      "evidence": "workload policies deny sys/plugins, sys/mounts, sys/raw and administrative mutation",
+      "owner": "platform-security",
+      "reviewedAt": "2026-09-01",
+      "expiresAt": "2026-09-15"
+    },
+    {
+      "vulnerabilityIds": ["CVE-2026-56854"],
+      "packageNames": ["golang.org/x/crypto"],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact": "The affected code authenticates SSH server connections with source-address restrictions. OpenBao is not an SSH server, the SSH secrets engine is disabled, and this mission prohibits SSH-access changes.",
+      "evidence": "desired-state engine allowlist excludes the SSH engine and SSH_CHANGED must remain NO",
+      "owner": "platform-security",
+      "reviewedAt": "2026-09-01",
+      "expiresAt": "2026-09-15"
+    },
+    {
+      "vulnerabilityIds": ["CVE-2026-84304"],
+      "packageNames": ["google.golang.org/grpc"],
+      "status": "not_affected",
+      "justification": "vulnerable_code_cannot_be_controlled_by_adversary",
+      "condition": "codestra_openbao_runtime_disabled",
+      "impact": "The pinned image contains affected grpc-go v1.82.1, but no Codestra OpenBao runtime is deployed or authorized. Release construction fails while the committed runtime authorities and environment certifications remain false. This disposition is invalid for any future deployment and requires grpc-go v1.83.1 or later, or a new reviewed assessment, before runtime authority may be enabled.",
+      "evidence": "GHSA-vp52-pcj8-j9qc; scripts/verify_vulnerability_gate.py RUNTIME_AUTHORITY_FIELDS; scripts/build_release.py runtime_blocked_by_vex; scripts/deploy_runtime.sh vulnerability gate",
+      "owner": "platform-security",
+      "reviewedAt": "2026-09-02",
+      "expiresAt": "2026-09-09"
+    }
+  ]
+}

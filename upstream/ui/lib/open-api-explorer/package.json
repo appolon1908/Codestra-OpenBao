@@ -1,0 +1,21 @@
+{
+  "name": "open-api-explorer",
+  "keywords": [
+    "ember-addon",
+    "ember-engine"
+  ],
+  "dependencies": {
+    "ember-cli-htmlbars": "*",
+    "ember-cli-babel": "*",
+    "ember-auto-import": "*",
+    "swagger-ui-dist": "*"
+  },
+  "ember-addon": {
+    "paths": [
+      "../core"
+    ]
+  },
+  "scarfSettings": {
+    "enabled": false
+  }
+}

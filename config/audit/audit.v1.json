@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "status": "PREPARED_DISABLED",
+  "runtimeApplyAuthorized": false,
+  "requiredBeforeSecretUse": true,
+  "device": {
+    "type": "file",
+    "path": "file-audit",
+    "filePath": "/openbao/audit/openbao-audit.jsonl",
+    "mode": "0600",
+    "format": "json",
+    "hmacAccessor": true,
+    "logRaw": false,
+    "failClosed": true
+  },
+  "shipping": {
+    "agent": "alloy",
+    "destination": "loki",
+    "secretValuesAllowed": false,
+    "requiredLabels": ["environment", "service", "node_id"]
+  },
+  "alerts": ["audit_device_failure", "root_token_usage", "policy_change", "auth_failure_surge", "permission_denial_surge"]
+}

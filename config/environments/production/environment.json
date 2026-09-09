@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "environment": "production",
+  "production": true,
+  "canonicalApiAddress": "https://bao.codestra.media",
+  "canonicalDnsTarget": "37.27.128.39",
+  "clusterAddress": "https://codestra-bao-production-01:8201",
+  "nodeId": "codestra-bao-production-01",
+  "raftPath": "/openbao/data",
+  "desiredVotingNodes": 3,
+  "observedVotingNodes": 1,
+  "haCertificationBlockedUntilVotingNodes": 3,
+  "runtimeApplyAuthorized": false,
+  "networks": {
+    "client": "codestra-security-production",
+    "cluster": "codestra-openbao-cluster-production",
+    "observability": "codestra-observability-production",
+    "trustedProxyCidr": "172.31.40.0/24",
+    "nativeHostPortsPublished": false
+  },
+  "secretHierarchy": "codestra/production/"
+}

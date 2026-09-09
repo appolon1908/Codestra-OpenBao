@@ -1,0 +1,6 @@
+58f2be0646f7953329a86ba2c1e0e14f373dff938f92c44a888a439c6eb496c9  openbao-2.6.2-linux-amd64.cdx.json
+2a35e44a6d38336e1a179da046196792a1fa1688ad0eb93cb966afe31e142a71  openbao-2.6.2-linux-amd64.trivy.json
+ec615f9f1473e0f646b571ca357cf02e8823997c3b782b86564cba8366f81dea  openbao-2.6.2-linux-amd64.vex.json
+fd3c7c7ca4c13d087c40fe33098ebf807d5815e492fdfcdc0cffc0f65935161a  openbao-2.6.2-source-identity.json
+a8c56452e36ff8d6d44c166eab1f25279bd7de6991576624c2f898c8c27eeb9c  codestra-jwt-replay-v1.1.0-linux-amd64.cdx.json
+96a82a8f47f419cb76c30933dc23c4341d9fbd02bee07c4fe826cd5bb4e82657  codestra-jwt-replay-v1.1.0-linux-amd64.trivy.json

@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "codestra/runtime-v1/monitoring-staging-token-control.v1.json"
+      - "codestra/runtime-v1/keycloak-monitoring-readonly.v1.json"
       - "codestra/runtime-v1/staging-policies/monitoring-staging-evidence.hcl"
       - "codestra/runtime-v1/validate_monitoring_staging_token_control.py"
       - ".github/workflows/validate-monitoring-staging-token-control.yml"
@@ -11,6 +12,7 @@ on:
     branches: [development]
     paths:
       - "codestra/runtime-v1/monitoring-staging-token-control.v1.json"
+      - "codestra/runtime-v1/keycloak-monitoring-readonly.v1.json"
       - "codestra/runtime-v1/staging-policies/monitoring-staging-evidence.hcl"
       - "codestra/runtime-v1/validate_monitoring_staging_token_control.py"
       - ".github/workflows/validate-monitoring-staging-token-control.yml"
@@ -23,10 +25,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           persist-credentials: false
-      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.13"
       - run: python -m py_compile codestra/runtime-v1/validate_monitoring_staging_token_control.py

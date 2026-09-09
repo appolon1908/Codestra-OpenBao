@@ -1,0 +1,184 @@
+/**
+ * Copyright (c) HashiCorp, Inc.
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+.message {
+  background: $blue-010;
+  border: 1px solid $blue-100;
+  margin-bottom: $spacing-s;
+  padding: $spacing-s $spacing-m $spacing-m $spacing-s;
+  position: relative;
+
+  &:not(:last-child) {
+    margin-bottom: $size-4;
+  }
+
+  .message-icon {
+    color: $blue;
+    margin-right: $spacing-xs;
+  }
+
+  .message-title {
+    color: $blue-500;
+    font-size: 16px;
+    font-weight: $font-weight-bold;
+    line-height: 1.25;
+
+    .progress {
+      margin-left: $spacing-xs;
+    }
+  }
+
+  .close-button {
+    background: transparent;
+    border: 0;
+    color: $grey;
+    cursor: pointer;
+    position: absolute;
+    right: $spacing-s;
+    top: $spacing-m;
+  }
+
+  .close-button + .message-title {
+    padding-right: $spacing-m;
+  }
+
+  .message-body {
+    border: 0;
+    padding: 1em 1.25em;
+    margin-top: $spacing-xxs;
+  }
+
+  .message-body.pre {
+    white-space: pre-wrap;
+  }
+  // was p selector only, but padding was getting overridden by the message-body above
+  p.message-body {
+    font-size: $size-8;
+    border: 0;
+    padding: 0;
+  }
+
+  .message-actions {
+    margin-top: $spacing-xs;
+
+    a,
+    a:not(.button):not(.file-delete-button):not(.tag) {
+      color: $blue;
+      font-weight: $font-weight-semibold;
+      text-decoration: none;
+    }
+
+    > * + * {
+      margin-left: $spacing-xs;
+    }
+  }
+
+  // message types, see message-types.js
+  &.is-danger {
+    background: $red-010;
+    border: 1px solid $red-050;
+
+    .message-body {
+      color: $red-700;
+    }
+
+    .message-icon {
+      color: $red-500;
+    }
+
+    .message-title {
+      color: $red-700;
+    }
+  }
+
+  &.is-highlight {
+    background: $yellow-010;
+    border: 1px solid $yellow-100;
+
+    .message-body {
+      color: $ui-gray-900;
+    }
+
+    .message-icon {
+      color: $yellow-500;
+    }
+
+    .message-title {
+      color: $orange-700;
+    }
+  }
+
+  &.is-info {
+    background-color: $blue-010;
+
+    .message-body {
+      color: $blue-700;
+    }
+
+    .message-header {
+      background-color: $blue-500;
+      color: $white;
+    }
+
+    .message-title {
+      color: $blue-700;
+    }
+  }
+
+  &.is-success {
+    background: $green-010;
+    border: 1px solid $green-100;
+
+    .message-body {
+      color: $green-900;
+    }
+
+    .message-icon {
+      color: $green-500;
+    }
+
+    .message-title {
+      color: $green-700;
+    }
+  }
+}
+
+.message-inline {
+  display: flex;
+  align-items: center;
+  margin: 0 0 $spacing-l;
+
+  .hs-icon {
+    margin: 0 $spacing-xxs 0 0;
+  }
+
+  .p {
+    margin: 0;
+  }
+
+  &.has-top {
+    margin-top: $size-6;
+  }
+
+  &.size-small {
+    font-size: $size-8;
+  }
+
+  &.padding-top {
+    padding-top: $size-8;
+  }
+
+  &.is-marginless {
+    margin-bottom: 0;
+  }
+
+  > p::first-letter {
+    text-transform: capitalize;
+  }
+}
+
+.message.message-marginless {
+  margin: 0;
+}

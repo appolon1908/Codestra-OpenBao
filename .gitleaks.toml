@@ -1,0 +1,47 @@
+title = "Codestra OpenBao secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Non-secret database lease policy duration in the historical desired-state document; reviewed 2026-09-01 by platform-security."
+paths = ['''^codestra/runtime-v1/desired-state\.json$''']
+regexes = ['''^15m-default-1h-maximum$''']
+
+[[allowlists]]
+description = "Official upstream CLI help embeds a public UUID-format example token; exact path and surrounding command syntax reviewed 2026-09-01 by platform-security."
+condition = "AND"
+regexTarget = "line"
+paths = ['''^upstream/builtin/credential/token/cli\.go$''']
+regexes = ['''bao login token=[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12} lookup=false''']
+
+[[allowlists]]
+description = "Official upstream JWT configuration code intentionally verifies a fixed invalid test JWT; exact path and assignment reviewed 2026-09-01 by platform-security."
+condition = "AND"
+regexTarget = "line"
+paths = ['''^upstream/builtin/credential/jwt/path_config\.go$''']
+regexes = ['''testJWT := "eyJ[A-Za-z0-9_.-]+"''']
+
+[[allowlists]]
+description = "Official upstream Transit schema lists the non-secret aes128-gcm96 algorithm identifier; exact path and description text reviewed 2026-09-01 by platform-security."
+condition = "AND"
+regexTarget = "line"
+paths = ['''^upstream/builtin/logical/transit/path_derive_key\.go$''']
+regexes = ['''derived key\. Currently, "aes128-gcm96" , "aes256-gcm96"''']
+
+[[allowlists]]
+description = "Official upstream certificate helpers assign public Go enum constants whose names trigger the generic key detector; exact paths and assignments reviewed 2026-09-01 by platform-security."
+condition = "AND"
+regexTarget = "line"
+paths = [
+  '''^upstream/sdk/helper/certutil/helpers\.go$''',
+  '''^upstream/sdk/helper/certutil/types\.go$''',
+]
+regexes = ['''(?:result\.)?[Pp]rivateKeyType = (?:EC|RSA|Ed25519)PrivateKey''']
+
+[[allowlists]]
+description = "Public Go module pseudo-version for the reviewed grpc-go genproto graph; exact dependency-map path and literal line reviewed 2026-09-04 by platform-security."
+condition = "AND"
+regexTarget = "line"
+paths = ['''^scripts/prepare_openbao_source_build\.py$''']
+regexes = ['''^\s*"google\.golang\.org/genproto/googleapis/(?:api|rpc)": "v0\.0\.0-20260526163538-3dc84a4a5aaa",\s*$''']

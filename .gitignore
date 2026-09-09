@@ -11,7 +11,7 @@
 *.unseal
 *.token
 *.secret
-secrets/
+/secrets/
 credentials/
 runtime-data/
 bao-data/
@@ -20,4 +20,6 @@ raft-data/
 # Local tooling
 .tmp/
 .cache/
+__pycache__/
+*.pyc
 .DS_Store

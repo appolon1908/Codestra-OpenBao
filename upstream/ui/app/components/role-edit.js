@@ -1,0 +1,129 @@
+/**
+ * Copyright (c) HashiCorp, Inc.
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+import { inject as service } from '@ember/service';
+import { or } from '@ember/object/computed';
+import { isBlank } from '@ember/utils';
+import { task, waitForEvent } from 'ember-concurrency';
+import Component from '@ember/component';
+import { set } from '@ember/object';
+import { schedule } from '@ember/runloop';
+import keys from 'vault/lib/keycodes';
+
+const LIST_ROOT_ROUTE = 'vault.cluster.secrets.backend.list-root';
+const SHOW_ROUTE = 'vault.cluster.secrets.backend.show';
+
+export default Component.extend({
+  router: service(),
+
+  mode: null,
+  emptyData: '{\n}',
+  onDataChange() {},
+  onRefresh() {},
+  model: null,
+  requestInFlight: or('model.isLoading', 'model.isReloading', 'model.isSaving'),
+
+  didInsertElement() {
+    this._super(...arguments);
+    schedule('afterRender', this, 'focusOnInsertFocus');
+  },
+
+  focusOnInsertFocus() {
+    if (this.shouldFocus === false) {
+      return;
+    }
+    this.forceFocus();
+  },
+
+  forceFocus() {
+    var $targ = this.element.querySelectorAll(this.focusOnInsertSelector || 'input[type="text"]')[0];
+    if ($targ && $targ !== document.activeElement) {
+      $targ.focus();
+    }
+  },
+
+  willDestroyElement() {
+    this._super(...arguments);
+    if (this.model && this.model.isError) {
+      this.model.rollbackAttributes();
+    }
+  },
+
+  waitForKeyUp: task(function* () {
+    while (true) {
+      const event = yield waitForEvent(document.body, 'keyup');
+      this.onEscape(event);
+    }
+  })
+    .on('didInsertElement')
+    .cancelOn('willDestroyElement'),
+
+  transitionToRoute() {
+    this.router.transitionTo(...arguments);
+  },
+
+  onEscape(e) {
+    if (e.keyCode !== keys.ESC || this.mode !== 'show') {
+      return;
+    }
+    this.transitionToRoute(LIST_ROOT_ROUTE);
+  },
+
+  hasDataChanges() {
+    this.onDataChange(this.model.hasDirtyAttributes);
+  },
+
+  persist(method, successCallback) {
+    const model = this.model;
+    return model[method]().then(() => {
+      if (!model.isError) {
+        successCallback(model);
+      }
+    });
+  },
+
+  actions: {
+    createOrUpdate(type, event) {
+      event.preventDefault();
+
+      // all of the attributes with fieldValue:'id' are called `name`
+      const modelId = this.model.id || this.model.name;
+      // prevent from submitting if there's no key
+      // maybe do something fancier later
+      if (type === 'create' && isBlank(modelId)) {
+        return;
+      }
+
+      this.persist('save', () => {
+        this.hasDataChanges();
+        this.transitionToRoute(SHOW_ROUTE, modelId);
+      });
+    },
+
+    setValue(key, event) {
+      set(this.model, key, event.target.checked);
+    },
+
+    refresh() {
+      this.onRefresh();
+    },
+
+    delete() {
+      this.persist('destroyRecord', () => {
+        this.hasDataChanges();
+        this.transitionToRoute(LIST_ROOT_ROUTE);
+      });
+    },
+
+    codemirrorUpdated(attr, val, codemirror) {
+      codemirror.performLint();
+      const hasErrors = codemirror.state.lint.marked.length > 0;
+
+      if (!hasErrors) {
+        set(this.model, attr, JSON.parse(val));
+      }
+    },
+  },
+});

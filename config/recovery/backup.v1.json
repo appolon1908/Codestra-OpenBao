@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "runtimeApplyAuthorized": false,
+  "backend": "integrated-raft-snapshot",
+  "schedule": "17 2 * * *",
+  "encryption": "age-x25519",
+  "checksum": "sha256",
+  "localProtectedCopyRequired": true,
+  "offHostCopyRequired": true,
+  "offHostImmutabilityRequired": true,
+  "retention": {
+    "daily": 30,
+    "weekly": 12,
+    "monthly": 12
+  },
+  "rpoTargetHours": 24,
+  "rtoTargetHours": 4,
+  "maximumBackupAgeHours": 26,
+  "backupFailureAlertRequired": true,
+  "backupAgeAlertRequired": true,
+  "isolatedRestoreRequired": true
+}

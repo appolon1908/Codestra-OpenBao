@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "environment": "staging",
+  "production": false,
+  "canonicalApiAddress": "https://bao-staging.codestra.internal",
+  "clusterAddress": "https://codestra-bao-staging-01:8201",
+  "nodeId": "codestra-bao-staging-01",
+  "raftPath": "/openbao/data",
+  "desiredVotingNodes": 3,
+  "runtimeApplyAuthorized": false,
+  "networks": {
+    "client": "codestra-security-staging",
+    "cluster": "codestra-openbao-cluster-staging",
+    "observability": "codestra-observability-staging",
+    "trustedProxyCidr": "172.31.30.0/24",
+    "nativeHostPortsPublished": false
+  },
+  "secretHierarchy": "codestra/staging/"
+}

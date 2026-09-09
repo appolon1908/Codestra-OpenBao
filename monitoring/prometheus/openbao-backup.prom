@@ -1,0 +1,4 @@
+# This textfile is an example shape only. The backup timer writes current
+# values atomically outside Git after each real execution.
+codestra_openbao_backup_last_success_unixtime 0
+codestra_openbao_backup_failures_total 0

@@ -1,0 +1,66 @@
+groups:
+  - name: codestra-openbao-audit
+    interval: 1m
+    rules:
+      - alert: OpenBaoAuditStreamSilent
+        expr: |
+          sum(count_over_time({service="openbao"}[5m])) == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao audit delivery to Loki is silent
+
+      - alert: OpenBaoRootTokenUsage
+        expr: |
+          sum(count_over_time({service="openbao"} |= "\"policies\":[\"root\"]" [5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: OpenBao root-token activity was observed in sanitized audit metadata
+
+      - alert: OpenBaoPermissionDenialSurge
+        expr: |
+          sum(count_over_time({service="openbao"} | json | __error__="" | error=~".*(permission denied|denied).*" [5m])) > 20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: OpenBao permission denials exceed the reviewed threshold
+
+      - alert: OpenBaoPolicyModified
+        expr: |
+          sum(count_over_time({service="openbao"} | json | __error__="" | request_path=~"sys/policies/(acl|rgp)/.+" | request_operation=~"create|update|delete" [5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: An OpenBao policy mutation was observed
+
+      - alert: OpenBaoControlPlaneConfigurationModified
+        expr: |
+          sum(count_over_time({service="openbao"} | json | __error__="" | request_path=~"sys/(auth|mounts|audit|plugins/catalog)(/.*)?" | request_operation=~"create|update|delete" [5m])) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: An OpenBao control-plane configuration mutation was observed
+
+      - alert: OpenBaoInitializationFailure
+        expr: |
+          sum(count_over_time({service="openbao"} | json | __error__="" | request_path="sys/init" | error!="" [5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: An OpenBao initialization request failed
+
+      - alert: OpenBaoAuthenticationFailureSurge
+        expr: |
+          sum(count_over_time({service="openbao"} | json | __error__="" | request_path=~"auth/.+/(login|callback)" | error!="" [5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: OpenBao authentication failures exceed the reviewed threshold

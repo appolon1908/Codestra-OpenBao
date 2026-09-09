@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "authority": "config/workload-secret-authority.v1.json",
+  "runtimeApplyAuthorized": false,
+  "policies": [
+    {
+      "environment": "development",
+      "serviceIdentity": "kong-gateway",
+      "policyName": "workload-kong-gateway-development",
+      "path": "openbao/policies/development/kong-gateway.hcl",
+      "sha256": "3169e087e2bb39aff91072ab0c39afaee7633bd5d172cbcbf7bcd7c458ac01cd",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "middleware-api",
+      "policyName": "workload-middleware-api-development",
+      "path": "openbao/policies/development/middleware-api.hcl",
+      "sha256": "958f173f317a32b347136e6c1907969dc762ea82f58831c3eab70273fc7f4c03",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "middleware-worker",
+      "policyName": "workload-middleware-worker-development",
+      "path": "openbao/policies/development/middleware-worker.hcl",
+      "sha256": "2913f4e5a6c40c2058aae1ab8ce80984267e62533822a07038d581a93f405591",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "n8n-automation",
+      "policyName": "workload-n8n-automation-development",
+      "path": "openbao/policies/development/n8n-automation.hcl",
+      "sha256": "38509d4516c575f67967d651c746e28e43d9a6f90f9239d96cc255c9b222c1ef",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "odoo-integration",
+      "policyName": "workload-odoo-integration-development",
+      "path": "openbao/policies/development/odoo-integration.hcl",
+      "sha256": "07e450ce260ba4173fadd411620146d226e59bc1a0a1a0d0e411372bebe2f15b",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "prometheus-openbao",
+      "policyName": "workload-prometheus-openbao-development",
+      "path": "openbao/policies/development/prometheus-openbao.hcl",
+      "sha256": "d0c65da71c22e3bef012ad087a8db2164f79eed81704d9b8d477f945b1f18630",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "crawler-adapter",
+      "policyName": "workload-crawler-adapter-production",
+      "path": "openbao/policies/production/crawler-adapter.hcl",
+      "sha256": "86253fe671ec33b30bd5e215deec89c612f610c565951723bae4075cc5ca6686",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "klyrow-email-adapter",
+      "policyName": "workload-klyrow-email-adapter-production",
+      "path": "openbao/policies/production/klyrow-email-adapter.hcl",
+      "sha256": "acb85cfa3df763e189509724ccb089e7a763f66929ded0c4a4b4058681e2ce6b",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "kong-gateway",
+      "policyName": "workload-kong-gateway-production",
+      "path": "openbao/policies/production/kong-gateway.hcl",
+      "sha256": "a6265498d238d438c21dddeaece29bea3b36a556b81ffbcfaf6e7ea7a31434bc",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "middleware-api",
+      "policyName": "workload-middleware-api-production",
+      "path": "openbao/policies/production/middleware-api.hcl",
+      "sha256": "2a3cec12cc63e382e1906bbd33ae2a1762ab3968a4ff58705c0f67ed40223977",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "middleware-worker",
+      "policyName": "workload-middleware-worker-production",
+      "path": "openbao/policies/production/middleware-worker.hcl",
+      "sha256": "e37fd5748b4359bcf4a74a695da6edc5bee9929ee789319f466b31dc3d35388f",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "n8n-automation",
+      "policyName": "workload-n8n-automation-production",
+      "path": "openbao/policies/production/n8n-automation.hcl",
+      "sha256": "871ec1ba1bb6cfb6321d030e5681003fd241521f963ff35e4bdec6bb7584cb40",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "odoo-integration",
+      "policyName": "workload-odoo-integration-production",
+      "path": "openbao/policies/production/odoo-integration.hcl",
+      "sha256": "396ac23606c28cb8c2cfc111535827dae7ebfd270dbfb4865c014c3034a3639f",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "prometheus-openbao",
+      "policyName": "workload-prometheus-openbao-production",
+      "path": "openbao/policies/production/prometheus-openbao.hcl",
+      "sha256": "8aaa51e0349903fa3be4ae40279ddaa4bd41941cc94842e748a2b090d8efeb9b",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "telnexa-sms-adapter",
+      "policyName": "workload-telnexa-sms-adapter-production",
+      "path": "openbao/policies/production/telnexa-sms-adapter.hcl",
+      "sha256": "1e1d1c519ab8068c1cb69f9816bb4afcfd2807bdc21825e19b1f58b697f81f2f",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "vicidial-adapter",
+      "policyName": "workload-vicidial-adapter-production",
+      "path": "openbao/policies/production/vicidial-adapter.hcl",
+      "sha256": "3618701b580687d7adc0a41c7b363f188250b4d040caccf3ca0e7da1b275cfdf",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "crawler-adapter",
+      "policyName": "workload-crawler-adapter-staging",
+      "path": "openbao/policies/staging/crawler-adapter.hcl",
+      "sha256": "3e48ce108e30221b17c4060398b7c61b954cf3d96a0c77645e749eb0acb27e55",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "klyrow-email-adapter",
+      "policyName": "workload-klyrow-email-adapter-staging",
+      "path": "openbao/policies/staging/klyrow-email-adapter.hcl",
+      "sha256": "6f0f619d4ba0c6e125dabea9b4277d0089f0492f9004b7a893db6e1cce9c9eb5",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "kong-gateway",
+      "policyName": "workload-kong-gateway-staging",
+      "path": "openbao/policies/staging/kong-gateway.hcl",
+      "sha256": "1390df8d6049a951d5dba4019c05c1393c71b0db396e5dc1fade81fadc3fe9b1",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "middleware-api",
+      "policyName": "workload-middleware-api-staging",
+      "path": "openbao/policies/staging/middleware-api.hcl",
+      "sha256": "b507b66012fd945753f44439ef9a28f96c20e37571b08730e28502d222fb1d00",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "middleware-worker",
+      "policyName": "workload-middleware-worker-staging",
+      "path": "openbao/policies/staging/middleware-worker.hcl",
+      "sha256": "f703a5e82606a8c9503574630e99532b8d2197cebf50a0a420bf793a1c2431ea",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "n8n-automation",
+      "policyName": "workload-n8n-automation-staging",
+      "path": "openbao/policies/staging/n8n-automation.hcl",
+      "sha256": "e07593019356be1b88357e308653dd56b53ded32da5fab3dbc27be21b068c977",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "odoo-integration",
+      "policyName": "workload-odoo-integration-staging",
+      "path": "openbao/policies/staging/odoo-integration.hcl",
+      "sha256": "c7de96c0474f0e8ac34a962f0ea6ba71d14b8359f30ce9a2847e75e95f7cc16b",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "prometheus-openbao",
+      "policyName": "workload-prometheus-openbao-staging",
+      "path": "openbao/policies/staging/prometheus-openbao.hcl",
+      "sha256": "21401dc4f3b23a832adfa9971c50c300cf507f993f8d926bbf4c917f59c66721",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "telnexa-sms-adapter",
+      "policyName": "workload-telnexa-sms-adapter-staging",
+      "path": "openbao/policies/staging/telnexa-sms-adapter.hcl",
+      "sha256": "5e93c6ded6d57224f271652d7c6b106cbb4cf2aaac9267d18ad516f6ec3d4256",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "vicidial-adapter",
+      "policyName": "workload-vicidial-adapter-staging",
+      "path": "openbao/policies/staging/vicidial-adapter.hcl",
+      "sha256": "111c572ecee8189e2a6414c1e4d7122aa280294b3ad56fc3e30ff6af0a7a7138",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "kong-gateway",
+      "policyName": "workload-kong-gateway-test",
+      "path": "openbao/policies/test/kong-gateway.hcl",
+      "sha256": "43872297445c1f620a1d112a9295f6a89ddf52c041fe8aab3a92091976dfaeb0",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "middleware-api",
+      "policyName": "workload-middleware-api-test",
+      "path": "openbao/policies/test/middleware-api.hcl",
+      "sha256": "a01298aa7125c69b4acf5f0cb031ec7b3c9683dda4e3f3725cdf5aa162c106ef",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "middleware-worker",
+      "policyName": "workload-middleware-worker-test",
+      "path": "openbao/policies/test/middleware-worker.hcl",
+      "sha256": "050ac61e208a5b662342b50bdb9bac86ed5e2112132a3425846845264f0a861d",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "n8n-automation",
+      "policyName": "workload-n8n-automation-test",
+      "path": "openbao/policies/test/n8n-automation.hcl",
+      "sha256": "31253a72761460c8535f3c9a1a7e314b60bd8c5d52e53a281f591af9f76f50ad",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "odoo-integration",
+      "policyName": "workload-odoo-integration-test",
+      "path": "openbao/policies/test/odoo-integration.hcl",
+      "sha256": "2e52a9fb2100c958f98caa66173a0faceb5e2556375d75781964c77aeba4626c",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "prometheus-openbao",
+      "policyName": "workload-prometheus-openbao-test",
+      "path": "openbao/policies/test/prometheus-openbao.hcl",
+      "sha256": "1bec613e15205620d57cee0fe324d0f956ad54e1cace4e95678f240791f1f862",
+      "runtimeApplyAuthorized": false
+    }
+  ]
+}

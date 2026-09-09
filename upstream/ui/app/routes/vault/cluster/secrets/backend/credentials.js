@@ -1,0 +1,84 @@
+/**
+ * Copyright (c) HashiCorp, Inc.
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+import { resolve } from 'rsvp';
+import Route from '@ember/routing/route';
+import { inject as service } from '@ember/service';
+
+const SUPPORTED_DYNAMIC_BACKENDS = ['database', 'ssh', 'aws', 'pki'];
+
+export default Route.extend({
+  templateName: 'vault/cluster/secrets/backend/credentials',
+  pathHelp: service('path-help'),
+  store: service(),
+
+  backendModel() {
+    return this.modelFor('vault.cluster.secrets.backend');
+  },
+
+  beforeModel() {
+    const { backend } = this.paramsFor('vault.cluster.secrets.backend');
+    if (backend != 'ssh') {
+      return;
+    }
+    const modelType = 'ssh-otp-credential';
+    return this.pathHelp.getNewModel(modelType, backend);
+  },
+
+  getDatabaseCredential(backend, secret, roleType = '') {
+    return this.store.queryRecord('database/credential', { backend, secret, roleType }).catch((error) => {
+      const status = error?.httpStatus;
+      let title;
+      let message = `We ran into a problem and could not continue: ${
+        error?.errors ? error.errors[0] : 'See OpenBao logs for details.'
+      }`;
+      if (status === 403) {
+        // 403 is forbidden
+        title = 'You are not authorized';
+        message =
+          "Role wasn't found or you do not have permissions. Ask your administrator if you think you should have access.";
+      }
+      return {
+        errorHttpStatus: status,
+        errorTitle: title,
+        errorMessage: message,
+      };
+    });
+  },
+
+  async model(params) {
+    const role = params.secret;
+    const backendModel = this.backendModel();
+    const backendPath = backendModel.id;
+    const backendType = backendModel.type;
+    const roleType = params.roleType;
+    let dbCred;
+    if (backendType === 'database') {
+      dbCred = await this.getDatabaseCredential(backendPath, role, roleType);
+    }
+    if (!SUPPORTED_DYNAMIC_BACKENDS.includes(backendModel.type)) {
+      return this.transitionTo('vault.cluster.secrets.backend.list-root', backendPath);
+    }
+    return resolve({
+      backendPath,
+      backendType,
+      roleName: role,
+      roleType,
+      dbCred,
+    });
+  },
+
+  resetController(controller) {
+    controller.reset();
+  },
+
+  actions: {
+    willTransition() {
+      // we do not want to save any of the credential information in the store.
+      // once the user navigates away from this page, remove all credential info.
+      this.store.unloadAll('database/credential');
+    },
+  },
+});

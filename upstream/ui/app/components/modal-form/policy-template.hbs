@@ -1,0 +1,58 @@
+{{#if this.policy.policyType}}
+  <nav class="tabs has-bottom-margin-l">
+    <ul>
+      <li class={{unless this.showExamplePolicy "active"}}>
+        <button
+          data-test-tab-your-policy
+          type="button"
+          name="form"
+          class="link link-plain tab has-text-weight-semibold {{unless this.showExamplePolicy ' is-active'}}"
+          {{on "click" (fn (mut this.showExamplePolicy) false)}}
+        >
+          Your Policy
+        </button>
+      </li>
+      <li class={{if this.showExamplePolicy "active"}}>
+        <button
+          data-test-tab-example-policy
+          type="button"
+          name="form"
+          class="link link-plain tab has-text-weight-semibold {{if this.showExamplePolicy ' is-active'}}"
+          {{on "click" (fn (mut this.showExamplePolicy) true)}}
+        >
+          Example Policy
+        </button>
+      </li>
+    </ul>
+  </nav>
+{{/if}}
+{{#if this.showExamplePolicy}}
+  <div class="has-bottom-margin-s">
+    <p>
+      ACL Policies are written in Hashicorp Configuration Language (
+      <ExternalLink @href="https://github.com/hashicorp/hcl">HCL</ExternalLink>
+      ) or JSON and describe which paths in OpenBao a user or machine is allowed to access. Here is an example policy:
+    </p>
+  </div>
+  <JsonEditor
+    @value={{get this.policyTemplates this.policy.policyType}}
+    @mode="ruby"
+    @readOnly={{true}}
+    @showToolbar={{true}}
+  />
+{{else}}
+  <Select
+    @name="policyType"
+    @label="Type"
+    @options={{this.policyOptions}}
+    @isFullwidth={{true}}
+    @selectedValue={{this.policy.policyType}}
+    @onChange={{this.setPolicyType}}
+    @noDefault={{true}}
+  />
+  {{#if this.policy.policyType}}
+    <PolicyForm @onSave={{this.onSave}} @model={{this.policy}} @onCancel={{@onCancel}} />
+  {{else}}
+    <EmptyState @title="No policy type selected" @message="Select a policy type to continue creating." />
+  {{/if}}
+{{/if}}

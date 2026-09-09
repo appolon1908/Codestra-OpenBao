@@ -1,0 +1,70 @@
+{
+  "authorityRole": "secrets-pki-workload-identity-authority",
+  "canonicalHostname": "bao.codestra.media",
+  "component": "openbao",
+  "contractId": "codestra.observability.openbao.v1",
+  "correlation": {
+    "indexedFields": ["codestra_business", "application", "service", "environment", "server", "region", "deployment"],
+    "propagateHeaders": ["X-Correlation-ID", "traceparent"],
+    "protectedNonIndexedFields": ["request_id", "trace_id", "tenant_id"],
+    "structuredFields": ["correlation_id", "request_id", "trace_id", "tenant_id"]
+  },
+  "deploymentClass": "central",
+  "displayName": "OpenBao",
+  "integrations": [
+    {"direction": "outbound", "mutating": false, "peer": "suite-workloads", "protocol": "openbao-http-api", "purpose": "issue policy-scoped short-lived runtime material", "signal": "identity-certificates-secrets"},
+    {"direction": "outbound", "mutating": false, "peer": "prometheus", "protocol": "prometheus-scrape", "purpose": "publish sanitized security and availability metrics", "signal": "metrics"}
+  ],
+  "managementReadback": {
+    "allowsMutation": false,
+    "controlApiOwner": "appolon1908-hue/Codestra-Telemetry",
+    "exposesSecretValues": false,
+    "healthOperationId": "health",
+    "readinessOperationId": "readiness",
+    "registryServiceId": "openbao",
+    "responseBodyPolicy": "discard"
+  },
+  "nativeApi": {
+    "authentication": {
+      "callerControlledBusinessAllowed": false,
+      "credentialSource": "secret_file",
+      "requiredScopes": [],
+      "tenantHeader": null,
+      "transport": "private_mtls"
+    },
+    "baseUrlEnvironment": "CODESTRA_OPENBAO_URL",
+    "operations": [
+      {"acceptedStatuses": [200, 429, 472, 473], "access": "read_only", "category": "health", "controlPlaneProxyAllowed": false, "id": "health", "method": "GET", "path": "/v1/sys/health", "responseBodyPolicy": "discard", "timeoutMs": 3000},
+      {"acceptedStatuses": [200, 429, 472, 473], "access": "read_only", "category": "readiness", "controlPlaneProxyAllowed": false, "id": "readiness", "method": "GET", "path": "/v1/sys/health", "responseBodyPolicy": "discard", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "query", "controlPlaneProxyAllowed": false, "id": "seal-status", "method": "GET", "path": "/v1/sys/seal-status", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "query", "controlPlaneProxyAllowed": false, "id": "leader", "method": "GET", "path": "/v1/sys/leader", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "metrics", "controlPlaneProxyAllowed": false, "id": "metrics", "method": "GET", "path": "/v1/sys/metrics", "responseBodyPolicy": "discard", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "credential_issue", "controlPlaneProxyAllowed": false, "id": "pki-issue", "method": "POST", "path": "/v1/{mount}/issue/{role}", "responseBodyPolicy": "native", "timeoutMs": 3000}
+    ]
+  },
+  "nativeExposure": "private_strong_auth",
+  "release": {
+    "imageDigestEnvironment": "CODESTRA_OPENBAO_IMAGE_DIGEST",
+    "immutableImageRequired": true,
+    "sourceRevisionEnvironment": "CODESTRA_OPENBAO_SOURCE_REVISION"
+  },
+  "repository": "appolon1908-hue/Codestra-OpenBao",
+  "safety": {
+    "anonymousManagementAccessAllowed": false,
+    "callerControlledBusinessAllowed": false,
+    "crossBusinessDefaultAllowed": false,
+    "insecureTlsVerificationAllowed": false,
+    "mutationProxyEnabled": false,
+    "nativeApiProxyEnabled": false,
+    "runtimeActivationAuthorized": false,
+    "secretValueReadbackEnabled": false
+  },
+  "schemaAuthority": {
+    "path": "codestra/api/service-contract.schema.json",
+    "repository": "appolon1908-hue/Codestra-Telemetry",
+    "sourceRevision": "c35d880a730ca5206d445e8a9a688cb465ae2ad4",
+    "version": "1.0.0"
+  },
+  "schemaVersion": "1.0.0",
+  "signals": {"consumes": [], "produces": ["secrets", "identity", "certificates", "audit"]}
+}

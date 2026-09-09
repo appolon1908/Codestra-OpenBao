@@ -1,0 +1,94 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package command
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/hashicorp/cli"
+	"github.com/openbao/openbao/sdk/v2/helper/structtomap"
+	"github.com/posener/complete"
+)
+
+var (
+	_ cli.Command             = (*NamespaceLookupCommand)(nil)
+	_ cli.CommandAutocomplete = (*NamespaceLookupCommand)(nil)
+)
+
+type NamespaceLookupCommand struct {
+	*BaseCommand
+}
+
+func (c *NamespaceLookupCommand) Synopsis() string {
+	return "Look up an existing namespace"
+}
+
+func (c *NamespaceLookupCommand) Help() string {
+	helpText := `
+Usage: bao namespace lookup [options] PATH
+
+  Get information about the namespace of the locally authenticated token:
+
+      $ bao namespace lookup
+
+  Get information about the namespace of a particular child token (e.g. ns1/ns2/):
+
+      $ bao namespace lookup -namespace=ns1 ns2
+
+` + c.Flags().Help()
+
+	return strings.TrimSpace(helpText)
+}
+
+func (c *NamespaceLookupCommand) Flags() *FlagSets {
+	return c.flagSet(FlagSetHTTP | FlagSetOutputFormat)
+}
+
+func (c *NamespaceLookupCommand) AutocompleteArgs() complete.Predictor {
+	return c.PredictVaultNamespaces()
+}
+
+func (c *NamespaceLookupCommand) AutocompleteFlags() complete.Flags {
+	return c.Flags().Completions()
+}
+
+func (c *NamespaceLookupCommand) Run(args []string) int {
+	f := c.Flags()
+
+	if err := f.Parse(args); err != nil {
+		c.UI.Error(err.Error())
+		return 1
+	}
+
+	args = f.Args()
+	switch {
+	case len(args) < 1:
+		c.UI.Error(fmt.Sprintf("Not enough arguments (expected 1, got %d)", len(args)))
+		return 1
+	case len(args) > 1:
+		c.UI.Error(fmt.Sprintf("Too many arguments (expected 1, got %d)", len(args)))
+		return 1
+	}
+
+	namespacePath := strings.TrimSpace(args[0])
+
+	client, err := c.Client()
+	if err != nil {
+		c.UI.Error(err.Error())
+		return 2
+	}
+
+	resp, err := client.Sys().ReadNamespace(namespacePath)
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("Error looking up namespace: %s", err))
+		return 2
+	}
+	if resp == nil {
+		c.UI.Error("Namespace not found")
+		return 2
+	}
+
+	return OutputData(c.UI, structtomap.Map(resp))
+}

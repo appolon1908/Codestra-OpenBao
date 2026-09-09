@@ -4,7 +4,6 @@
 # in this repository.
 
 ui = true
-disable_mlock = false
 cluster_name = "codestra-openbao-__ENVIRONMENT__"
 api_addr = "https://__NODE_FQDN__:8200"
 cluster_addr = "https://__NODE_FQDN__:8201"
@@ -13,6 +12,7 @@ max_lease_ttl = "1h"
 log_level = "info"
 log_format = "json"
 raw_storage_endpoint = false
+plugin_directory = "/openbao/plugins"
 
 storage "raft" {
   path = "/openbao/data"

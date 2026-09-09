@@ -1,0 +1,15 @@
+# unconventional js
+/vendor
+
+# compiled output
+/dist/
+/tmp/
+
+# dependencies
+node_modules
+/.pnpm-store
+
+# misc
+!.*
+/.eslintcache
+/coverage

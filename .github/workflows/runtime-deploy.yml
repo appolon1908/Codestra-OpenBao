@@ -1,0 +1,202 @@
+name: OpenBao protected immutable runtime deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Exact protected environment branch to deploy
+        required: true
+        type: choice
+        options: [development, test, staging, production]
+      expected_source_sha:
+        description: Exact current environment branch SHA
+        required: true
+        type: string
+      plugin_build_run_id:
+        description: Successful exact-head image authority run ID; NOT_APPLICABLE for production
+        required: false
+        default: NOT_APPLICABLE
+        type: string
+      release_id:
+        description: Immutable signed release ID; NOT_APPLICABLE outside production
+        required: false
+        default: NOT_APPLICABLE
+        type: string
+      confirmation:
+        description: DEPLOY_EXACT_OPENBAO_RUNTIME_<source SHA>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: openbao-${{ inputs.environment }}-runtime
+  cancel-in-progress: false
+
+jobs:
+  deploy-runtime:
+    name: Deploy exact immutable OpenBao runtime
+    environment: openbao-${{ inputs.environment }}-runtime
+    runs-on: [self-hosted, linux, x64, codestra-openbao]
+    timeout-minutes: 60
+    env:
+      CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      CODESTRA_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+      OPENBAO_RUNTIME_CONFIRMATION: ${{ inputs.confirmation }}
+      OPENBAO_RELEASE_ID: ${{ inputs.release_id }}
+      OPENBAO_APPROVAL_ENVIRONMENT: openbao-${{ inputs.environment }}-runtime
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OPERATOR_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OPERATOR_KEY_PATH }}
+      OPENBAO_OPERATOR_TOKEN_FILE: ${{ vars.OPENBAO_OPERATOR_TOKEN_FILE }}
+      OPENBAO_CONTAINER_NAME: ${{ vars.OPENBAO_CONTAINER_NAME }}
+      OPENBAO_RUNTIME_ROOT: ${{ vars.OPENBAO_RUNTIME_ROOT }}
+      OPENBAO_DATA_DIR: ${{ vars.OPENBAO_DATA_DIR }}
+      OPENBAO_AUDIT_DIR: ${{ vars.OPENBAO_AUDIT_DIR }}
+      OPENBAO_SERVER_CERT_FILE: ${{ vars.OPENBAO_SERVER_CERT_FILE }}
+      OPENBAO_SERVER_KEY_FILE: ${{ vars.OPENBAO_SERVER_KEY_FILE }}
+      OPENBAO_SERVER_CA_FILE: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      CODESTRA_CLIENT_CA_FILE: ${{ vars.CODESTRA_CLIENT_CA_FILE }}
+      OPENBAO_HEALTH_CLIENT_CERT_FILE: ${{ vars.OPENBAO_HEALTH_CLIENT_CERT_FILE }}
+      OPENBAO_HEALTH_CLIENT_KEY_FILE: ${{ vars.OPENBAO_HEALTH_CLIENT_KEY_FILE }}
+      OPENBAO_BACKUP_ROOT: ${{ vars.OPENBAO_BACKUP_ROOT }}
+      OPENBAO_AGE_RECIPIENT_FILE: ${{ vars.OPENBAO_AGE_RECIPIENT_FILE }}
+      OPENBAO_AGE_IDENTITY_FILE: ${{ vars.OPENBAO_AGE_IDENTITY_FILE }}
+      OPENBAO_OFFHOST_REMOTE: ${{ vars.OPENBAO_OFFHOST_REMOTE }}
+      OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION: ${{ vars.OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION }}
+    steps:
+      - name: Check out the exact protected environment source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.expected_source_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify exact branch and successful plugin build authority
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLUGIN_BUILD_RUN_ID: ${{ inputs.plugin_build_run_id }}
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          [[ "$CODESTRA_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$CODESTRA_SOURCE_SHA" ]]
+          branch_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)"
+          [[ "$branch_sha" == "$CODESTRA_SOURCE_SHA" ]]
+          if [[ "$CODESTRA_ENVIRONMENT" == production ]]; then
+            [[ "$PLUGIN_BUILD_RUN_ID" == NOT_APPLICABLE ]]
+            [[ "$RELEASE_ID" =~ ^openbao-v[0-9]+\.[0-9]+\.[0-9]+-[0-9]{8}\.[0-9]+$ ]]
+            [[ "$(gh api "repos/${GITHUB_REPOSITORY}/commits/${RELEASE_ID}" --jq .sha)" == "$CODESTRA_SOURCE_SHA" ]]
+            release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_ID}")"
+            jq -e --arg tag "$RELEASE_ID" '
+              .tag_name == $tag and .draft == false and .prerelease == false and
+              .immutable == true and
+              ([.assets[].name] | sort) == ([$tag + ".sigstore.json", $tag + ".tar.gz", $tag + ".tar.gz.sha256"] | sort) and
+              ([.assets[].digest] | all(startswith("sha256:")))
+            ' <<<"$release" >/dev/null
+          else
+            [[ "$RELEASE_ID" == NOT_APPLICABLE ]]
+            [[ "$PLUGIN_BUILD_RUN_ID" =~ ^[0-9]+$ ]]
+            run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PLUGIN_BUILD_RUN_ID}")"
+            jq -e --arg sha "$CODESTRA_SOURCE_SHA" '
+              .name == "OpenBao immutable image authority" and
+              .head_sha == $sha and .conclusion == "success"
+            ' <<<"$run" >/dev/null
+          fi
+          test -z "$(git status --porcelain)"
+      - name: Download only the exact-head CI-built plugin
+        if: inputs.environment != 'production'
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: openbao-runtime-plugin-${{ inputs.expected_source_sha }}
+          path: ${{ runner.temp }}/openbao-runtime-plugin
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.plugin_build_run_id }}
+      - name: Install pinned Sigstore verifier for production
+        if: inputs.environment == 'production'
+        uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62
+      - name: Download and verify the exact immutable production release
+        if: inputs.environment == 'production'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          release_dir="$RUNNER_TEMP/openbao-release"
+          package_dir="$release_dir/package"
+          mkdir -p "$package_dir"
+          gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+            --dir "$release_dir" --pattern "${RELEASE_ID}.tar.gz" \
+            --pattern "${RELEASE_ID}.tar.gz.sha256" \
+            --pattern "${RELEASE_ID}.sigstore.json"
+          (cd "$release_dir" && sha256sum -c "${RELEASE_ID}.tar.gz.sha256")
+          cosign verify-blob \
+            --bundle "$release_dir/${RELEASE_ID}.sigstore.json" \
+            --certificate-identity "https://github.com/appolon1908-hue/Codestra-OpenBao/.github/workflows/release.yml@refs/heads/production" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$release_dir/${RELEASE_ID}.tar.gz" >/dev/null
+          tar --extract --gzip --file "$release_dir/${RELEASE_ID}.tar.gz" \
+            --directory "$package_dir" --no-same-owner --no-same-permissions
+          (cd "$package_dir" && sha256sum -c SHA256SUMS)
+          expected_image="$(jq -r .image_digest CODESTRA_UPSTREAM.json)"
+          expected_plugin="$(jq -r .binarySha256 plugins/codestra-jwt-replay/plugin.v1.json)"
+          jq -e --arg source "$CODESTRA_SOURCE_SHA" --arg image "$expected_image" \
+            --arg plugin "$expected_plugin" '
+            .sourceSha == $source and .imageDigest == $image and
+            .authPlugin.sha256 == $plugin and .runtimeApplyAuthorized == true and
+            .providerBusinessEffectsEnabled == false and .secretValuesIncluded == false
+          ' "$package_dir/release-manifest.json" >/dev/null
+          bundle_sha="$(sha256sum "$release_dir/${RELEASE_ID}.tar.gz" | awk '{print $1}')"
+          jq -n --arg releaseId "$RELEASE_ID" --arg sourceSha "$CODESTRA_SOURCE_SHA" \
+            --arg imageDigest "$expected_image" --arg pluginSha256 "$expected_plugin" \
+            --arg bundleSha256 "$bundle_sha" \
+            '{schemaVersion:1,releaseId:$releaseId,sourceSha:$sourceSha,imageDigest:$imageDigest,pluginSha256:$pluginSha256,bundleSha256:$bundleSha256,immutable:true,checksumVerified:true,signatureVerified:true,secretValuesIncluded:false}' \
+            > "$release_dir/release-readback.json"
+          chmod 0400 "$release_dir/release-readback.json"
+          printf 'OPENBAO_PLUGIN_BINARY=%s\n' "$package_dir/plugins/codestra-jwt-replay" >> "$GITHUB_ENV"
+          printf 'OPENBAO_RELEASE_EVIDENCE=%s\n' "$release_dir/release-readback.json" >> "$GITHUB_ENV"
+      - name: Select and verify the exact non-production plugin
+        if: inputs.environment != 'production'
+        run: |
+          plugin="$RUNNER_TEMP/openbao-runtime-plugin/codestra-jwt-replay"
+          [[ -f "$plugin" && ! -L "$plugin" ]]
+          [[ "$(sha256sum "$plugin" | awk '{print $1}')" == "$(jq -r .binarySha256 plugins/codestra-jwt-replay/plugin.v1.json)" ]]
+          printf 'OPENBAO_PLUGIN_BINARY=%s\n' "$plugin" >> "$GITHUB_ENV"
+      - name: Take an immediate backup whenever state exists
+        run: |
+          umask 077
+          export OPENBAO_RUNTIME_DEPLOY_EVIDENCE="$RUNNER_TEMP/openbao-runtime-evidence/runtime-deploy.json"
+          export OPENBAO_PRECHANGE_BACKUP_EVIDENCE="$RUNNER_TEMP/openbao-runtime-evidence/prechange-backup.json"
+          printf 'OPENBAO_RUNTIME_DEPLOY_EVIDENCE=%s\n' "$OPENBAO_RUNTIME_DEPLOY_EVIDENCE" >> "$GITHUB_ENV"
+          mkdir -p "$(dirname "$OPENBAO_RUNTIME_DEPLOY_EVIDENCE")"
+          if docker inspect "$OPENBAO_CONTAINER_NAME" >/dev/null 2>&1; then
+            set +e
+            status="$(bao status -format=json)"
+            status_code=$?
+            set -e
+            [[ "$status_code" == 0 || "$status_code" == 2 ]]
+            if [[ "$(jq -r .initialized <<<"$status")" == true ]]; then
+              export BAO_TOKEN="$(< "$OPENBAO_OPERATOR_TOKEN_FILE")"
+              export OPENBAO_BACKUP_EVIDENCE="$OPENBAO_PRECHANGE_BACKUP_EVIDENCE"
+              scripts/backup.sh
+              unset BAO_TOKEN
+            elif [[ "$CODESTRA_ENVIRONMENT" == production ]]; then
+              echo 'Production is not initialized; a required pre-change Raft backup cannot be taken.' >&2
+              exit 2
+            fi
+          elif [[ "$CODESTRA_ENVIRONMENT" == production ]]; then
+            echo 'Production has no state from which to prove the required pre-change backup.' >&2
+            exit 2
+          fi
+      - name: Deploy exact runtime and retain the previous container for rollback
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/deploy_runtime.sh
+      - name: Upload sanitized deployment and SSH evidence only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-runtime-${{ inputs.environment }}-${{ inputs.expected_source_sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/openbao-runtime-evidence/
+          if-no-files-found: error
+          retention-days: 90

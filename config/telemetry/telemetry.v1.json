@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "status": "PREPARED_DISABLED",
+  "runtimeApplyAuthorized": false,
+  "prometheusRetentionTime": "30s",
+  "disableHostname": true,
+  "unauthenticatedMetricsAccess": false,
+  "privateObservabilityNetworkRequired": true,
+  "metricsPolicy": "workload-prometheus-openbao-{environment}",
+  "secretLabelsAllowed": false,
+  "requiredSignals": [
+    "initialized", "sealed", "active", "standby", "leader", "raft_peer_count",
+    "request_rate", "error_rate", "auth_failures", "token_count", "lease_count",
+    "lease_expiration", "revocation", "request_latency", "storage_latency",
+    "memory", "cpu", "filesystem_capacity", "restart_count"
+  ]
+}

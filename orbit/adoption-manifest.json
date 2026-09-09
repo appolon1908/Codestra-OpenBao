@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "2.0.0",
+  "repository": "appolon1908-hue/Codestra-OpenBao",
+  "classification": "vendor-operator-ui",
+  "targetBranch": "codex/codestra-orbit-v2-codestra-openbao",
+  "adoptionMode": "operator-theme-sso",
+  "domain": "bao.codestra.media",
+  "domainStatus": "verification-required",
+  "requirements": {
+    "renderedInterface": true,
+    "loginLogoutRequired": true,
+    "sharedHeaderFooterRequired": false,
+    "approvedIdentitySSORequired": true,
+    "nativeAuthenticationFallbackRequired": true,
+    "logoutRequired": true,
+    "logoutAllRequired": true,
+    "sessionRevocationRequired": true,
+    "browserTokenStorageProhibited": true,
+    "supportedThemeOnly": true,
+    "nativeBehaviorPreserved": true,
+    "secretValuesInBrowserApisProhibited": true,
+    "nativePortsPublic": false,
+    "runtimeApplyAuthorized": false,
+    "productionCertified": false
+  },
+  "status": "blocked",
+  "blockers": [
+    "SDK-repository PR #75 must resolve all review findings, receive independent approval, merge, and publish protected exact-SHA packages.",
+    "The Orbit repository catalog must reconcile the Codestra-OpenBao domain and adoption status with this consumer manifest.",
+    "Restricted domain, DNS, TLS, edge handoff, CSP, and private-port evidence must pass in staging.",
+    "OIDC, PKCE, MFA, native fallback, session logout, logout-all, token revocation, least privilege, and break-glass behavior must be certified.",
+    "Native policy, namespace, lease, audit, seal/unseal, recovery, upgrade, and rollback behavior must remain intact.",
+    "Production activation remains separately blocked by OpenBao runtime, recovery, monitoring, and protected promotion gates."
+  ]
+}

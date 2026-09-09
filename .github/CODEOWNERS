@@ -1,0 +1,13 @@
+# OpenBao authority and all security-sensitive source require independent review.
+* @kazan555
+
+/.github/ @kazan555
+/CODESTRA_UPSTREAM.json @kazan555
+/config/ @kazan555
+/deploy/ @kazan555
+/monitoring/ @kazan555
+/openbao/ @kazan555
+/scripts/ @kazan555
+/docs/production/ @kazan555
+/docs/recovery/ @kazan555
+/docs/security/ @kazan555

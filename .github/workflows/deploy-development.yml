@@ -1,0 +1,35 @@
+name: Deploy OpenBao development
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_source_sha:
+        description: Exact current development SHA
+        required: true
+        type: string
+      plan_run_id:
+        description: Run ID that created the reviewed development plan
+        required: true
+        type: string
+      plan_sha256:
+        description: Reviewed saved-plan SHA-256
+        required: true
+        type: string
+      confirmation:
+        description: APPLY_EXACT_OPENBAO_PLAN_<source SHA>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-saved-plan.yml
+    with:
+      environment: development
+      expected_source_sha: ${{ inputs.expected_source_sha }}
+      plan_run_id: ${{ inputs.plan_run_id }}
+      plan_sha256: ${{ inputs.plan_sha256 }}
+      confirmation: ${{ inputs.confirmation }}

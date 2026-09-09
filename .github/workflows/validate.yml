@@ -1,0 +1,141 @@
+name: OpenBao validation
+
+on:
+  pull_request:
+  push:
+    branches: [development, test, staging, production, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbao-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-authority:
+    name: OpenBao / source-authority
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up pinned Python toolchain
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Install pinned parser dependency
+        run: python -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
+      - name: Validate exact upstream and repository authority
+        env:
+          PYTHONPYCACHEPREFIX: /tmp/codestra-openbao-pycache
+        run: |
+          python -m py_compile scripts/validate_repository.py tests/test_repository_security.py
+          python tests/test_repository_security.py
+          python scripts/validate_repository.py
+      - name: Reject whitespace errors in the committed range
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          elif [[ "$GITHUB_EVENT_NAME" == push && "${{ github.event.before }}" =~ ^[0-9a-f]{40}$ && "${{ github.event.before }}" != '0000000000000000000000000000000000000000' ]]; then
+            base_sha="${{ github.event.before }}"
+          else
+            base_sha="$(git rev-parse HEAD^)"
+          fi
+          git diff --check "$base_sha" "$GITHUB_SHA" -- . ':(exclude)upstream'
+
+  configuration:
+    name: OpenBao / configuration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up pinned Python toolchain
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Install pinned parser dependency
+        run: python -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
+      - name: Run configuration, schema, HCL and regression validation
+        env:
+          PYTHONPYCACHEPREFIX: /tmp/codestra-openbao-pycache
+        run: scripts/validate.sh
+
+  compose-validation:
+    name: OpenBao / compose-validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Render the exact-digest private Compose definition
+        env:
+          OPENBAO_NODE_ID: validation
+          OPENBAO_CONTAINER_NAME: openbao-validation
+          CODESTRA_ENVIRONMENT: production
+          CODESTRA_SOURCE_SHA: 0000000000000000000000000000000000000000
+          OPENBAO_CONFIG_FILE: /tmp/openbao.hcl
+          OPENBAO_DATA_DIR: /tmp/openbao-data
+          OPENBAO_AUDIT_DIR: /tmp/openbao-audit
+          OPENBAO_PLUGIN_DIR: /tmp/openbao-plugins
+          OPENBAO_SERVER_CERT_FILE: /tmp/server-cert
+          OPENBAO_SERVER_KEY_FILE: /tmp/server-key
+          CODESTRA_CLIENT_CA_FILE: /tmp/client-ca
+          OPENBAO_HEALTH_CLIENT_CERT_FILE: /tmp/health-cert
+          OPENBAO_HEALTH_CLIENT_KEY_FILE: /tmp/health-key
+          OPENBAO_CLIENT_NETWORK: client
+          OPENBAO_CLUSTER_NETWORK: cluster
+          OPENBAO_OBSERVABILITY_NETWORK: observability
+        run: |
+          docker compose -f deploy/compose/compose.yaml config --quiet
+          docker compose -f deploy/compose/compose.yaml config > /tmp/openbao-compose.yaml
+          ! grep -Eiq '(^|[[:space:]])privileged: true|network_mode: host|pid: host|:latest([[:space:]]|$)' /tmp/openbao-compose.yaml
+          ! grep -Eq 'published:|host_ip:' /tmp/openbao-compose.yaml
+
+  branch-promotion:
+    name: OpenBao / branch-promotion
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Enforce the reviewed promotion path
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          event = os.environ['EVENT_NAME']
+          if event == 'pull_request':
+              base = os.environ['BASE_REF']
+              head = os.environ['HEAD_REF']
+              allowed = (
+                  (base == 'development' and (head.startswith('remediation/') or head.startswith('sync/openbao-upstream-'))) or
+                  (base == 'test' and head == 'development') or
+                  (base == 'staging' and head == 'test') or
+                  (base == 'production' and head == 'staging') or
+                  (base == 'main' and head == 'production')
+              )
+              if not allowed:
+                  raise SystemExit(f'OPENBAO_BRANCH_PROMOTION=FAIL {head} -> {base}')
+          elif event == 'push' and os.environ['REF_NAME'] not in {'development', 'test', 'staging', 'production', 'main'}:
+              raise SystemExit('OPENBAO_BRANCH_PROMOTION=FAIL unexpected push branch')
+          print('OPENBAO_BRANCH_PROMOTION=PASS')
+          PY

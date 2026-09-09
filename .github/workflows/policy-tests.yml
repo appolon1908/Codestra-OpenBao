@@ -1,0 +1,58 @@
+name: OpenBao policy and integration tests
+
+on:
+  pull_request:
+  push:
+    branches: [development, test, staging, production, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbao-policy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy-tests:
+    name: OpenBao / policy-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Set up pinned Python toolchain
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Regenerate and prove least-privilege policy authority
+        run: |
+          python3 scripts/generate_workload_authority.py
+          python3 scripts/generate_workload_policies.py
+          python3 scripts/generate_jwt_roles.py
+          python3 -m unittest discover -s tests/policy -p 'test_*.py' -v
+          python3 tests/test_workload_secret_authority.py
+          git diff --exit-code
+
+  integration-tests:
+    name: OpenBao / integration-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Set up exact plugin build toolchain
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.25.13'
+          cache: false
+      - name: Compile and read back policy and JWT CEL roles in isolated OpenBao
+        run: scripts/integration_test.sh
+      - name: Prove stateful JTI replay denial and negative JWT boundaries
+        run: scripts/integration_test_jti_plugin.sh
+      - name: Run isolated runtime-contract regressions
+        run: python3 -m unittest discover -s tests/integration -p 'test_*.py' -v

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "runtimeBindingsAuthorized": false,
+  "identities": [
+    {
+      "serviceIdentity": "kong-gateway",
+      "owner": "platform-edge",
+      "environments": ["development", "test", "staging", "production"],
+      "namespacePrefixes": ["kong/"],
+      "purpose": "read Kong runtime and upstream authentication material",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "middleware-api",
+      "owner": "middleware-platform",
+      "environments": ["development", "test", "staging", "production"],
+      "namespacePrefixes": ["middleware/api/"],
+      "purpose": "read API runtime credentials without provider master credentials",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "middleware-worker",
+      "owner": "middleware-platform",
+      "environments": ["development", "test", "staging", "production"],
+      "namespacePrefixes": [
+        "middleware/worker/email/",
+        "middleware/worker/sms/",
+        "middleware/worker/social/",
+        "middleware/worker/advertising/",
+        "middleware/worker/ai/",
+        "middleware/worker/telephony/",
+        "middleware/worker/crawler/"
+      ],
+      "purpose": "approved effect-executor credentials separated by provider family",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "n8n-automation",
+      "owner": "automation-platform",
+      "environments": ["development", "test", "staging", "production"],
+      "namespacePrefixes": ["n8n/middleware-client/"],
+      "purpose": "read only Middleware client and orchestration credentials",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "odoo-integration",
+      "owner": "business-integrations",
+      "environments": ["development", "test", "staging", "production"],
+      "namespacePrefixes": ["odoo/integration/"],
+      "purpose": "read exact Odoo integration credentials",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "klyrow-email-adapter",
+      "owner": "klyrow-platform",
+      "environments": ["staging", "production"],
+      "namespacePrefixes": ["middleware/worker/email/klyrow/"],
+      "purpose": "read Klyrow email-adapter credentials only",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "telnexa-sms-adapter",
+      "owner": "telnexa-platform",
+      "environments": ["staging", "production"],
+      "namespacePrefixes": ["middleware/worker/sms/telnexa/"],
+      "purpose": "read Telnexa SMS-adapter credentials only",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "vicidial-adapter",
+      "owner": "communications-platform",
+      "environments": ["staging", "production"],
+      "namespacePrefixes": ["middleware/worker/telephony/vicidial/"],
+      "purpose": "read VICIdial adapter credentials without administration authority",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "crawler-adapter",
+      "owner": "kyqra-platform",
+      "environments": ["staging", "production"],
+      "namespacePrefixes": ["middleware/worker/crawler/kyqra/"],
+      "purpose": "read crawler adapter credentials only",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "prometheus-openbao",
+      "owner": "observability-platform",
+      "environments": ["development", "test", "staging", "production"],
+      "namespacePrefixes": ["observability/openbao/metrics-client/"],
+      "purpose": "read only the private OpenBao metrics client material",
+      "providerBusinessEffectsEnabled": false
+    }
+  ],
+  "defaults": {
+    "authenticationMethod": "keycloak-jwt",
+    "operations": ["read"],
+    "tokenTtlSeconds": 300,
+    "tokenMaximumTtlSeconds": 300,
+    "rotationPolicy": "owner-managed maximum 90 days with tested overlap",
+    "revocationProcedure": "revoke auth token accessor and every dynamic child lease; verify subsequent access denial",
+    "auditRequired": true,
+    "runtimeBindingAuthorized": false
+  }
+}
