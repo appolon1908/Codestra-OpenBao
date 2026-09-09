@@ -17,7 +17,7 @@ The currently pinned image contains affected `google.golang.org/grpc` v1.82.1 fo
 Before any OpenBao runtime activation, require one of the following:
 
 ```text
-GRPC_GO_VERSION>=1.83.2
+GRPC_GO_VERSION>=1.83.2 (and therefore the prior GRPC_GO_VERSION>=1.83.1 floor)
 ```
 
 or a new, non-expired, evidence-backed security assessment that explicitly authorizes the exact image and runtime configuration. Until then:
