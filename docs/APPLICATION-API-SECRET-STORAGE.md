@@ -49,6 +49,27 @@ The API runtime policy cannot read the other three namespaces. Provider-specific
 permissions must also be narrow enough; one all-purpose broker key would defeat
 the intended separation even if stored under several paths.
 
+## Shared SaaS control-plane boundary
+
+The requested cross-product SaaS functions are now mapped in
+`config/shared-saas-api-secrets.v1.json` and
+[Shared SaaS API secrets](SHARED-SAAS-API-SECRETS.md). They cover organizations,
+workspaces, teams, subscriptions, SaaS billing, entitlements, quotas, metering,
+client integrations, developer credentials, webhooks, branding, onboarding and
+audit/data-management controls.
+
+The planning name `shared-saas-api` is **not** an admitted OpenBao identity. No
+backend repository/runtime process has yet been bound to that role in reviewed
+source, so no generated HCL policy or Keycloak JWT role is created for it. This
+prevents an unverified control-plane service from gaining a wildcard path across
+all client or product secrets.
+
+Shared SaaS subscription billing remains separate from product/customer money.
+Google login remains a Keycloak identity-provider concern. Klyrow, Telnexa and
+Social retain ownership of their provider credentials. Tenant developer API key
+plaintext is not retained; tenant OAuth tokens must be tenant-scoped and encrypted
+rather than stored under one globally readable KV prefix.
+
 ## Private native APIs
 
 | Operation | Endpoint | Authorized caller |
@@ -65,6 +86,13 @@ new KV-v2 version. Applications get no secret-write, destroy, unseal or administ
 capabilities. Do not proxy arbitrary OpenBao paths through Kong or Middleware.
 References: [OpenBao KV-v2 API](https://openbao.org/api-docs/secret/kv/kv-v2/)
 and [Agent templates](https://openbao.org/docs/agent-and-proxy/agent/template/).
+
+For the OpenBao UI, use a KV v2 mount named `codestra` only if the live cluster's
+reviewed source plan expects that mount and no conflicting mount already exists.
+Human-facing paths such as `codestra/production/beyvra/...` map to KV-v2 ACL paths
+under `codestra/data/production/...` and `codestra/metadata/production/...`.
+Secret values must be entered only after the corresponding workload policy is
+reviewed and bound; never paste them into GitHub, issues, CI logs or screenshots.
 
 ## Render a reviewable bundle
 
@@ -105,4 +133,6 @@ initialize the cluster or enable trading, payments, email or SMS effects.
 - [beyvra-backend #108](https://github.com/appolon1908-hue/beyvra-backend/pull/108)
 
 The expanded shared API and record ownership requirements are in
-[Product API integration](PRODUCT-API-INTEGRATION.md).
+[Product API integration](PRODUCT-API-INTEGRATION.md). The cross-product SaaS
+secret and authorization boundary is in
+[Shared SaaS API secrets](SHARED-SAAS-API-SECRETS.md).
