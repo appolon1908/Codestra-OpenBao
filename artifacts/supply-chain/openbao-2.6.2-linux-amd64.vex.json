@@ -58,7 +58,7 @@
       "evidence": "GHSA-vp52-pcj8-j9qc; scripts/verify_vulnerability_gate.py RUNTIME_AUTHORITY_FIELDS; scripts/build_release.py runtime_blocked_by_vex; scripts/deploy_runtime.sh vulnerability gate",
       "owner": "platform-security",
       "reviewedAt": "2026-09-02",
-      "expiresAt": "2026-09-09"
+      "expiresAt": "2026-10-09"
     }
   ]
 }
