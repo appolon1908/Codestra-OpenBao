@@ -28,17 +28,18 @@ finding is outside workload reach because external runtime plugin installation
 is prohibited. The SSH library finding is outside the execution path because
 OpenBao is not an SSH server and the SSH engine is prohibited.
 
-The image also contains grpc-go v1.82.1, affected by CVE-2026-84304. OpenBao
-does compile internal gRPC servers, so the code is not declared absent. The
-time-bounded disposition applies only because no Codestra OpenBao runtime is
-deployed or authorized, and release construction fails while runtime authority
-and environment certification remain false. It expires on 2026-09-09. Any
-runtime activation must first use grpc-go v1.83.1 or later, or replace this
-disposition with a new evidence-backed review.
+The image also contains grpc-go v1.82.1, affected by CVE-2026-84304 and
+CVE-2026-84445. OpenBao does compile internal gRPC servers, so the code is not
+declared absent. The time-bounded disposition applies only because no Codestra
+OpenBao runtime is deployed or authorized, and release construction fails while
+runtime authority and environment certification remain false. It expires on
+2026-09-16. Any runtime activation must first use the protected source-built
+image with grpc-go v1.83.2, or replace this disposition with a new
+evidence-backed review.
 
 The separately built replay plugin is a gRPC server and receives no such VEX
 disposition. Its deterministic overlay upgrades grpc-go from v1.82.1 to
-v1.83.1; the regenerated binary, SBOM, vulnerability report and checksums show
+v1.83.2; the regenerated binary, SBOM, vulnerability report and checksums show
 zero plugin High/Critical findings.
 
 Every disposition has an expiration. `scripts/verify_vulnerability_gate.py`
@@ -52,3 +53,4 @@ Primary upstream evidence:
 - <https://github.com/openbao/openbao/security/advisories>
 - <https://openbao.org/docs/install/>
 - <https://github.com/grpc/grpc-go/security/advisories/GHSA-vp52-pcj8-j9qc>
+- <https://github.com/grpc/grpc-go/security/advisories/GHSA-2v4p-qf9q-27wj>

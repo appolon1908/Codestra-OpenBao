@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-02T16:30:00+02:00",
+  "generatedAt": "2026-09-09T22:55:00+02:00",
   "image": "ghcr.io/openbao/openbao@sha256:e29524ba7c3f20d01f562c481e3eccbad6c91df45a2f2531433da4951e408cff",
   "policy": "zero unresolved exploitable HIGH or CRITICAL vulnerabilities",
   "statements": [
@@ -49,16 +49,16 @@
       "expiresAt": "2026-09-15"
     },
     {
-      "vulnerabilityIds": ["CVE-2026-84304"],
+      "vulnerabilityIds": ["CVE-2026-84304", "CVE-2026-84445"],
       "packageNames": ["google.golang.org/grpc"],
       "status": "not_affected",
       "justification": "vulnerable_code_cannot_be_controlled_by_adversary",
       "condition": "codestra_openbao_runtime_disabled",
-      "impact": "The pinned image contains affected grpc-go v1.82.1, but no Codestra OpenBao runtime is deployed or authorized. Release construction fails while the committed runtime authorities and environment certifications remain false. This disposition is invalid for any future deployment and requires grpc-go v1.83.1 or later, or a new reviewed assessment, before runtime authority may be enabled.",
-      "evidence": "GHSA-vp52-pcj8-j9qc; scripts/verify_vulnerability_gate.py RUNTIME_AUTHORITY_FIELDS; scripts/build_release.py runtime_blocked_by_vex; scripts/deploy_runtime.sh vulnerability gate",
+      "impact": "The pinned image contains affected grpc-go v1.82.1, but no Codestra OpenBao runtime is deployed or authorized. Release construction fails while the committed runtime authorities and environment certifications remain false. This disposition is invalid for any future deployment and requires the protected source-built image with grpc-go v1.83.2, or a new reviewed assessment, before runtime authority may be enabled.",
+      "evidence": "GHSA-vp52-pcj8-j9qc; GHSA-2v4p-qf9q-27wj; scripts/verify_vulnerability_gate.py RUNTIME_AUTHORITY_FIELDS; scripts/build_release.py runtime_blocked_by_vex; scripts/deploy_runtime.sh vulnerability gate; protected source dependency google.golang.org/grpc v1.83.2",
       "owner": "platform-security",
-      "reviewedAt": "2026-09-02",
-      "expiresAt": "2026-09-09"
+      "reviewedAt": "2026-09-09",
+      "expiresAt": "2026-09-16"
     }
   ]
 }

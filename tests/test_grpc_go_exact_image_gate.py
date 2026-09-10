@@ -83,16 +83,16 @@ class ExactImageGateTests(unittest.TestCase):
     def test_source_gate_matches_remediated_inputs(self) -> None:
         gate = MODULE.load_json(MODULE.GATE_PATH)
         minimum, source_version = MODULE.validate_gate(gate)
-        self.assertEqual(minimum, "1.83.1")
+        self.assertEqual(minimum, "1.83.2")
         self.assertEqual(source_version, "1.83.2")
+        self.assertEqual(gate["additional_cves"], ["CVE-2026-84445"])
         self.assertEqual(gate["source_build"]["archive_module_version"], "0.3.2")
         self.assertEqual(gate["source_build"]["docker_target"], "distroless")
         self.assertEqual(gate["exact_image_gate"], "BLOCKED_PENDING_PROTECTED_BUILD")
         self.assertTrue(all(value is False for value in gate["activation"].values()))
 
     def test_version_ordering(self) -> None:
-        self.assertLess(MODULE.version_tuple("1.82.1"), MODULE.version_tuple("1.83.1"))
-        self.assertGreater(MODULE.version_tuple("1.83.2"), MODULE.version_tuple("1.83.1"))
+        self.assertLess(MODULE.version_tuple("1.83.1"), MODULE.version_tuple("1.83.2"))
 
     def test_parse_source_version_requires_exactly_one_declaration(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -112,7 +112,7 @@ class ExactImageGateTests(unittest.TestCase):
     def test_valid_protected_image_evidence_passes(self) -> None:
         MODULE.validate_image_evidence(
             valid_evidence(),
-            "1.83.1",
+            "1.83.2",
             "1.83.2",
             expected_source_sha=SOURCE_SHA,
             expected_source_tree=SOURCE_TREE,
@@ -122,19 +122,19 @@ class ExactImageGateTests(unittest.TestCase):
         evidence = valid_evidence()
         evidence["image_dependency_version"] = "1.82.1"
         with self.assertRaises(ValueError):
-            MODULE.validate_image_evidence(evidence, "1.83.1", "1.83.2")
+            MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
 
     def test_old_archive_dependency_is_rejected(self) -> None:
         evidence = valid_evidence()
         evidence["archive_module_version"] = "0.2.0"
         with self.assertRaises(ValueError):
-            MODULE.validate_image_evidence(evidence, "1.83.1", "1.83.2")
+            MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
 
     def test_non_distroless_runtime_is_rejected(self) -> None:
         evidence = valid_evidence()
         evidence["runtime_target"] = "default"
         with self.assertRaises(ValueError):
-            MODULE.validate_image_evidence(evidence, "1.83.1", "1.83.2")
+            MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
 
     def test_digest_mismatch_is_rejected(self) -> None:
         evidence = valid_evidence()
@@ -142,7 +142,7 @@ class ExactImageGateTests(unittest.TestCase):
             "ghcr.io/appolon1908-hue/codestra-openbao@sha256:" + "9" * 64
         )
         with self.assertRaises(ValueError):
-            MODULE.validate_image_evidence(evidence, "1.83.1", "1.83.2")
+            MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
 
     def test_unresolved_high_vulnerability_is_rejected(self) -> None:
         evidence = valid_evidence()
@@ -151,7 +151,7 @@ class ExactImageGateTests(unittest.TestCase):
         scan["high_count"] = 1
         evidence["vulnerability_scan"] = scan
         with self.assertRaises(ValueError):
-            MODULE.validate_image_evidence(evidence, "1.83.1", "1.83.2")
+            MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
 
     def test_wrong_workflow_identity_is_rejected(self) -> None:
         evidence = valid_evidence()
@@ -160,13 +160,13 @@ class ExactImageGateTests(unittest.TestCase):
         signature["certificate_identity"] = "https://example.invalid/untrusted"
         evidence["signature"] = signature
         with self.assertRaises(ValueError):
-            MODULE.validate_image_evidence(evidence, "1.83.1", "1.83.2")
+            MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
 
     def test_runtime_self_authorization_is_rejected(self) -> None:
         evidence = valid_evidence()
         evidence["runtime_authorized"] = True
         with self.assertRaises(ValueError):
-            MODULE.validate_image_evidence(evidence, "1.83.1", "1.83.2")
+            MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
 
     def test_placeholder_artifact_reference_is_rejected(self) -> None:
         evidence = valid_evidence()
@@ -175,7 +175,7 @@ class ExactImageGateTests(unittest.TestCase):
         sbom["reference"] = "REPLACE_WITH_SBOM"
         evidence["sbom"] = sbom
         with self.assertRaises(ValueError):
-            MODULE.validate_image_evidence(evidence, "1.83.1", "1.83.2")
+            MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
 
 
 if __name__ == "__main__":
