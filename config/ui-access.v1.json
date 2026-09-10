@@ -1,0 +1,20 @@
+{
+  "schema": "codestra.ui-access.v1",
+  "service": "openbao",
+  "canonical_host": "bao.codestra.media",
+  "human_access": {
+    "mode": "operator-gateway",
+    "identity_provider": "Keycloak",
+    "login_theme": "codestra",
+    "issuer": "https://auth.codestra.co/realms/codestra",
+    "credentials_collected_by": "Keycloak",
+    "local_password_form": false,
+    "required_roles": ["secrets-operator", "secrets-auditor"]
+  },
+  "machine_access": {
+    "mode": "scoped_workload_identity",
+    "browser_tokens": false,
+    "native_api_public": false
+  },
+  "boundary": "The OpenBao API remains private; the styled human entry point is supplied by the approved operator gateway and never by a new login form in OpenBao itself."
+}

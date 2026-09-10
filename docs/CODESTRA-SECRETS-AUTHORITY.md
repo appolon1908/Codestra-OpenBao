@@ -123,3 +123,7 @@ OpenBao is intended to hold or issue runtime material such as:
 ## Current runtime state
 
 This repository bootstrap is source-only. OpenBao deployment, initialization, unseal/recovery configuration, Keycloak integration, secret creation, secret migration, and production credential activation are not enabled by the upstream-source import.
+
+## Human operator entry
+
+The reviewed UI boundary is described in [`config/ui-access.v1.json`](../config/ui-access.v1.json). OpenBao remains a private API and does not collect browser passwords. Human operators enter through the approved Keycloak `codestra` theme and gateway, with role checks before the native API is reachable.
