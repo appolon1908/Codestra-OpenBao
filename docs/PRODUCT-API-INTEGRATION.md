@@ -8,6 +8,13 @@ contract, not a claim that every API is implemented or deployed. The proposed
 not renamed by this change. Eight additional repository main trees are recorded
 in `config/integration-source-observations.v1.json`, without runtime claims.
 
+A separate cross-product SaaS control-plane contract is recorded in
+`config/shared-saas-api-secrets.v1.json` and documented in
+[Shared SaaS API secrets](SHARED-SAAS-API-SECRETS.md). It defines organizations,
+workspaces, memberships, subscriptions, entitlements, quotas, metering, client
+integrations, developer credentials and webhook requirements without inventing a
+runtime consumer or granting a new OpenBao role.
+
 | Product/service | Authoritative source | Requested API groups |
 | --- | --- | --- |
 | larimia | `appolon1908-hue/LARIM-A-Backend` | service-catalog, providers, verification, service-areas, availability, pricing, bookings, rescheduling, dispatch, job-status, payments, refunds, payouts, reviews, disputes |
@@ -38,6 +45,50 @@ must conflict. Outbound side effects and provider-event processing need durable
 results, replay controls and reconciliation. These requirements do not claim all
 existing route handlers have already passed their implementation tests.
 
+## Shared SaaS control plane
+
+The shared SaaS layer applies across the products without becoming the owner of
+product-domain data. Its API groups are:
+
+- organizations and workspaces;
+- users, teams and permissions;
+- login and SSO integration;
+- products and plans;
+- subscriptions and SaaS billing;
+- feature entitlements and quotas;
+- usage metering;
+- client integrations;
+- developer credentials;
+- client webhooks;
+- branding and domains;
+- onboarding and account lifecycle;
+- audit/data-management controls; and
+- developer portal and support metadata.
+
+A successful login identifies the principal only. Workspace membership, role,
+product entitlement and record-level authorization still decide what data and
+actions are available. One account can subscribe to multiple products while each
+product keeps separate permissions and usage limits.
+
+SaaS subscription billing is explicitly separate from customer money. The SaaS
+control plane must not custody or move Beyvra trading balances, Moneybee funding,
+Transportation settlements, LARIMÍA/Breero provider payouts or other product-domain
+funds merely because the same tenant has a paid SaaS subscription.
+
+The planned `shared-saas-api` identity is **not admitted** to OpenBao yet because
+no exact backend repository/runtime process has been bound in the reviewed source.
+Do not compensate with a manual wildcard role. The shared SaaS contract instead
+records narrow planned authority for subscription-billing configuration, Gmail
+OAuth application configuration, webhook signing, integration encryption and
+developer-credential authority material. Product/provider master credentials stay
+in their owning namespaces.
+
+Tenant developer API keys should be shown once and stored as a one-way hash plus
+metadata; any server-side pepper/signing material belongs in OpenBao. Tenant OAuth
+access/refresh tokens should be tenant-scoped and encrypted in the integration
+store using OpenBao Transit or an equivalently reviewed envelope-encryption key,
+not placed as plaintext under one globally readable KV prefix.
+
 Existing `klyrow-email-adapter`, `telnexa-sms-adapter`, `vicidial-adapter` and
 `odoo-integration` policies cover their admitted platform integrations. They are
 not universal native-provider administration roles. Social and realtime require
@@ -53,6 +104,8 @@ approval and tenant controls remain part of the integration.
 [Postiz API](https://docs.postiz.com/public-api/introduction).
 
 See [Application secret storage](APPLICATION-API-SECRET-STORAGE.md) for the seven
-newly admitted workload identities and four backend consumer changes. Provider
-credentials stay in their scoped private OpenBao namespaces; user, booking,
-funding, shipment, message and call records stay in their domain stores.
+newly admitted workload identities and four backend consumer changes. See
+[Shared SaaS API secrets](SHARED-SAAS-API-SECRETS.md) for the cross-product SaaS
+control-plane secret boundary. Provider credentials stay in their scoped private
+OpenBao namespaces; user, booking, funding, shipment, message and call records
+stay in their domain stores.
