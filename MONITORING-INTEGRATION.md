@@ -16,3 +16,5 @@ The release controller mounts reviewed configuration and artifacts in Middleware
 Keep native backends private. Send UI reads through authenticated Middleware/BFF routes, never browser-held backend credentials. Use release-mounted secrets, approved targets/query templates, tenant and campaign scopes, and structured redacted telemetry. Service registration, green CI and successful ingestion are distinct from verified production coverage.
 
 Acceptance requires the exact source CI result, approved immutable release, registered service/endpoint contracts, fresh telemetry, private authentication, a synthetic alert and recovery evidence. Production activation remains separate. This commit adds the repository's design/onboarding record; it does not instrument or deploy its application.
+
+All validation and security workflows must pass on the final pull-request commit before this record is eligible for protected-branch promotion.
