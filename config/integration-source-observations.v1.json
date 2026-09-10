@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "kind": "inspected-main-tree-not-runtime-evidence",
+  "repositories": {
+    "klyrow.com": "5a7aed5c58a2a928f511fd22d71524d69b3d094d",
+    "klyrow-Website-": "1529afcc65d9190706294231bdb3f86cf771545b",
+    "telnexa": "b8f8b2f1aad188c8d4c4edf8902ced83a8426738",
+    "Telnexa-web": "e89ebfd78c8929b2c52e44fe7762cf415d8593fb",
+    "Vicidialer-Codestra": "573eab2c05ed5bbc7f119200466b83545cc2c2a5",
+    "social.codestra.co": "b2bd86b762cafa4525b556123c92da0542bf7204",
+    "Websocket-": "84434eb31320c73d8950882b693763a8ab4728b4",
+    "Odoo": "cc87205e4a71a6f9af872ddaca2943bbb1e9b2b9"
+  }
+}

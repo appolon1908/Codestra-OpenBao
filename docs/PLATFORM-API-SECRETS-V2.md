@@ -176,3 +176,10 @@ Until those gates pass:
 OPENBAO_RUNTIME_ACTIVATION=BLOCKED
 OPENBAO_PRODUCTION_DEPLOYMENT=NO
 ```
+
+## Application consumers
+
+Seven application and separated Beyvra workload identities extend this authority.
+See [Application API secret storage](APPLICATION-API-SECRET-STORAGE.md) and
+`config/application-secret-catalog.v1.json` for all 11 repository mappings, exact
+file bindings, source gaps, and unverified runtime status.

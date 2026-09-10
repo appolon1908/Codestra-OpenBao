@@ -5,10 +5,58 @@
   "policies": [
     {
       "environment": "development",
+      "serviceIdentity": "beyvra-api",
+      "policyName": "workload-beyvra-api-development",
+      "path": "openbao/policies/development/beyvra-api.hcl",
+      "sha256": "c690ab4dbef7da9f74ee80c796e43eb1b29261150731fd2322d5defc2a0d12e8",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "beyvra-funding",
+      "policyName": "workload-beyvra-funding-development",
+      "path": "openbao/policies/development/beyvra-funding.hcl",
+      "sha256": "378d1aa587c288f9228676e5f096e27d564b39c4ef38c490969c4a8c6ab09312",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "beyvra-market-data",
+      "policyName": "workload-beyvra-market-data-development",
+      "path": "openbao/policies/development/beyvra-market-data.hcl",
+      "sha256": "bdc4d63904d1c3d1f21983ecaddb90806402629edc3828f522207b5558843045",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "beyvra-trading-executor",
+      "policyName": "workload-beyvra-trading-executor-development",
+      "path": "openbao/policies/development/beyvra-trading-executor.hcl",
+      "sha256": "783180417451e0f4135e34a6e57e02b579d256e6f107a4b33cf4dd5595f0e72e",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "breero-api",
+      "policyName": "workload-breero-api-development",
+      "path": "openbao/policies/development/breero-api.hcl",
+      "sha256": "0bcf2cf2363c9cc990aae90a90c93716be5da7b2e729cb53c4e194bb72d89766",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
       "serviceIdentity": "kong-gateway",
       "policyName": "workload-kong-gateway-development",
       "path": "openbao/policies/development/kong-gateway.hcl",
       "sha256": "3169e087e2bb39aff91072ab0c39afaee7633bd5d172cbcbf7bcd7c458ac01cd",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "larimia-api",
+      "policyName": "workload-larimia-api-development",
+      "path": "openbao/policies/development/larimia-api.hcl",
+      "sha256": "571b3528e2c0dc2871ecd9494963dcef12af723f8b54647161050f1df6b8a8fe",
       "runtimeApplyAuthorized": false
     },
     {
@@ -25,6 +73,14 @@
       "policyName": "workload-middleware-worker-development",
       "path": "openbao/policies/development/middleware-worker.hcl",
       "sha256": "2913f4e5a6c40c2058aae1ab8ce80984267e62533822a07038d581a93f405591",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "development",
+      "serviceIdentity": "moneybee-api",
+      "policyName": "workload-moneybee-api-development",
+      "path": "openbao/policies/development/moneybee-api.hcl",
+      "sha256": "3d599d0b2d4205fd57a0b4ba188c94e5408117544f518b48691849ec05124ae2",
       "runtimeApplyAuthorized": false
     },
     {
@@ -53,6 +109,46 @@
     },
     {
       "environment": "production",
+      "serviceIdentity": "beyvra-api",
+      "policyName": "workload-beyvra-api-production",
+      "path": "openbao/policies/production/beyvra-api.hcl",
+      "sha256": "1e829bb93a07b375fa15787378add0a1e3f07f1db480f4bf2dcc6eda448bd9f6",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "beyvra-funding",
+      "policyName": "workload-beyvra-funding-production",
+      "path": "openbao/policies/production/beyvra-funding.hcl",
+      "sha256": "1e39bfa8aa88ed3c4dd893f017ec423090b1d88add8d98c01726efef32542077",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "beyvra-market-data",
+      "policyName": "workload-beyvra-market-data-production",
+      "path": "openbao/policies/production/beyvra-market-data.hcl",
+      "sha256": "ec65bafc47c966c7c5125532514b3edf53a5ccbbc39f381df102955b73fd0939",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "beyvra-trading-executor",
+      "policyName": "workload-beyvra-trading-executor-production",
+      "path": "openbao/policies/production/beyvra-trading-executor.hcl",
+      "sha256": "338487f16e1b5f2aedc609a63c63f92d7837bb1d501b76b22b40fa7694e6045c",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "breero-api",
+      "policyName": "workload-breero-api-production",
+      "path": "openbao/policies/production/breero-api.hcl",
+      "sha256": "ced3d66546ea4f891332cd1cd6f764763375d83f1c1c6f5867954875fabb2c90",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
       "serviceIdentity": "crawler-adapter",
       "policyName": "workload-crawler-adapter-production",
       "path": "openbao/policies/production/crawler-adapter.hcl",
@@ -77,6 +173,14 @@
     },
     {
       "environment": "production",
+      "serviceIdentity": "larimia-api",
+      "policyName": "workload-larimia-api-production",
+      "path": "openbao/policies/production/larimia-api.hcl",
+      "sha256": "ed58736a02ab131a1a3d9d8a1d41a6917904fd816da7a3f8148b44c502fbb0c0",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
       "serviceIdentity": "middleware-api",
       "policyName": "workload-middleware-api-production",
       "path": "openbao/policies/production/middleware-api.hcl",
@@ -89,6 +193,14 @@
       "policyName": "workload-middleware-worker-production",
       "path": "openbao/policies/production/middleware-worker.hcl",
       "sha256": "e37fd5748b4359bcf4a74a695da6edc5bee9929ee789319f466b31dc3d35388f",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "moneybee-api",
+      "policyName": "workload-moneybee-api-production",
+      "path": "openbao/policies/production/moneybee-api.hcl",
+      "sha256": "4e3643a16cc24386d3f5af2d1dfc7cd4c6c5d21641ce5fca68c340e4c7d13edc",
       "runtimeApplyAuthorized": false
     },
     {
@@ -133,6 +245,46 @@
     },
     {
       "environment": "staging",
+      "serviceIdentity": "beyvra-api",
+      "policyName": "workload-beyvra-api-staging",
+      "path": "openbao/policies/staging/beyvra-api.hcl",
+      "sha256": "c86c1c1083d8a4b80f3f87b16f603837bda0a385b2cac64b538329c1958fa132",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "beyvra-funding",
+      "policyName": "workload-beyvra-funding-staging",
+      "path": "openbao/policies/staging/beyvra-funding.hcl",
+      "sha256": "ea42100d87ca6c4e5457791146cd149ad989eb4b9c7ed748606a659b27cbb4a4",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "beyvra-market-data",
+      "policyName": "workload-beyvra-market-data-staging",
+      "path": "openbao/policies/staging/beyvra-market-data.hcl",
+      "sha256": "773693049ca1bfe28cd60c666ede5c63049fbd9abeae4a74de39e8e57cc8c915",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "beyvra-trading-executor",
+      "policyName": "workload-beyvra-trading-executor-staging",
+      "path": "openbao/policies/staging/beyvra-trading-executor.hcl",
+      "sha256": "3eaf88538826fc43083d4b8ce070ae300ffafd75b8e232450b6508d80f45502e",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "breero-api",
+      "policyName": "workload-breero-api-staging",
+      "path": "openbao/policies/staging/breero-api.hcl",
+      "sha256": "e3b4daa195c7d83300616051bfd35e146016aec9450faabbf9467939a4766a3e",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
       "serviceIdentity": "crawler-adapter",
       "policyName": "workload-crawler-adapter-staging",
       "path": "openbao/policies/staging/crawler-adapter.hcl",
@@ -157,6 +309,14 @@
     },
     {
       "environment": "staging",
+      "serviceIdentity": "larimia-api",
+      "policyName": "workload-larimia-api-staging",
+      "path": "openbao/policies/staging/larimia-api.hcl",
+      "sha256": "9fdafb3821164900af8c12aff4f280271753ca99a571397b0b826b54902797ea",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
       "serviceIdentity": "middleware-api",
       "policyName": "workload-middleware-api-staging",
       "path": "openbao/policies/staging/middleware-api.hcl",
@@ -169,6 +329,14 @@
       "policyName": "workload-middleware-worker-staging",
       "path": "openbao/policies/staging/middleware-worker.hcl",
       "sha256": "f703a5e82606a8c9503574630e99532b8d2197cebf50a0a420bf793a1c2431ea",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "moneybee-api",
+      "policyName": "workload-moneybee-api-staging",
+      "path": "openbao/policies/staging/moneybee-api.hcl",
+      "sha256": "c147a1434f6b5a569b510a5babb16813e9feb6fd02abdb16a12241349dc818fe",
       "runtimeApplyAuthorized": false
     },
     {
@@ -213,10 +381,58 @@
     },
     {
       "environment": "test",
+      "serviceIdentity": "beyvra-api",
+      "policyName": "workload-beyvra-api-test",
+      "path": "openbao/policies/test/beyvra-api.hcl",
+      "sha256": "e5cf0b655447ffabf7e9752b15592ef19e7fdc33dc14ff525b4a545494309e50",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "beyvra-funding",
+      "policyName": "workload-beyvra-funding-test",
+      "path": "openbao/policies/test/beyvra-funding.hcl",
+      "sha256": "6dcbcb3da1500e0228d8f7ea16f76d741a47ddc5cb3c46ec7191c823d3bbf0b6",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "beyvra-market-data",
+      "policyName": "workload-beyvra-market-data-test",
+      "path": "openbao/policies/test/beyvra-market-data.hcl",
+      "sha256": "346598c1bc5666f3f0aead22e24fb472f6e0697b52536e777e0165c1ae30ca05",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "beyvra-trading-executor",
+      "policyName": "workload-beyvra-trading-executor-test",
+      "path": "openbao/policies/test/beyvra-trading-executor.hcl",
+      "sha256": "526e1a37b5b78ee1af4510a43e88daed67d16da45342f62264e60058adad3f6d",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "breero-api",
+      "policyName": "workload-breero-api-test",
+      "path": "openbao/policies/test/breero-api.hcl",
+      "sha256": "8aea2819e25dc6e6d2c23d8163fe866e3cf115b6cc84d0c17b831ba6a0011112",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
       "serviceIdentity": "kong-gateway",
       "policyName": "workload-kong-gateway-test",
       "path": "openbao/policies/test/kong-gateway.hcl",
       "sha256": "43872297445c1f620a1d112a9295f6a89ddf52c041fe8aab3a92091976dfaeb0",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "larimia-api",
+      "policyName": "workload-larimia-api-test",
+      "path": "openbao/policies/test/larimia-api.hcl",
+      "sha256": "81734f388260f5cde16ca94a9005565098886989c22c8c6b6717fa839ddb791f",
       "runtimeApplyAuthorized": false
     },
     {
@@ -233,6 +449,14 @@
       "policyName": "workload-middleware-worker-test",
       "path": "openbao/policies/test/middleware-worker.hcl",
       "sha256": "050ac61e208a5b662342b50bdb9bac86ed5e2112132a3425846845264f0a861d",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "test",
+      "serviceIdentity": "moneybee-api",
+      "policyName": "workload-moneybee-api-test",
+      "path": "openbao/policies/test/moneybee-api.hcl",
+      "sha256": "eda454f8b05dc556cf8bcf9dbfb0d7e95cd7e23f44a3a8ec21af89d9cfbf213c",
       "runtimeApplyAuthorized": false
     },
     {

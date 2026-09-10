@@ -27,6 +27,346 @@
   "runtimeApplyAuthorized": false,
   "roles": [
     {
+      "name": "beyvra-api-development",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-api-development",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-api' && claims.codestra_environment == 'development' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-api-development', policies: ['workload-beyvra-api-development'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-api-production",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-api-production",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-api' && claims.codestra_environment == 'production' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-api-production', policies: ['workload-beyvra-api-production'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-api-staging",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-api-staging",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-api' && claims.codestra_environment == 'staging' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-api-staging', policies: ['workload-beyvra-api-staging'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-api-test",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-api-test",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-api' && claims.codestra_environment == 'test' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-api-test', policies: ['workload-beyvra-api-test'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-funding-development",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-funding-development",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-funding' && claims.codestra_environment == 'development' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-funding-development', policies: ['workload-beyvra-funding-development'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-funding-production",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-funding-production",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-funding' && claims.codestra_environment == 'production' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-funding-production', policies: ['workload-beyvra-funding-production'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-funding-staging",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-funding-staging",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-funding' && claims.codestra_environment == 'staging' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-funding-staging', policies: ['workload-beyvra-funding-staging'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-funding-test",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-funding-test",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-funding' && claims.codestra_environment == 'test' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-funding-test', policies: ['workload-beyvra-funding-test'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-market-data-development",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-market-data-development",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-market-data' && claims.codestra_environment == 'development' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-market-data-development', policies: ['workload-beyvra-market-data-development'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-market-data-production",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-market-data-production",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-market-data' && claims.codestra_environment == 'production' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-market-data-production', policies: ['workload-beyvra-market-data-production'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-market-data-staging",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-market-data-staging",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-market-data' && claims.codestra_environment == 'staging' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-market-data-staging', policies: ['workload-beyvra-market-data-staging'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-market-data-test",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-market-data-test",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-market-data' && claims.codestra_environment == 'test' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-market-data-test', policies: ['workload-beyvra-market-data-test'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-trading-executor-development",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-trading-executor-development",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-trading-executor' && claims.codestra_environment == 'development' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-trading-executor-development', policies: ['workload-beyvra-trading-executor-development'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-trading-executor-production",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-trading-executor-production",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-trading-executor' && claims.codestra_environment == 'production' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-trading-executor-production', policies: ['workload-beyvra-trading-executor-production'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-trading-executor-staging",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-trading-executor-staging",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-trading-executor' && claims.codestra_environment == 'staging' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-trading-executor-staging', policies: ['workload-beyvra-trading-executor-staging'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "beyvra-trading-executor-test",
+      "endpoint": "auth/jwt-codestra/cel/role/beyvra-trading-executor-test",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'beyvra-trading-executor' && claims.codestra_environment == 'test' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'beyvra-trading-executor-test', policies: ['workload-beyvra-trading-executor-test'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "breero-api-development",
+      "endpoint": "auth/jwt-codestra/cel/role/breero-api-development",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'breero-api' && claims.codestra_environment == 'development' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'breero-api-development', policies: ['workload-breero-api-development'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "breero-api-production",
+      "endpoint": "auth/jwt-codestra/cel/role/breero-api-production",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'breero-api' && claims.codestra_environment == 'production' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'breero-api-production', policies: ['workload-breero-api-production'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "breero-api-staging",
+      "endpoint": "auth/jwt-codestra/cel/role/breero-api-staging",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'breero-api' && claims.codestra_environment == 'staging' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'breero-api-staging', policies: ['workload-breero-api-staging'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "breero-api-test",
+      "endpoint": "auth/jwt-codestra/cel/role/breero-api-test",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'breero-api' && claims.codestra_environment == 'test' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'breero-api-test', policies: ['workload-breero-api-test'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
       "name": "crawler-adapter-production",
       "endpoint": "auth/jwt-codestra/cel/role/crawler-adapter-production",
       "payload": {
@@ -163,6 +503,74 @@
       "runtimeApplyAuthorized": false
     },
     {
+      "name": "larimia-api-development",
+      "endpoint": "auth/jwt-codestra/cel/role/larimia-api-development",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'larimia-api' && claims.codestra_environment == 'development' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'larimia-api-development', policies: ['workload-larimia-api-development'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "larimia-api-production",
+      "endpoint": "auth/jwt-codestra/cel/role/larimia-api-production",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'larimia-api' && claims.codestra_environment == 'production' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'larimia-api-production', policies: ['workload-larimia-api-production'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "larimia-api-staging",
+      "endpoint": "auth/jwt-codestra/cel/role/larimia-api-staging",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'larimia-api' && claims.codestra_environment == 'staging' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'larimia-api-staging', policies: ['workload-larimia-api-staging'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "larimia-api-test",
+      "endpoint": "auth/jwt-codestra/cel/role/larimia-api-test",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'larimia-api' && claims.codestra_environment == 'test' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'larimia-api-test', policies: ['workload-larimia-api-test'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
       "name": "middleware-api-development",
       "endpoint": "auth/jwt-codestra/cel/role/middleware-api-development",
       "payload": {
@@ -287,6 +695,74 @@
       "payload": {
         "cel_program": {
           "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'middleware-worker' && claims.codestra_environment == 'test' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'middleware-worker-test', policies: ['workload-middleware-worker-test'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "moneybee-api-development",
+      "endpoint": "auth/jwt-codestra/cel/role/moneybee-api-development",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'moneybee-api' && claims.codestra_environment == 'development' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'moneybee-api-development', policies: ['workload-moneybee-api-development'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "moneybee-api-production",
+      "endpoint": "auth/jwt-codestra/cel/role/moneybee-api-production",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'moneybee-api' && claims.codestra_environment == 'production' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'moneybee-api-production', policies: ['workload-moneybee-api-production'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "moneybee-api-staging",
+      "endpoint": "auth/jwt-codestra/cel/role/moneybee-api-staging",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'moneybee-api' && claims.codestra_environment == 'staging' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'moneybee-api-staging', policies: ['workload-moneybee-api-staging'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+        },
+        "message": "Codestra workload JWT rejected",
+        "clock_skew_leeway": 30,
+        "expiration_leeway": -1,
+        "not_before_leeway": -1,
+        "bound_audiences": [
+          "openbao"
+        ]
+      },
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "name": "moneybee-api-test",
+      "endpoint": "auth/jwt-codestra/cel/role/moneybee-api-test",
+      "payload": {
+        "cel_program": {
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'moneybee-api' && claims.codestra_environment == 'test' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'moneybee-api-test', policies: ['workload-moneybee-api-test'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
         },
         "message": "Codestra workload JWT rejected",
         "clock_skew_leeway": 30,
