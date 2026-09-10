@@ -8,6 +8,13 @@ contract, not a claim that every API is implemented or deployed. The proposed
 not renamed by this change. Eight additional repository main trees are recorded
 in `config/integration-source-observations.v1.json`, without runtime claims.
 
+The [shared SaaS and client API plan](SHARED-SAAS-API-PLAN.md) extends these
+product boundaries with organizations, workspaces, teams, Google/SSO login,
+subscriptions, entitlement enforcement, quotas, metering, developer credentials,
+email/Gmail/social integrations and outgoing client webhooks. The eight requested
+SaaS products retain their domain records. This additional layer is planned;
+its implementation repository and runtime bindings still require admission.
+
 | Product/service | Authoritative source | Requested API groups |
 | --- | --- | --- |
 | larimia | `appolon1908-hue/LARIM-A-Backend` | service-catalog, providers, verification, service-areas, availability, pricing, bookings, rescheduling, dispatch, job-status, payments, refunds, payouts, reviews, disputes |
