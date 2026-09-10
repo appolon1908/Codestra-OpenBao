@@ -13,6 +13,7 @@ from typing import Any
 DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 ARCHIVE_MODULE = "github.com/moby/go-archive"
+BLOCKED_GRPC_CVES = {"CVE-2026-84304", "CVE-2026-84445"}
 
 
 def sha256(path: Path) -> str:
@@ -44,7 +45,7 @@ def vulnerability_counts(path: Path) -> tuple[int, int, bool]:
                 continue
             vulnerability_id = str(vulnerability.get("VulnerabilityID", ""))
             severity = str(vulnerability.get("Severity", "")).upper()
-            cve_present = cve_present or vulnerability_id == "CVE-2026-84304"
+            cve_present = cve_present or vulnerability_id in BLOCKED_GRPC_CVES
             critical += severity == "CRITICAL"
             high += severity == "HIGH"
     return critical, high, cve_present
@@ -145,7 +146,7 @@ def main() -> int:
     print(f"OPENBAO_IMAGE_EVIDENCE_STATUS={evidence['status']}")
     print(f"OPENBAO_IMAGE_CRITICAL_COUNT={critical}")
     print(f"OPENBAO_IMAGE_HIGH_COUNT={high}")
-    print(f"OPENBAO_IMAGE_CVE_2026_84304_PRESENT={'YES' if cve_present else 'NO'}")
+    print(f"OPENBAO_IMAGE_BLOCKED_GRPC_CVE_PRESENT={'YES' if cve_present else 'NO'}")
     return 0 if evidence["status"] == "PASS" else 1
 
 

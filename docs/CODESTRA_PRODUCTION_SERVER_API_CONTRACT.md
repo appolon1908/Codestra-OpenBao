@@ -12,12 +12,12 @@ OpenBao owns its server configuration, integrated Raft, TLS/mTLS, audit devices,
 
 ## Current vulnerability boundary
 
-The currently pinned image contains affected `google.golang.org/grpc` v1.82.1 for `CVE-2026-84304`. The repository VEX disposition is valid only while **every OpenBao deployment and runtime-binding authority remains false**. It expires on **September 9, 2026** and cannot authorize staging runtime, production canary, or live deployment.
+The currently pinned image contains affected `google.golang.org/grpc` v1.82.1 for `CVE-2026-84304` and `CVE-2026-84445`. The repository VEX disposition is valid only while **every OpenBao deployment and runtime-binding authority remains false**. It expires on **September 16, 2026** and cannot authorize staging runtime, production canary, or live deployment.
 
 Before any OpenBao runtime activation, require one of the following:
 
 ```text
-GRPC_GO_VERSION>=1.83.1
+GRPC_GO_VERSION>=1.83.2 (and therefore the prior GRPC_GO_VERSION>=1.83.1 floor)
 ```
 
 or a new, non-expired, evidence-backed security assessment that explicitly authorizes the exact image and runtime configuration. Until then:
@@ -56,7 +56,7 @@ Certification must not read secret values into logs or evidence. Initialization,
 ```text
 PROTECTED_PRODUCTION_SHA=PASS
 OFFICIAL_SOURCE_LOCK=PASS
-CVE_2026_84304_RUNTIME_BLOCK=RESOLVED
+GRPC_GO_RUNTIME_BLOCK=ACTIVE_PENDING_SIGNED_SOURCE_IMAGE
 TLS13=PASS
 MTLS=PASS
 RAFT_HEALTH=PASS
