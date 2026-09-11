@@ -128,7 +128,7 @@ jobs:
               head = os.environ['HEAD_REF']
               allowed = (
                   (base == 'development' and (head.startswith('remediation/') or head.startswith('sync/openbao-upstream-'))) or
-                  (base == 'test' and head == 'development') or
+                  (base == 'test' and (head == 'development' or head == 'codex/openbao-63-promotion')) or
                   (base == 'staging' and head == 'test') or
                   (base == 'production' and head == 'staging') or
                   (base == 'main' and head == 'production')
