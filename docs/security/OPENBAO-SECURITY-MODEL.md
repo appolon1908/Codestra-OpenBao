@@ -30,9 +30,10 @@ collision requests fail closed; expired hash entries are bounded and cleaned.
 
 The plugin is built reproducibly from the exact upstream SHA with Go 1.25.13
 and checksum-locked `golang.org/x/crypto` and `google.golang.org/grpc` security
-overrides. The latter upgrades grpc-go to v1.83.1 for CVE-2026-84304. Version
+overrides. The latter upgrades grpc-go to v1.83.2 for CVE-2026-84304 and
+CVE-2026-84445. Version
 v1.1.0 has binary digest
-`332562de9c3f179b4598104cceb83c4cddf0896428df192697e7d91dc6651508`.
+`4d1dd974c4128cc87805c4031fbeed044e82f9731332b798f3b93f99119faefa`.
 Because OpenBao Agent JWT auto-auth calls the standard `login` route while CEL
 roles use `cel/login`, the dedicated mount maps standard login internally to
 CEL login before upstream validation. Both paths then pass through the same

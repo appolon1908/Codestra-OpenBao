@@ -37,7 +37,7 @@ class BuildPlanTests(unittest.TestCase):
         self.assertFalse(plan["runtimeApplyAuthorized"])
         self.assertFalse(any(item["action"] == "delete" for item in plan["operations"]))
         plugin = next(item for item in plan["operations"] if item["kind"] == "auth_plugin")
-        self.assertEqual(plugin["payload"]["sha256"], "332562de9c3f179b4598104cceb83c4cddf0896428df192697e7d91dc6651508")
+        self.assertEqual(plugin["payload"]["sha256"], "4d1dd974c4128cc87805c4031fbeed044e82f9731332b798f3b93f99119faefa")
         auth = next(item for item in plan["operations"] if item["kind"] == "auth_method")
         self.assertEqual(auth["payload"]["plugin_name"], "codestra-jwt-replay")
         kv_config = next(item for item in plan["operations"] if item["kind"] == "secret_engine_config")

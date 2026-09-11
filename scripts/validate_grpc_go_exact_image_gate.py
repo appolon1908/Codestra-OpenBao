@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed source and exact-image evidence gate for CVE-2026-84304."""
+"""Fail-closed source and exact-image evidence gate for grpc-go CVEs."""
 
 from __future__ import annotations
 
@@ -87,6 +87,8 @@ def require_false_map(value: Any, label: str) -> None:
 def validate_gate(gate: dict[str, Any]) -> tuple[str, str]:
     if gate.get("schema_version") != 1 or gate.get("cve") != "CVE-2026-84304":
         raise ValueError("gate identity mismatch")
+    if gate.get("additional_cves") != ["CVE-2026-84445"]:
+        raise ValueError("additional grpc-go CVE authority mismatch")
     if gate.get("module") != "google.golang.org/grpc":
         raise ValueError("module authority mismatch")
 
@@ -299,6 +301,7 @@ def main() -> int:
     report = {
         "schema_version": 1,
         "cve": "CVE-2026-84304",
+        "additional_cves": ["CVE-2026-84445"],
         "minimum_remediated_version": minimum,
         "source_dependency_version": source_version,
         "archive_module_version": ARCHIVE_VERSION,
