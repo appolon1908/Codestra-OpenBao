@@ -2,7 +2,7 @@
 
 `config/policies/workload-identities.v1.json` is the owner and eligibility
 inventory. `config/workload-secret-authority.v1.json` is generated authority;
-`openbao/auth/jwt-roles.v1.json` contains the exact CEL roles. There are 32
+`openbao/auth/jwt-roles.v1.json` contains the exact CEL roles. There are 60
 prepared roles across four environments. All runtime bindings remain disabled.
 
 | Identity | Owner | Environments | Purpose |
@@ -17,6 +17,13 @@ prepared roles across four environments. All runtime bindings remain disabled.
 | `telnexa-sms-adapter` | telnexa-platform | staging, production | exact SMS adapter path; live effects remain disabled |
 | `vicidial-adapter` | communications-platform | staging, production | exact telephony adapter path; dialing remains disabled |
 | `crawler-adapter` | kyqra-platform | staging, production | exact Kyqra crawler adapter path |
+| `beyvra-api` | beyvra-platform | all | read-only Beyvra API private configuration secrets |
+| `beyvra-funding` | beyvra-platform | all | read-only Beyvra funding private configuration secrets |
+| `beyvra-market-data` | beyvra-platform | all | read-only Beyvra market-data private configuration secrets |
+| `beyvra-trading-executor` | beyvra-platform | all | read-only Beyvra trading-executor private configuration secrets |
+| `breero-api` | breero-platform | all | read-only Breero API private configuration secrets |
+| `larimia-api` | larim-a-platform | all | read-only Larimia API private configuration secrets |
+| `moneybee-api` | moneybee-platform | all | read-only Moneybee API private configuration secrets |
 
 An identity is admitted only when its owner, runtime consumer, exact Keycloak
 client, environment claim, paths, TTL, rotation procedure, revocation procedure

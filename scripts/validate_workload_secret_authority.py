@@ -20,6 +20,13 @@ SPEC.loader.exec_module(GENERATOR)
 IDENTITY = re.compile(r"^[a-z][a-z0-9-]+$")
 ENVIRONMENTS = {"development", "test", "staging", "production"}
 EXPECTED_IDENTITIES = {
+    "beyvra-market-data": ("beyvra-platform", ["beyvra/market-data/providers/"]),
+    "beyvra-funding": ("beyvra-platform", ["beyvra/funding/providers/"]),
+    'moneybee-api': ('moneybee-platform', ['moneybee/api/runtime/']),
+    'larimia-api': ('larim-a-platform', ['larim-a/api/runtime/']),
+    'breero-api': ('breero-platform', ['breero/api/runtime/']),
+    'beyvra-api': ('beyvra-platform', ['beyvra/api/runtime/']),
+    'beyvra-trading-executor': ('beyvra-platform', ['beyvra/execution/provider/']),
     "kong-gateway": ("platform-edge", ["kong/"]),
     "middleware-api": ("middleware-platform", ["middleware/api/"]),
     "middleware-worker": (
