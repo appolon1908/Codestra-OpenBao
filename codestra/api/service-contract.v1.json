@@ -39,7 +39,41 @@
       {"acceptedStatuses": [200], "access": "read_only", "category": "query", "controlPlaneProxyAllowed": false, "id": "seal-status", "method": "GET", "path": "/v1/sys/seal-status", "responseBodyPolicy": "native", "timeoutMs": 3000},
       {"acceptedStatuses": [200], "access": "read_only", "category": "query", "controlPlaneProxyAllowed": false, "id": "leader", "method": "GET", "path": "/v1/sys/leader", "responseBodyPolicy": "native", "timeoutMs": 3000},
       {"acceptedStatuses": [200], "access": "read_only", "category": "metrics", "controlPlaneProxyAllowed": false, "id": "metrics", "method": "GET", "path": "/v1/sys/metrics", "responseBodyPolicy": "discard", "timeoutMs": 3000},
-      {"acceptedStatuses": [200], "access": "mutation", "category": "credential_issue", "controlPlaneProxyAllowed": false, "id": "pki-issue", "method": "POST", "path": "/v1/{mount}/issue/{role}", "responseBodyPolicy": "native", "timeoutMs": 3000}
+      {"acceptedStatuses": [200], "access": "read_only", "category": "query", "controlPlaneProxyAllowed": false, "id": "raft-configuration", "method": "GET", "path": "/v1/sys/storage/raft/configuration", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "query", "controlPlaneProxyAllowed": false, "id": "raft-autopilot-state", "method": "GET", "path": "/v1/sys/storage/raft/autopilot/state", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "authentication", "controlPlaneProxyAllowed": false, "id": "jwt-login", "method": "POST", "path": "/v1/auth/jwt-codestra/login", "responseBodyPolicy": "native", "timeoutMs": 5000},
+      {"acceptedStatuses": [200], "access": "query", "category": "authentication", "controlPlaneProxyAllowed": false, "id": "oidc-auth-url", "method": "POST", "path": "/v1/auth/oidc/oidc/auth_url", "responseBodyPolicy": "native", "timeoutMs": 5000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "authentication", "controlPlaneProxyAllowed": false, "id": "oidc-callback", "method": "GET", "path": "/v1/auth/oidc/oidc/callback", "responseBodyPolicy": "native", "timeoutMs": 5000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "token", "controlPlaneProxyAllowed": false, "id": "token-lookup-self", "method": "GET", "path": "/v1/auth/token/lookup-self", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "token", "controlPlaneProxyAllowed": false, "id": "token-renew-self", "method": "POST", "path": "/v1/auth/token/renew-self", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [204], "access": "mutation", "category": "token", "controlPlaneProxyAllowed": false, "id": "token-revoke-self", "method": "POST", "path": "/v1/auth/token/revoke-self", "responseBodyPolicy": "discard", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "secret_read", "controlPlaneProxyAllowed": false, "id": "kv-read", "method": "GET", "path": "/v1/codestra/data/{environment}/{namespace}/{key}", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "secret_metadata", "controlPlaneProxyAllowed": false, "id": "kv-metadata-read", "method": "GET", "path": "/v1/codestra/metadata/{environment}/{namespace}/{key}", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "secret_metadata", "controlPlaneProxyAllowed": false, "id": "kv-metadata-list", "method": "GET", "path": "/v1/codestra/metadata/{environment}/{namespace}/?list=true", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "secret_write", "controlPlaneProxyAllowed": false, "id": "kv-write", "method": "POST", "path": "/v1/codestra/data/{environment}/{namespace}/{key}", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "secret_metadata", "controlPlaneProxyAllowed": false, "id": "kv-config-read", "method": "GET", "path": "/v1/codestra/config", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "credential_issue", "controlPlaneProxyAllowed": false, "id": "database-creds", "method": "GET", "path": "/v1/database/creds/{role}", "responseBodyPolicy": "native", "timeoutMs": 5000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "credential_issue", "controlPlaneProxyAllowed": false, "id": "pki-issue", "method": "POST", "path": "/v1/pki-codestra/issue/{role}", "responseBodyPolicy": "native", "timeoutMs": 5000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "encryption", "controlPlaneProxyAllowed": false, "id": "transit-encrypt", "method": "POST", "path": "/v1/transit-codestra/encrypt/{key}", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "encryption", "controlPlaneProxyAllowed": false, "id": "transit-decrypt", "method": "POST", "path": "/v1/transit-codestra/decrypt/{key}", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "signing", "controlPlaneProxyAllowed": false, "id": "transit-sign", "method": "POST", "path": "/v1/transit-codestra/sign/{key}", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "query", "category": "signing", "controlPlaneProxyAllowed": false, "id": "transit-verify", "method": "POST", "path": "/v1/transit-codestra/verify/{key}", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "lease", "controlPlaneProxyAllowed": false, "id": "lease-renew", "method": "PUT", "path": "/v1/sys/leases/renew", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [204], "access": "mutation", "category": "lease", "controlPlaneProxyAllowed": false, "id": "lease-revoke", "method": "PUT", "path": "/v1/sys/leases/revoke", "responseBodyPolicy": "discard", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "administration", "controlPlaneProxyAllowed": false, "id": "init", "method": "POST", "path": "/v1/sys/init", "responseBodyPolicy": "native", "timeoutMs": 10000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "administration", "controlPlaneProxyAllowed": false, "id": "unseal", "method": "POST", "path": "/v1/sys/unseal", "responseBodyPolicy": "metadata_only", "timeoutMs": 10000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "backup", "controlPlaneProxyAllowed": false, "id": "raft-snapshot", "method": "GET", "path": "/v1/sys/storage/raft/snapshot", "responseBodyPolicy": "native", "timeoutMs": 10000},
+      {"acceptedStatuses": [204], "access": "mutation", "category": "recovery", "controlPlaneProxyAllowed": false, "id": "raft-snapshot-restore", "method": "POST", "path": "/v1/sys/storage/raft/snapshot-force", "responseBodyPolicy": "discard", "timeoutMs": 10000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "administration", "controlPlaneProxyAllowed": false, "id": "policy-read", "method": "GET", "path": "/v1/sys/policies/acl/{name}", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [204], "access": "mutation", "category": "administration", "controlPlaneProxyAllowed": false, "id": "policy-write", "method": "PUT", "path": "/v1/sys/policies/acl/{name}", "responseBodyPolicy": "discard", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "administration", "controlPlaneProxyAllowed": false, "id": "jwt-config-read", "method": "GET", "path": "/v1/auth/jwt-codestra/config", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [204], "access": "mutation", "category": "administration", "controlPlaneProxyAllowed": false, "id": "jwt-config-write", "method": "POST", "path": "/v1/auth/jwt-codestra/config", "responseBodyPolicy": "discard", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "administration", "controlPlaneProxyAllowed": false, "id": "jwt-role-read", "method": "GET", "path": "/v1/auth/jwt-codestra/cel/role/{name}", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [204], "access": "mutation", "category": "administration", "controlPlaneProxyAllowed": false, "id": "jwt-role-write", "method": "POST", "path": "/v1/auth/jwt-codestra/cel/role/{name}", "responseBodyPolicy": "discard", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "administration", "controlPlaneProxyAllowed": false, "id": "mounts-list", "method": "GET", "path": "/v1/sys/mounts", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "administration", "controlPlaneProxyAllowed": false, "id": "auth-methods-list", "method": "GET", "path": "/v1/sys/auth", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "administration", "controlPlaneProxyAllowed": false, "id": "audit-devices-list", "method": "GET", "path": "/v1/sys/audit", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "read_only", "category": "administration", "controlPlaneProxyAllowed": false, "id": "plugin-catalog-read", "method": "GET", "path": "/v1/sys/plugins/catalog/auth/{name}", "responseBodyPolicy": "metadata_only", "timeoutMs": 3000}
     ]
   },
   "nativeExposure": "private_strong_auth",
@@ -66,5 +100,8 @@
     "version": "1.0.0"
   },
   "schemaVersion": "1.0.0",
-  "signals": {"consumes": [], "produces": ["secrets", "identity", "certificates", "audit"]}
+  "signals": {
+    "consumes": [],
+    "produces": ["secrets", "identity", "certificates", "audit"]
+  }
 }
