@@ -18,7 +18,7 @@ The confirmed production server address is `65.109.65.169`. It is a routing targ
 
 Before deployment, prove that the intended ingress path to `65.109.65.169` is correctly routed and that `middleware.internal.codestra.agency` resolves as designed from the calling network. Direct IP callbacks remain forbidden unless a separately reviewed ingress design supplies a certificate with the required IP SAN; normal callbacks must use the canonical DNS name.
 
-DIDWW must be treated as a candidate carrier until its account confirms the required production interface. Public DIDWW documentation describes HTTP SMS trunks; do not assume that a DIDWW portal login supplies SMPP credentials. The carrier capability gate must record whether the selected interface is SMPP or HTTP and map it through a carrier adapter without changing Middleware's canonical event contract.
+DIDWW is the selected production carrier and the account owner has confirmed that DIDWW provides SMPP. The implementation must use an SMPP carrier adapter without changing Middleware's canonical event contract. The actual SMPP host, port, system ID, password, system type, bind mode, and TLS requirements remain secret/operator inputs and must be loaded into OpenBao out-of-band.
 
 ## Architecture
 
@@ -94,17 +94,18 @@ Never store message bodies, destination histories, DLR payload archives, approva
 Before credentials are written, create an approved, non-secret carrier record containing:
 
 - carrier legal name and account owner;
-- interface: `smpp` or `http`;
+- interface: `smpp` (confirmed by Ralph Appolon on 2026-09-12);
 - production and sandbox endpoints;
 - TLS requirements and certificate validation rules;
 - bind type for SMPP (`transceiver` preferred, otherwise explicit transmitter/receiver pair);
-- approved sender IDs or originating numbers;
-- allowed destination countries/network classes;
+- approved sender IDs or originating numbers (pending exact values and country registrations);
+- destination policy ceiling: worldwide except the United States; each country remains disabled until carrier support, sender registration, consent, sanctions/export screening, and local compliance approval are recorded;
 - DLR states and provider error-code map;
 - inbound/MO addressing and callback behavior;
 - encoding support: GSM-7, UCS-2, concatenation/SAR or UDH;
-- provider throughput/burst behavior;
+- provider throughput/burst behavior (pending exact MPS/TPS limit);
 - settlement currency, rate-card version, taxes, and balance alert thresholds;
+- initial spend ceiling: USD 2.00 per newly created customer/tenant account, fail closed when exhausted; account-grain interpretation must be confirmed before implementation;
 - support/escalation contacts and maintenance window.
 
 ## Middleware event contract
@@ -146,7 +147,7 @@ A green workflow means every required check on the exact commit SHA passed. Appr
 
 ## Bounded carrier sandbox test
 
-Use an allowlist of owner-controlled test numbers, a hard segment count, spend ceiling, time window, and a closed-by-default kill switch.
+Use an allowlist of owner-controlled test numbers, a hard segment count, the USD 2.00 per-new-account spend ceiling, a time window, and a closed-by-default kill switch. The United States must be explicitly denied at both API policy and carrier-adapter layers.
 
 | Test | Expected evidence |
 |---|---|
@@ -175,7 +176,17 @@ The activation record must contain explicit approval from:
 - service owner: runbook, support/escalation, SLO, dashboards, rollback;
 - production change owner: exact commit/digests, change window, canary bounds.
 
-No single approval substitutes for another. Missing, expired, or SHA-mismatched evidence keeps the kill switch closed.
+Approval record (2026-09-12):
+
+| Role | Approver | State |
+|---|---|---|
+| Production owner | Ralph Appolon | Approved direction and bounded production preparation |
+| Compliance | Independent or formally delegated approver required | Pending country-by-country evidence |
+| Security | Independent or formally delegated approver required | Pending Keycloak/OpenBao/mTLS/image evidence |
+| Billing/finance | Independent or formally delegated approver required | Pending rate card and USD 2.00 limit enforcement proof |
+| Service/change owner | Ralph Appolon | Pending exact-SHA/digest and sandbox evidence |
+
+No single approval substitutes for another. A person may fill multiple roles only when organizational policy formally delegates those authorities and the evidence records each role separately. Missing, expired, or SHA-mismatched evidence keeps the kill switch closed.
 
 ## Deployment sequence
 
