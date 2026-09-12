@@ -8,7 +8,7 @@ Secret values in Git: prohibited
 
 Production SMS remains disabled until every gate in this document has machine-verifiable evidence and named approval. OpenBao is the authority for runtime secret material; it is not an authorization bypass and stores no customer message content.
 
-The supplied host string `65.10965169` is not a valid IPv4 address. It must not be committed, added to DNS, or used as a TLS target. The canonical Middleware service identity already used by Codestra repositories is:
+The confirmed production server address is `65.109.65.169`. It is a routing target, not the TLS service identity. The canonical Middleware service identity already used by Codestra repositories is:
 
 - URL authority: `https://middleware.internal.codestra.agency`
 - production Telnexa event path: `POST /api/v1/events/telnexa`
@@ -16,7 +16,7 @@ The supplied host string `65.10965169` is not a valid IPv4 address. It must not 
 - transport: TLS with mutual client authentication
 - identity rule: certificates validate the DNS name, never an unverified numeric address
 
-If the intended public server is `65.109.65.169`, an owner must confirm it and prove DNS/routing before any deployment change. Direct public-IP callbacks remain forbidden unless a separately reviewed ingress design is approved.
+Before deployment, prove that the intended ingress path to `65.109.65.169` is correctly routed and that `middleware.internal.codestra.agency` resolves as designed from the calling network. Direct IP callbacks remain forbidden unless a separately reviewed ingress design supplies a certificate with the required IP SAN; normal callbacks must use the canonical DNS name.
 
 DIDWW must be treated as a candidate carrier until its account confirms the required production interface. Public DIDWW documentation describes HTTP SMS trunks; do not assume that a DIDWW portal login supplies SMPP credentials. The carrier capability gate must record whether the selected interface is SMPP or HTTP and map it through a carrier adapter without changing Middleware's canonical event contract.
 
@@ -180,7 +180,7 @@ No single approval substitutes for another. Missing, expired, or SHA-mismatched 
 ## Deployment sequence
 
 1. Confirm selected carrier interface and approved production account without copying credentials into GitHub.
-2. Correct and verify the intended server IP; prove DNS for `middleware.internal.codestra.agency`, route, firewall, and mTLS.
+2. Verify routing to confirmed server `65.109.65.169`; prove DNS for `middleware.internal.codestra.agency`, firewall policy, TLS hostname validation, and mTLS.
 3. Apply Keycloak fix; rerun vulnerability scan and the complete required workflow.
 4. Write staging secrets through the audited OpenBao operator path.
 5. Deploy signed, digest-pinned staging images and execute all sandbox tests.
