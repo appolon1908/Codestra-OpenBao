@@ -26,6 +26,7 @@ APPROVED_ACTION_REFERENCES = {
     "actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661",
     "sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62",
     "appolon1908-hue/Codestra-Telemetry/.github/workflows/reusable-validate-service-contract.yml@c35d880a730ca5206d445e8a9a688cb465ae2ad4",
+    "appolon1908-hue/kyyow-contracts/.github/workflows/validate-platform-component.yml@eea7ec0402acce5a4f63b327b59f20b5d3e98d33",
     "./.github/workflows/_deploy-saved-plan.yml",
 }
 
