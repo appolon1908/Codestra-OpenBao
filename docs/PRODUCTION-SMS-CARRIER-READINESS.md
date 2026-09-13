@@ -1,7 +1,9 @@
 # Production SMS carrier, OpenBao, and Middleware readiness design
 
-Status: proposed, fail-closed  
-Scope: DIDWW/carrier onboarding, Jasmin, relay/API, Middleware callbacks, Keycloak release gate, evidence, and approvals  
+Status: proposed, fail-closed
+
+Scope: DIDWW/carrier onboarding, Jasmin, relay/API, Middleware callbacks, Keycloak release gate, evidence, and approvals
+
 Secret values in Git: prohibited
 
 ## Decision summary
