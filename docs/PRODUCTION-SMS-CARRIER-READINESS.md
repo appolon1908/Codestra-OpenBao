@@ -143,7 +143,7 @@ Carrier ingress is a separate trust boundary. SMPP DLR/MO must arrive on the app
 
 Production deployment is blocked unless all are true:
 
-1. [Keycloak issue #114](https://github.com/appolon1908-hue/Keycloak/issues/114) has an approved vulnerability record naming the exact CVE/advisory, affected component and version, fixed version, patched image digest, scanner/database version, rescan evidence, and required workflow checks on the exact source SHA. The Keycloak/Netty finding's precise identifier and fixed artifact remain unresolved here: missing fields block release; an unrelated clean scan is insufficient;
+1. [Keycloak issue #114](https://github.com/appolon1908-hue/Keycloak/issues/114) has an approved vulnerability record for `CVE-2026-75595` in `io.netty:netty-handler`. The [Telnexa release scan](https://github.com/appolon1908-hue/telnexa/actions/runs/34658149648/job/103454881780) found `4.1.136.Final` and reported fixed versions `4.1.137.Final` and `4.2.17.Final` in candidate `ghcr.io/appolon1908-hue/telnexa-keycloak@sha256:5a88c0b8ce77c4b162793a2f6b3c28b504123a7bdf2d3ef275e3bf5a34e3aef7` from source `73abfcbfc4904859d58221cdb1dfb1ad93bf5a33`. This is evidence of an affected artifact, not a verified fix. Closure requires a compatible patched Keycloak image digest, the selected fixed dependency version, scanner/database version, rescan evidence, and required workflow checks on the exact source SHA; those closure fields remain pending and block release;
 2. API, Jasmin/adapter, relay, and migration images are referenced by immutable `sha256` digest;
 3. image signatures and provenance attestations validate against the approved identity;
 4. SBOM and critical/high vulnerability policy pass, with time-bounded approved exceptions only;
