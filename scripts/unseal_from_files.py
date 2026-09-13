@@ -109,7 +109,7 @@ def read_shares(files: list[str]) -> list[str]:
     return values
 
 
-def main() -> None:
+def main(*, validate_only: bool = False) -> None:
     address = os.environ.get("BAO_ADDR")
     files = os.environ.get("OPENBAO_UNSEAL_KEY_FILES", "").split(":")
     if not address or not files or any(not item for item in files):
@@ -119,6 +119,9 @@ def main() -> None:
         tls = context()
         # Validate the entire batch before submitting the first share.
         shares = read_shares(files)
+        if validate_only:
+            print("OPENBAO_UNSEAL_INPUTS=PASS")
+            return
         for index, share in enumerate(shares, start=1):
             result = submit(address, share, tls)
             shares[index - 1] = ""
@@ -136,4 +139,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] not in ([], ["--check-inputs"]):
+        raise SystemExit("OPENBAO_UNSEAL=FAIL ERROR=unsupported_arguments")
+    main(validate_only=sys.argv[1:] == ["--check-inputs"])

@@ -6,6 +6,7 @@ import io
 import os
 from pathlib import Path
 import ssl
+import subprocess
 import tempfile
 import threading
 import unittest
@@ -155,6 +156,45 @@ class UnsealFileTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 unseal.main()
             submit.assert_not_called()
+
+    def test_validate_only_checks_inputs_without_submitting(self) -> None:
+        output = io.StringIO()
+        with patch.dict(os.environ, self.env(), clear=True), patch.object(unseal, "submit") as submit, contextlib.redirect_stdout(output):
+            unseal.main(validate_only=True)
+            submit.assert_not_called()
+        self.assertEqual(output.getvalue(), "OPENBAO_UNSEAL_INPUTS=PASS\n")
+
+    def test_restore_rejects_invalid_unseal_inputs_before_external_commands(self) -> None:
+        fake_bin = self.work / "bin"
+        fake_bin.mkdir()
+        calls = self.work / "external-calls"
+        for command in ("age", "bao", "jq", "realpath", "sha256sum", "shred", "stat"):
+            executable = fake_bin / command
+            executable.write_text('#!/usr/bin/env bash\nprintf "unexpected\\n" >> "$FAKE_EXTERNAL_CALLS"\nexit 97\n', encoding="utf-8")
+            executable.chmod(0o700)
+        env = {
+            **self.env(),
+            "PATH": f"{fake_bin}:{os.environ['PATH']}",
+            "FAKE_EXTERNAL_CALLS": str(calls),
+            "CODESTRA_ENVIRONMENT": "staging",
+            "OPENBAO_RESTORE_ARTIFACT": self.files[0],
+            "OPENBAO_RESTORE_CHECKSUM": self.files[0],
+            "OPENBAO_AGE_IDENTITY_FILE": self.files[0],
+            "OPENBAO_PRODUCTION_CLUSTER_ID": "excluded-synthetic-cluster",
+            "OPENBAO_RESTORE_EVIDENCE": str(self.work / "evidence.json"),
+            "OPENBAO_OPERATOR_TOKEN_FILE": self.files[0],
+            "OPENBAO_RESTORED_PROBE_TOKEN_FILE": self.files[1],
+            "OPENBAO_RESTORED_PROBE_EXPECTED_POLICY": "restored-probe",
+            "OPENBAO_ISOLATED_RESTORE_ACKNOWLEDGED": "true",
+        }
+        result = subprocess.run(
+            ["bash", str(ROOT / "scripts/restore-test.sh")],
+            env={**os.environ, **env}, capture_output=True, text=True, check=False, timeout=10,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("OPENBAO_UNSEAL=FAIL", result.stderr)
+        self.assertFalse(calls.exists())
+        self.assertFalse((self.work / "evidence.json").exists())
 
     def test_stop_after_success_and_print_only_sanitized_result(self) -> None:
         output = io.StringIO()

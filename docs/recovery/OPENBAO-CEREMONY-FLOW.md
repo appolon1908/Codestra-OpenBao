@@ -64,7 +64,13 @@ failed merely from a nonzero command status.
 `BAO_ADDR` origin. HTTPS requires the trusted CA plus both the client
 certificate and private-key paths, with TLS 1.3. Redirects and environment
 proxies are disabled. HTTP is allowed only for loopback development/test
-fixtures; staging and production restore callers must supply native mTLS.
+fixtures; staging restore and production unseal callers must supply native mTLS.
+
+`scripts/restore-test.sh` runs the helper with `--check-inputs` before any
+target contact, snapshot decryption or restore. This validates local TLS and
+share inputs without sending shares. The helper revalidates them at unseal
+time, since local preflight cannot guarantee subsequent file or network
+availability. Custodians must stage the approved inputs before restore begins.
 
 The custodian-controlled `OPENBAO_UNSEAL_KEY_FILES` list contains one to five
 absolute nonsymbolic regular files owned by the execution user, mode `0400`
