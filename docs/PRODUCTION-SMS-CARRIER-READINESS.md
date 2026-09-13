@@ -156,6 +156,15 @@ Production deployment is blocked unless all are true:
 
 A green workflow means every required check on the exact commit SHA passed. Approval or success on an older SHA is not transferable.
 
+Candidate remediation evidence recorded 2026-09-13, not production closure:
+
+- Telnexa PR #36 head `5b1440d51fd89d8541cff62d841ba1ea1daa6abb` and Keycloak PR #116 head `820212e07da507e82cb9df64b572a29ddfb006c1` select Netty `4.1.137.Final`;
+- the image builds pin `netty-handler` SHA-256 `d0e4c6ee4779f59f6ab2fb5d388e4f57147c82270164b37945764bb9bda96a44` and `netty-codec-http` SHA-256 `0535bb5a736472bef5c948d15eb273c4ab9f796656fc7c5d6b982ad92bddbd49`, fetch them from Maven Central's canonical host with Docker `ADD --checksum`, and verify both hashes again in the final image;
+- Trivy `0.74.0`, using vulnerability DB updated `2026-09-13T07:13:14Z` and Java DB updated `2026-09-13T01:12:19Z`, reports zero fixable HIGH/CRITICAL findings in both locally built current candidate images under the release-equivalent `--scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1` policy;
+- Telnexa #36 has seven green exact-head checks. Keycloak #116 has green source, merge-result, E2E, repository-authority, orchestrator, and aggregate validation contexts; its bootstrap remains deliberately failed with `missing-independent-approval`.
+
+Local image IDs are validation evidence only. Closure still requires independent exact-head approvals, merged protected-branch SHAs, CI-built signed registry digests and provenance, an exact-digest rescan, and binding all resulting identities into the approved multi-repository release manifest.
+
 ## Bounded carrier sandbox test
 
 Use an allowlist of owner-controlled test numbers, a hard segment count, the USD 2.00 per-new-account spend ceiling, a time window, and a closed-by-default kill switch. The United States must be explicitly denied at both API policy and carrier-adapter layers.
