@@ -1,0 +1,25 @@
+name: production-bootstrap
+on:
+  pull_request:
+    paths:
+      - "deploy/**"
+      - "config/**"
+      - "scripts/**"
+      - "policies/**"
+      - "tests/**"
+      - ".github/workflows/production-bootstrap.yml"
+  push:
+    branches: [development, test, staging, production, main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate Compose
+        run: docker compose -f deploy/compose.yaml config >/dev/null
+      - name: Validate scripts
+        run: |
+          shellcheck scripts/*.sh tests/*.sh
+          sh tests/static.sh

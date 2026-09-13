@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "authority": "appolon1908-hue/Codestra-OpenBao",
+  "environment": "production",
+  "canonical_endpoint": "https://bao.codestra.media",
+  "native_listener": "127.0.0.1:18200",
+  "consumers": [
+    {"repo":"appolon1908-hue/Middleware-","identity":"middleware-production","prefix":"codestra/production/middleware","rendered_files":["observability-alerts.env","klyrow-alert-oidc-client-secret","klyrow-alert-ca","klyrow-alert-client-cert","klyrow-alert-client-key"],"access":"read-only"},
+    {"repo":"appolon1908-hue/Odoo","identity":"odoo-production","prefix":"codestra/production/odoo","access":"read-only; business data forbidden"},
+    {"repo":"appolon1908-hue/klyrow.com","identity":"klyrow-production","prefix":"codestra/production/klyrow","aliases":["middleware/client-secret","middleware/hmac-secret","postal/api-key","smtp/tls-cert","smtp/tls-key","n8n/credential-reference"],"access":"read-only"},
+    {"repo":"appolon1908-hue/telnexa","identity":"telnexa-production","prefix":"codestra/production/telnexa","classes":["provider","callback-hmac","mtls","keycloak-client"],"access":"read-only; live delivery independently gated"},
+    {"repo":"appolon1908-hue/Keycloak","identity":"keycloak-production","prefix":"codestra/production/keycloak","rendered_files":["openbao_oidc_client_secret","grafana_oidc_client_secret","superset_oidc_client_secret"],"issuer":"https://auth.codestra.co/realms/codestra","access":"read-only"},
+    {"repo":"appolon1908-hue/Codestra-Grafana-","identity":"grafana-production","prefix":"codestra/production/grafana","access":"read-only"},
+    {"repo":"appolon1908-hue/Superset","identity":"superset-production","prefix":"codestra/production/superset","access":"read-only"},
+    {"repo":"appolon1908-hue/Codestra-Prometheus","identity":"prometheus-production","prefix":"codestra/production/prometheus","access":"read-only; metrics only"},
+    {"repo":"appolon1908-hue/Codestra-Alertmanager","identity":"alertmanager-production","prefix":"codestra/production/alertmanager","access":"read-only; Middleware receiver only"},
+    {"repo":"appolon1908-hue/Vicidialer-Codestra","identity":"vicidial-production","prefix":"codestra/production/vicidial","classes":["mtls","api-auth","database"],"access":"read-only"}
+  ],
+  "invariants": {
+    "git_contains_secret_values": false,
+    "browser_receives_provider_secrets": false,
+    "cross_environment_reads": false,
+    "observability_has_application_provider_credentials": false,
+    "odoo_business_data_in_openbao": false,
+    "native_port_public": false
+  }
+}
