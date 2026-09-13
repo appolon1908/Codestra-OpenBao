@@ -8,6 +8,13 @@ contract, not a claim that every API is implemented or deployed. The proposed
 not renamed by this change. Eight additional repository main trees are recorded
 in `config/integration-source-observations.v1.json`, without runtime claims.
 
+The [shared SaaS and client API plan](SHARED-SAAS-API-PLAN.md) extends these
+product boundaries with organizations, workspaces, teams, Google/SSO login,
+subscriptions, entitlement enforcement, quotas, metering, developer credentials,
+email/Gmail/social integrations and outgoing client webhooks. The eight requested
+SaaS products retain their domain records. This additional layer is planned;
+its implementation repository and runtime bindings still require admission.
+
 A separate cross-product SaaS control-plane contract is recorded in
 `config/shared-saas-api-secrets.v1.json` and documented in
 [Shared SaaS API secrets](SHARED-SAAS-API-SECRETS.md). It defines organizations,

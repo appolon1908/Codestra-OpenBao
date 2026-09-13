@@ -3,6 +3,7 @@
   "status": "REQUIREMENTS_MAPPED_RUNTIME_UNVERIFIED",
   "runtimeApplyAuthorized": false,
   "exampleRoutesAreDeployed": false,
+  "sharedSaasAndClientApiPlan": "config/shared-saas-api-plan.v1.json",
   "products": [
     {
       "product": "larimia",
@@ -398,6 +399,7 @@
     "boundedTimeoutsRetriesAndRateLimits": true
   },
   "sharedComponents": {
+    "Shared SaaS backend": "planned owner of organizations, workspaces, memberships, subscriptions, entitlements, quotas and usage; implementation repository unbound",
     "Keycloak": "human login, MFA, sessions and machine identity; backends enforce record access",
     "Caddy + Kong": "TLS, versioned routing, identity integration and rate limits",
     "Middleware": "authorized adapters, stable identifiers, event routing, retries and reconciliation",

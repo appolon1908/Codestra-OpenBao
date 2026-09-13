@@ -1,0 +1,31 @@
+{
+  "schema": "codestra.ui-access.v1",
+  "service": "openbao",
+  "canonical_host": "bao.codestra.media",
+  "human_access": {
+    "mode": "native-openbao-oidc",
+    "identity_provider": "Keycloak",
+    "oidc_client_id": "openbao-secrets",
+    "issuer": "https://auth.codestra.co/realms/codestra",
+    "login_theme": "codestra-identity",
+    "visual_base": "codestra",
+    "credentials_collected_by": "Keycloak",
+    "local_password_form": false,
+    "mfa_required": true,
+    "required_roles": [
+      "secrets-operator",
+      "secrets-admin"
+    ],
+    "network_gate": "source-network-allowlist"
+  },
+  "machine_access": {
+    "mode": "scoped-workload-identity",
+    "browser_tokens": false,
+    "native_api_public": false
+  },
+  "runtime": {
+    "activation_authorized": false,
+    "native_port_public": false
+  },
+  "boundary": "Caddy preserves the private/source-network boundary; OpenBao owns OIDC session and policy enforcement; Keycloak owns credentials, MFA and the shared Codestra identity appearance."
+}

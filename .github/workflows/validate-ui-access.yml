@@ -1,0 +1,38 @@
+name: Validate Codestra UI access
+
+on:
+  pull_request:
+    paths:
+      - "config/ui-access.v1.json"
+      - "docs/CODESTRA-LOGIN-VISUAL-CONTRACT.md"
+      - "scripts/validate_ui_access.py"
+      - ".github/workflows/validate-ui-access.yml"
+  push:
+    branches:
+      - development
+      - test
+      - staging
+      - production
+      - main
+    paths:
+      - "config/ui-access.v1.json"
+      - "docs/CODESTRA-LOGIN-VISUAL-CONTRACT.md"
+      - "scripts/validate_ui_access.py"
+      - ".github/workflows/validate-ui-access.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-ui-access:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.13"
+      - name: Validate fail-closed Codestra browser access boundary
+        run: python scripts/validate_ui_access.py
