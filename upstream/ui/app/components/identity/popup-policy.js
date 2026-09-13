@@ -1,0 +1,36 @@
+/**
+ * Copyright (c) HashiCorp, Inc.
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+import { computed } from '@ember/object';
+import Base from './_popup-base';
+
+export default Base.extend({
+  model: computed('params', function () {
+    return this.params[0];
+  }),
+
+  policyName: computed('params', function () {
+    return this.params[1];
+  }),
+
+  messageArgs(model, policyName) {
+    return [model, policyName];
+  },
+
+  successMessage(model, policyName) {
+    return `Successfully removed '${policyName}' policy from ${model.id} `;
+  },
+
+  errorMessage(e, model, policyName) {
+    const error = e.errors ? e.errors.join(' ') : e.message;
+    return `There was a problem removing '${policyName}' policy - ${error}`;
+  },
+
+  transaction(model, policyName) {
+    const policies = model.policies;
+    model.set('policies', policies.without(policyName));
+    return model.save();
+  },
+});

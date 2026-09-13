@@ -1,0 +1,29 @@
+<Sidebar::Nav::Cluster />
+<div class="global-flash">
+  {{#each this.flashMessages.queue as |flash|}}
+    <FlashMessage data-test-flash-message={{true}} @flash={{flash}} as |customComponent flash close|>
+      {{#if flash.componentName}}
+        {{component flash.componentName content=flash.content}}
+      {{else}}
+        <AlertPopup
+          @type={{message-types flash.type}}
+          @message={{flash.message}}
+          @close={{close}}
+          @isPreformatted={{flash.preformatted}}
+        />
+      {{/if}}
+    </FlashMessage>
+  {{/each}}
+</div>
+
+{{#if this.auth.isActiveSession}}
+  <section class="section">
+    <div class="container is-widescreen">
+      <TokenExpireWarning @expirationDate={{this.auth.tokenExpirationDate}}>
+        {{outlet}}
+      </TokenExpireWarning>
+    </div>
+  </section>
+{{else}}
+  {{outlet}}
+{{/if}}

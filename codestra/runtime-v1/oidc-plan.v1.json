@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.0",
+  "status": "CONTROL_PLANE_PREPARED_NOT_APPLIED",
+  "applyMode": "plan-only",
+  "authority": {
+    "identityProvider": "Codestra Keycloak",
+    "authorizationEnforcement": "OpenBao policies",
+    "edgeNetworkGate": "Codestra Caddy"
+  },
+  "authMount": {
+    "path": "oidc",
+    "type": "oidc",
+    "description": "Codestra human secrets-operator authentication"
+  },
+  "client": {
+    "issuer": "https://auth.codestra.co/realms/codestra",
+    "clientId": "openbao-secrets",
+    "clientType": "confidential",
+    "clientSecretFile": "/run/secrets/openbao_oidc_client_secret",
+    "pkceCodeChallengeMethod": "S256",
+    "defaultRole": "",
+    "redirectUris": [
+      "https://bao.codestra.media/v1/auth/oidc/callback",
+      "https://bao.codestra.media/ui/vault/auth/oidc/oidc/callback",
+      "http://localhost:8250/oidc/callback"
+    ]
+  },
+  "claims": {
+    "userClaim": "sub",
+    "groupsClaim": "/realm_access/roles",
+    "businessClaim": "codestra_business",
+    "environmentClaim": "environment",
+    "privilegedMfaRequired": true
+  },
+  "roles": [
+    {
+      "name": "codestra-secrets-operator",
+      "keycloakRealmRole": "secrets-operator",
+      "boundAudiences": ["openbao-secrets"],
+      "allowedRedirectUris": [
+        "https://bao.codestra.media/v1/auth/oidc/callback",
+        "https://bao.codestra.media/ui/vault/auth/oidc/oidc/callback",
+        "http://localhost:8250/oidc/callback"
+      ],
+      "policyNamePattern": "codestra-secrets-operator-__BUSINESS__-__ENVIRONMENT__",
+      "businessClaimRequired": true,
+      "environmentClaimRequired": true,
+      "mfaRequired": true,
+      "tokenTtl": "15m",
+      "tokenMaxTtl": "30m"
+    },
+    {
+      "name": "codestra-secrets-admin",
+      "keycloakRealmRole": "secrets-admin",
+      "boundAudiences": ["openbao-secrets"],
+      "allowedRedirectUris": [
+        "https://bao.codestra.media/v1/auth/oidc/callback",
+        "https://bao.codestra.media/ui/vault/auth/oidc/oidc/callback",
+        "http://localhost:8250/oidc/callback"
+      ],
+      "policyNamePattern": "codestra-secrets-admin-__BUSINESS__-__ENVIRONMENT__",
+      "businessClaimRequired": true,
+      "environmentClaimRequired": true,
+      "mfaRequired": true,
+      "tokenTtl": "10m",
+      "tokenMaxTtl": "15m"
+    }
+  ],
+  "policyPrerequisites": {
+    "exactBusinessAndEnvironmentPathsRequired": true,
+    "rootPolicyAllowed": false,
+    "defaultBroadPolicyAllowed": false,
+    "crossBusinessWildcardAllowed": false,
+    "oidcAuthenticationReplacesOpenBaoPolicies": false,
+    "policyGenerationAndReviewRequiredBeforeApply": true
+  },
+  "networkBoundary": {
+    "nativeApiInternetExposureAllowed": false,
+    "nativeHostPortPublished": false,
+    "tlsMinimumVersion": "TLS13",
+    "clientCertificateRequired": true,
+    "edgeSourceAllowlistRequired": true
+  },
+  "negativeTests": [
+    "wrong_issuer_denied",
+    "wrong_audience_denied",
+    "unregistered_callback_denied",
+    "missing_keycloak_role_denied",
+    "missing_mfa_denied",
+    "missing_business_claim_denied",
+    "missing_environment_claim_denied",
+    "cross_business_policy_denied",
+    "observability_role_denied",
+    "native_api_public_access_denied",
+    "revoked_session_cannot_continue_indefinitely"
+  ],
+  "activation": {
+    "keycloakClientApplied": false,
+    "clientSecretInstalled": false,
+    "authMethodEnabled": false,
+    "rolesApplied": false,
+    "policiesApplied": false,
+    "mfaEnforced": false,
+    "negativeTestsPassed": false,
+    "productionLoginEnabled": false
+  }
+}

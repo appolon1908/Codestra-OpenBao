@@ -1,0 +1,97 @@
+name: OpenBao protected runtime rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Exact protected environment
+        required: true
+        type: choice
+        options: [development, test, staging, production]
+      current_source_sha:
+        description: Exact current protected environment SHA
+        required: true
+        type: string
+      rollback_container:
+        description: Exact retained timestamped rollback container name
+        required: true
+        type: string
+      rollback_source_sha:
+        description: Exact retained container source SHA
+        required: true
+        type: string
+      rollback_image_digest:
+        description: Exact retained container sha256 image digest
+        required: true
+        type: string
+      confirmation:
+        description: ROLLBACK_OPENBAO_RUNTIME_TO_<rollback source SHA>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: openbao-${{ inputs.environment }}-runtime
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    name: Restore exact retained OpenBao runtime
+    environment: openbao-${{ inputs.environment }}-runtime
+    runs-on: [self-hosted, linux, x64, codestra-openbao]
+    timeout-minutes: 60
+    env:
+      CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      CODESTRA_SOURCE_SHA: ${{ inputs.current_source_sha }}
+      OPENBAO_APPROVAL_ENVIRONMENT: openbao-${{ inputs.environment }}-runtime
+      OPENBAO_CONTAINER_NAME: ${{ vars.OPENBAO_CONTAINER_NAME }}
+      OPENBAO_ROLLBACK_CONTAINER: ${{ inputs.rollback_container }}
+      OPENBAO_ROLLBACK_SOURCE_SHA: ${{ inputs.rollback_source_sha }}
+      OPENBAO_ROLLBACK_IMAGE_DIGEST: ${{ inputs.rollback_image_digest }}
+      OPENBAO_ROLLBACK_CONFIRMATION: ${{ inputs.confirmation }}
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OPERATOR_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OPERATOR_KEY_PATH }}
+      OPENBAO_OPERATOR_TOKEN_FILE: ${{ vars.OPENBAO_OPERATOR_TOKEN_FILE }}
+      OPENBAO_BACKUP_ROOT: ${{ vars.OPENBAO_BACKUP_ROOT }}
+      OPENBAO_AGE_RECIPIENT_FILE: ${{ vars.OPENBAO_AGE_RECIPIENT_FILE }}
+      OPENBAO_AGE_IDENTITY_FILE: ${{ vars.OPENBAO_AGE_IDENTITY_FILE }}
+      OPENBAO_OFFHOST_REMOTE: ${{ vars.OPENBAO_OFFHOST_REMOTE }}
+      OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION: ${{ vars.OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION }}
+    steps:
+      - name: Check out exact current protected source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.current_source_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify current protected branch and take fresh backup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          export OPENBAO_ROLLBACK_EVIDENCE="$RUNNER_TEMP/openbao-rollback-evidence/rollback.json"
+          export OPENBAO_PRECHANGE_BACKUP_EVIDENCE="$RUNNER_TEMP/openbao-rollback-evidence/prechange-backup.json"
+          printf 'OPENBAO_ROLLBACK_EVIDENCE=%s\n' "$OPENBAO_ROLLBACK_EVIDENCE" >> "$GITHUB_ENV"
+          [[ "$(git rev-parse HEAD)" == "$CODESTRA_SOURCE_SHA" ]]
+          [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)" == "$CODESTRA_SOURCE_SHA" ]]
+          umask 077
+          mkdir -p "$(dirname "$OPENBAO_ROLLBACK_EVIDENCE")"
+          export BAO_TOKEN="$(< "$OPENBAO_OPERATOR_TOKEN_FILE")"
+          export OPENBAO_BACKUP_EVIDENCE="$OPENBAO_PRECHANGE_BACKUP_EVIDENCE"
+          scripts/backup.sh
+          unset BAO_TOKEN
+      - name: Roll back to retained exact container without changing Raft data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/rollback.sh
+      - name: Upload sanitized rollback and SSH evidence only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-rollback-${{ inputs.environment }}-${{ inputs.rollback_source_sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/openbao-rollback-evidence/
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,429 @@
+{
+  "schemaVersion": 1,
+  "status": "REQUIREMENTS_MAPPED_RUNTIME_UNVERIFIED",
+  "runtimeApplyAuthorized": false,
+  "exampleRoutesAreDeployed": false,
+  "sharedSaasAndClientApiPlan": "config/shared-saas-api-plan.v1.json",
+  "products": [
+    {
+      "product": "larimia",
+      "repositories": [
+        "appolon1908-hue/LARIM-A-Backend",
+        "appolon1908-hue/LARIM-A-Fornt-end"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/LARIM-A-Backend",
+      "ownedRecordType": "bookings",
+      "requestedApiGroups": [
+        "service-catalog",
+        "providers",
+        "verification",
+        "service-areas",
+        "availability",
+        "pricing",
+        "bookings",
+        "rescheduling",
+        "dispatch",
+        "job-status",
+        "payments",
+        "refunds",
+        "payouts",
+        "reviews",
+        "disputes"
+      ],
+      "proposedRoutePrefix": "/larimia/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [
+        "larimia-api"
+      ],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    },
+    {
+      "product": "breero",
+      "repositories": [
+        "appolon1908-hue/Breero.com"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/Breero.com",
+      "ownedRecordType": "work-orders",
+      "requestedApiGroups": [
+        "properties",
+        "service-requests",
+        "estimates",
+        "technicians",
+        "availability",
+        "matching",
+        "work-orders",
+        "dispatch",
+        "arrival-tracking",
+        "job-photos",
+        "customer-acceptance",
+        "invoices",
+        "payments",
+        "warranties"
+      ],
+      "proposedRoutePrefix": "/breero/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [
+        "breero-api"
+      ],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    },
+    {
+      "product": "moneybee",
+      "repositories": [
+        "appolon1908-hue/Moneybee-Backend",
+        "appolon1908-hue/Moneybee-frontend-"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/Moneybee-Backend",
+      "ownedRecordType": "funding-applications",
+      "requestedApiGroups": [
+        "borrowers",
+        "businesses",
+        "consent",
+        "applications",
+        "documents",
+        "financial-connections",
+        "underwriting",
+        "lender-criteria",
+        "lender-matches",
+        "submissions",
+        "offers",
+        "signatures",
+        "funding-status"
+      ],
+      "proposedRoutePrefix": "/moneybee/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [
+        "moneybee-api"
+      ],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    },
+    {
+      "product": "transportation",
+      "repositories": [
+        "appolon1908-hue/transportation-backend-",
+        "appolon1908-hue/transportaion-Frontend"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/transportation-backend-",
+      "ownedRecordType": "shipments",
+      "requestedApiGroups": [
+        "shippers",
+        "carriers",
+        "carrier-verification",
+        "equipment",
+        "quotes",
+        "loads",
+        "tenders",
+        "assignments",
+        "dispatch",
+        "tracking",
+        "appointments",
+        "proof-of-delivery",
+        "invoices",
+        "settlements",
+        "claims"
+      ],
+      "proposedRoutePrefix": "/transport/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    },
+    {
+      "product": "klyrow",
+      "repositories": [
+        "appolon1908-hue/klyrow.com",
+        "appolon1908-hue/klyrow-Website-"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/klyrow.com",
+      "ownedRecordType": "email-delivery",
+      "requestedApiGroups": [
+        "accounts",
+        "domains",
+        "verification",
+        "senders",
+        "messages",
+        "templates",
+        "contacts",
+        "campaigns",
+        "suppressions",
+        "unsubscribes",
+        "events",
+        "usage",
+        "billing",
+        "plans",
+        "signup",
+        "onboarding",
+        "subscriptions",
+        "support"
+      ],
+      "proposedRoutePrefix": "/email/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [
+        "klyrow-email-adapter"
+      ],
+      "secretScopeNote": "Existing provider adapter identity only; native customer API/runtime secret admission is separate",
+      "runtimeVerified": false
+    },
+    {
+      "product": "telnexa",
+      "repositories": [
+        "appolon1908-hue/telnexa",
+        "appolon1908-hue/Telnexa-web"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/telnexa",
+      "ownedRecordType": "sms-delivery",
+      "requestedApiGroups": [
+        "messages",
+        "status",
+        "senders",
+        "routing",
+        "inbound",
+        "receipts",
+        "consent",
+        "opt-outs",
+        "wallets",
+        "pricing",
+        "usage",
+        "billing",
+        "plans",
+        "coverage",
+        "signup",
+        "business-verification",
+        "sender-registrations",
+        "onboarding",
+        "support"
+      ],
+      "proposedRoutePrefix": "/sms/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [
+        "telnexa-sms-adapter"
+      ],
+      "secretScopeNote": "Existing provider adapter identity only; native customer API/runtime secret admission is separate",
+      "runtimeVerified": false
+    },
+    {
+      "product": "vicidial",
+      "repositories": [
+        "appolon1908-hue/Vicidialer-Codestra"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/Vicidialer-Codestra",
+      "ownedRecordType": "call-execution",
+      "requestedApiGroups": [
+        "agents",
+        "campaigns",
+        "assignments",
+        "availability",
+        "queues",
+        "calls",
+        "transfers",
+        "callbacks",
+        "dispositions",
+        "events",
+        "recordings",
+        "supervisor-reporting"
+      ],
+      "proposedRoutePrefix": "/voice/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [
+        "vicidial-adapter"
+      ],
+      "secretScopeNote": "Existing provider adapter identity only; native customer API/runtime secret admission is separate",
+      "runtimeVerified": false
+    },
+    {
+      "product": "social",
+      "repositories": [
+        "appolon1908-hue/social.codestra.co"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/social.codestra.co",
+      "ownedRecordType": "social-publications",
+      "requestedApiGroups": [
+        "channels",
+        "media",
+        "drafts",
+        "approvals",
+        "calendar",
+        "scheduling",
+        "publishing-status",
+        "analytics",
+        "engagement"
+      ],
+      "proposedRoutePrefix": "/social/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    },
+    {
+      "product": "realtime",
+      "repositories": [
+        "appolon1908-hue/Websocket-"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/Websocket-",
+      "ownedRecordType": "event-delivery-cursors",
+      "requestedApiGroups": [
+        "session",
+        "subscriptions",
+        "call-state",
+        "screen-pops",
+        "presence",
+        "reconnect",
+        "resume",
+        "acknowledgement"
+      ],
+      "proposedRoutePrefix": "/realtime/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    },
+    {
+      "product": "odoo",
+      "repositories": [
+        "appolon1908-hue/Odoo"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/Odoo",
+      "ownedRecordType": "crm-accounting-support",
+      "requestedApiGroups": [
+        "contacts",
+        "leads",
+        "opportunities",
+        "campaign-assignments",
+        "activities",
+        "quotations",
+        "invoices",
+        "payment-reconciliation",
+        "support-tickets",
+        "product-references"
+      ],
+      "proposedRoutePrefix": "/crm/v1/",
+      "routePrefixVerified": false,
+      "openbaoIdentities": [
+        "odoo-integration"
+      ],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    },
+    {
+      "product": "beyvra",
+      "repositories": [
+        "appolon1908-hue/beyvra-backend",
+        "appolon1908-hue/beyvra-frontend"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/beyvra-backend",
+      "ownedRecordType": "trading-accounts-and-orders",
+      "requestedApiGroups": [
+        "authentication",
+        "kyc",
+        "instruments",
+        "market-data",
+        "orders",
+        "accounts",
+        "portfolio",
+        "funding",
+        "risk",
+        "research",
+        "notifications",
+        "reports",
+        "operations"
+      ],
+      "proposedRoutePrefix": null,
+      "routePrefixVerified": false,
+      "openbaoIdentities": [
+        "beyvra-api",
+        "beyvra-market-data",
+        "beyvra-funding",
+        "beyvra-trading-executor"
+      ],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    },
+    {
+      "product": "booked4seasons",
+      "repositories": [
+        "appolon1908-hue/booked4seasons"
+      ],
+      "recordOwnerRepository": "appolon1908-hue/booked4seasons",
+      "ownedRecordType": "service-intake",
+      "requestedApiGroups": [
+        "service-requests",
+        "contact",
+        "provider-interest"
+      ],
+      "proposedRoutePrefix": null,
+      "routePrefixVerified": false,
+      "openbaoIdentities": [],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    },
+    {
+      "product": "restaurant",
+      "repositories": [
+        "appolon1908-hue/Frontend-Resturant-"
+      ],
+      "recordOwnerRepository": null,
+      "ownedRecordType": "restaurant-records-backend-unbound",
+      "requestedApiGroups": [
+        "reservations",
+        "orders",
+        "tables",
+        "kitchen",
+        "staff"
+      ],
+      "proposedRoutePrefix": null,
+      "routePrefixVerified": false,
+      "openbaoIdentities": [],
+      "secretScopeNote": "Per-process admission; no browser secret access",
+      "runtimeVerified": false
+    }
+  ],
+  "requiredApiControls": {
+    "tenantAndRecordAuthorization": true,
+    "roleAndServiceScopeAuthorization": true,
+    "documentedVersionedContract": true,
+    "auditEventsWithoutSecrets": true,
+    "idempotencyForBookingsPaymentsMessagesAndCalls": true,
+    "idempotencyScope": [
+      "tenant_id",
+      "principal_id",
+      "operation",
+      "idempotency_key"
+    ],
+    "sameKeyDifferentPayload": "reject-conflict",
+    "sameKeySamePayload": "return-original-result",
+    "signedProviderEvents": true,
+    "eventDeduplicationAndReconciliation": true,
+    "boundedTimeoutsRetriesAndRateLimits": true
+  },
+  "sharedComponents": {
+    "Shared SaaS backend": "planned owner of organizations, workspaces, memberships, subscriptions, entitlements, quotas and usage; implementation repository unbound",
+    "Keycloak": "human login, MFA, sessions and machine identity; backends enforce record access",
+    "Caddy + Kong": "TLS, versioned routing, identity integration and rate limits",
+    "Middleware": "authorized adapters, stable identifiers, event routing, retries and reconciliation",
+    "N8N": "authorized workflow orchestration through domain APIs",
+    "OpenBao": "scoped provider and service secrets; no business records",
+    "Klyrow + Telnexa": "tenant-scoped messaging, preferences and delivery status",
+    "Odoo": "CRM and agreed accounting/support; no implicit ownership of product domain records",
+    "Observability": "sanitized health, errors, latency, logs, traces and alerts"
+  },
+  "odooSynchronization": {
+    "sourceRecordOwnerRequired": true,
+    "sourceSystemAndRecordIdRequired": true,
+    "sourceVersionRequired": true,
+    "fieldMapRequiredBeforeActivation": true,
+    "fieldMappings": [],
+    "odooToProductWritableFields": [],
+    "unmappedFieldUpdates": "deny",
+    "loopPreventionAndEventDeduplicationRequired": true,
+    "reconciliationRequired": true,
+    "runtimeEnabled": false
+  },
+  "realtime": {
+    "audioTransport": false,
+    "tenantAuthorizedSubscriptions": true,
+    "eventSourceRemainsAuthoritative": true
+  }
+}

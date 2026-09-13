@@ -1,0 +1,32 @@
+{
+  "archive_integrity_repairs": [
+    {
+      "archive": "upstream/physical/raft/snapshot/testdata/spaces-meta.tar",
+      "archive_sha256_after": "e7587e93b84e2675d15ac5eb6edd198e67c08211ba011a00e54812e3d3731315",
+      "archive_sha256_before": "c3feae93508ab48ce36d9fe5ac16491065fe046d002c82f381100dd419dc22fe",
+      "archive_size_preserved": true,
+      "focused_test": "go test ./physical/raft/snapshot -run ^TestArchive_GoodData$ -count=1",
+      "member": "state.bin",
+      "member_order_and_metadata_preserved": true,
+      "member_payloads_changed": [
+        "SHA256SUMS"
+      ],
+      "reason": "recompute embedded SHA256SUMS after deterministic private-key fixture sanitization",
+      "sanitized_member_sha256": "23da5e3443ff61c0463ade613f319bb1796f5d98e6db5a79eff3ebf5b36fd075",
+      "secret_values_recorded": false,
+      "stale_embedded_sha256": "aa73f76d409d148bae2d7263544633647fc0a8b52c416ea2e7c22c3e77a8d272"
+    }
+  ],
+  "archive_integrity_verified": true,
+  "deployment_enabled": false,
+  "import_path": "upstream",
+  "sanitization_count": 168,
+  "sanitization_manifest": "CODESTRA_UPSTREAM_SANITIZATION.json",
+  "sanitization_scope": "upstream test/example/documentation fixtures only; production/runtime logic is not intentionally modified",
+  "schema_version": "1.0",
+  "secret_material_allowed_in_git": false,
+  "synchronized_at": "2026-09-02T14:16:31.045779+00:00",
+  "upstream_clone_url": "https://github.com/openbao/openbao.git",
+  "upstream_commit": "dd9c19c37a878cf4a81b18efb8d6f0599c7da923",
+  "upstream_ref": "dd9c19c37a878cf4a81b18efb8d6f0599c7da923"
+}

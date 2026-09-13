@@ -1,0 +1,112 @@
+name: OpenBao protected rotation and revocation certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Non-production runtime to certify
+        required: true
+        type: choice
+        options: [development, test, staging]
+      expected_source_sha:
+        description: Exact current protected environment SHA
+        required: true
+        type: string
+      identity:
+        description: Exact reviewed workload identity
+        required: true
+        type: string
+      current_version:
+        description: Reviewed current KV version N
+        required: true
+        type: string
+      new_payload_sha256:
+        description: SHA-256 of exact N+1 rendered payload
+        required: true
+        type: string
+      rotation_confirmation:
+        description: ROTATE_<IDENTITY>_<ENVIRONMENT>_N_TO_N_PLUS_1
+        required: true
+        type: string
+      revocation_confirmation:
+        description: REVOKE_<IDENTITY>_<ENVIRONMENT>_TEST_IDENTITY
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: openbao-${{ inputs.environment }}-runtime-certification
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    name: Prove rotation revocation and denial controls
+    environment: openbao-${{ inputs.environment }}-certify
+    runs-on: [self-hosted, linux, x64, codestra-openbao]
+    timeout-minutes: 45
+    env:
+      CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      CODESTRA_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+      OPENBAO_APPROVAL_ENVIRONMENT: openbao-${{ inputs.environment }}-certify
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OPERATOR_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OPERATOR_KEY_PATH }}
+      OPENBAO_OPERATOR_TOKEN_FILE: ${{ vars.OPENBAO_OPERATOR_TOKEN_FILE }}
+      OPENBAO_ROTATION_IDENTITY: ${{ inputs.identity }}
+      OPENBAO_ROTATION_SECRET_PATH: ${{ vars.OPENBAO_ROTATION_SECRET_PATH }}
+      OPENBAO_ROTATION_NEW_SECRET_FILE: ${{ vars.OPENBAO_ROTATION_NEW_SECRET_FILE }}
+      OPENBAO_ROTATION_RENDERED_FILE: ${{ vars.OPENBAO_ROTATION_RENDERED_FILE }}
+      OPENBAO_ROTATION_EXPECTED_SHA256: ${{ inputs.new_payload_sha256 }}
+      OPENBAO_ROTATION_EXPECTED_CURRENT_VERSION: ${{ inputs.current_version }}
+      OPENBAO_ROTATION_SERVICE_UID: ${{ vars.OPENBAO_ROTATION_SERVICE_UID }}
+      OPENBAO_ROTATION_SERVICE_GID: ${{ vars.OPENBAO_ROTATION_SERVICE_GID }}
+      OPENBAO_ROTATION_NEW_VERIFIER: ${{ vars.OPENBAO_ROTATION_NEW_VERIFIER }}
+      OPENBAO_ROTATION_OLD_REVOKE: ${{ vars.OPENBAO_ROTATION_OLD_REVOKE }}
+      OPENBAO_ROTATION_OLD_VERIFIER: ${{ vars.OPENBAO_ROTATION_OLD_VERIFIER }}
+      OPENBAO_ROTATION_HEALTH_VERIFIER: ${{ vars.OPENBAO_ROTATION_HEALTH_VERIFIER }}
+      OPENBAO_ROTATION_CONFIRMATION: ${{ inputs.rotation_confirmation }}
+      OPENBAO_REVOCATION_IDENTITY: ${{ inputs.identity }}
+      OPENBAO_REVOCATION_DRIVER: ${{ vars.OPENBAO_REVOCATION_DRIVER }}
+      OPENBAO_REVOCATION_TARGET_DENY_VERIFIER: ${{ vars.OPENBAO_REVOCATION_TARGET_DENY_VERIFIER }}
+      OPENBAO_REVOCATION_UNRELATED_VERIFIER: ${{ vars.OPENBAO_REVOCATION_UNRELATED_VERIFIER }}
+      OPENBAO_REVOCATION_CROSS_ENV_DENY_VERIFIER: ${{ vars.OPENBAO_REVOCATION_CROSS_ENV_DENY_VERIFIER }}
+      OPENBAO_REVOCATION_AUDIT_VERIFIER: ${{ vars.OPENBAO_REVOCATION_AUDIT_VERIFIER }}
+      OPENBAO_REVOCATION_CONFIRMATION: ${{ inputs.revocation_confirmation }}
+      OPENBAO_PROVIDER_EFFECTS_DISABLED_ACKNOWLEDGED: true
+    steps:
+      - name: Check out exact protected source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.expected_source_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify exact branch and protected approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$(git rev-parse HEAD)" == "$CODESTRA_SOURCE_SHA" ]]
+          [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)" == "$CODESTRA_SOURCE_SHA" ]]
+          scripts/verify_environment_approval.sh
+      - name: Prove CAS rotation agent refresh old denial and health
+        run: |
+          umask 077
+          export OPENBAO_ROTATION_EVIDENCE="$RUNNER_TEMP/openbao-certification/rotation.json"
+          mkdir -p "$(dirname "$OPENBAO_ROTATION_EVIDENCE")"
+          export BAO_TOKEN="$(< "$OPENBAO_OPERATOR_TOKEN_FILE")"
+          scripts/rotate-test.sh
+          unset BAO_TOKEN
+      - name: Prove targeted revocation isolation and audit alert
+        run: |
+          export OPENBAO_REVOCATION_EVIDENCE="$RUNNER_TEMP/openbao-certification/revocation.json"
+          scripts/revoke-test.sh
+      - name: Upload only sanitized certification evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-runtime-certification-${{ inputs.environment }}-${{ inputs.identity }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/openbao-certification/
+          if-no-files-found: error
+          retention-days: 90

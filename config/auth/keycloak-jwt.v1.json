@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "status": "PREPARED_DISABLED",
+  "mount": "jwt-codestra",
+  "discoveryUrl": "https://auth.codestra.co/realms/codestra",
+  "boundIssuer": "https://auth.codestra.co/realms/codestra",
+  "boundAudience": "openbao",
+  "userClaim": "sub",
+  "requiredClaims": ["iss", "sub", "aud", "azp", "iat", "exp", "jti", "codestra_environment"],
+  "clockSkewLeewaySeconds": 30,
+  "expirationLeewaySeconds": -1,
+  "notBeforeLeewaySeconds": -1,
+  "maximumJwtLifetimeSeconds": 300,
+  "wildcardClientMatchingAllowed": false,
+  "celClaimValidationRequired": true,
+  "jtiReplayCacheRequired": true,
+  "jtiReplayCacheImplemented": true,
+  "authPluginManifest": "plugins/codestra-jwt-replay/plugin.v1.json",
+  "defaultRole": "",
+  "roleSource": "config/workload-secret-authority.v1.json",
+  "runtimeApplyAuthorized": false
+}

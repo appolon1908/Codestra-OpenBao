@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.codestra.co/orbit/v2/adoption-manifest.schema.json",
+  "title": "Codestra Orbit repository adoption manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "repository",
+    "classification",
+    "targetBranch",
+    "adoptionMode",
+    "requirements",
+    "status"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "2.0.0"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "classification": {
+      "enum": [
+        "source-authority",
+        "first-party-ui",
+        "vendor-operator-ui",
+        "backend-api",
+        "runtime-infrastructure",
+        "observability-backend",
+        "documentation",
+        "inventory-required"
+      ]
+    },
+    "targetBranch": {
+      "type": "string",
+      "pattern": "^codex/codestra-orbit-v2-[a-z0-9-]+$"
+    },
+    "adoptionMode": {
+      "enum": [
+        "package-authority",
+        "full-shell",
+        "operator-theme-sso",
+        "contract-only",
+        "n/a-no-rendered-interface",
+        "inventory-required"
+      ]
+    },
+    "domain": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "domainStatus": {
+      "enum": [
+        "registered",
+        "verification-required",
+        "pending-registration",
+        "not-applicable"
+      ]
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "status": {
+      "enum": [
+        "not-started",
+        "branch-created",
+        "implementation-in-progress",
+        "blocked",
+        "candidate",
+        "certified"
+      ]
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

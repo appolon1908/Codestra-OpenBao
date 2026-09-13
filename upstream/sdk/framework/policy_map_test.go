@@ -1,0 +1,33 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package framework
+
+import (
+	"reflect"
+	"testing"
+
+	"github.com/openbao/openbao/sdk/v2/logical"
+)
+
+func TestPolicyMap(t *testing.T) {
+	p := &PolicyMap{}
+	p.Name = "foo"
+	s := new(logical.InmemStorage)
+
+	ctx := t.Context()
+
+	p.Put(ctx, s, "foo", map[string]interface{}{"value": "bar"})
+	p.Put(ctx, s, "bar", map[string]interface{}{"value": "foo,baz "})
+
+	// Read via API
+	actual, err := p.Policies(ctx, s, "foo", "bar")
+	if err != nil {
+		t.Fatalf("bad: %#v", err)
+	}
+
+	expected := []string{"bar", "baz", "foo"}
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("bad: %#v", actual)
+	}
+}

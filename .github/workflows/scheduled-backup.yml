@@ -1,0 +1,58 @@
+name: OpenBao scheduled production backup
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbao-production-scheduled-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Encrypt verify and copy production Raft snapshot off host
+    if: github.ref == 'refs/heads/main'
+    environment: openbao-production-backup-scheduled
+    runs-on: [self-hosted, linux, x64, codestra-openbao]
+    timeout-minutes: 45
+    env:
+      CODESTRA_ENVIRONMENT: production
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OPERATOR_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OPERATOR_KEY_PATH }}
+      OPENBAO_OPERATOR_TOKEN_FILE: ${{ vars.OPENBAO_OPERATOR_TOKEN_FILE }}
+      OPENBAO_BACKUP_ROOT: ${{ vars.OPENBAO_BACKUP_ROOT }}
+      OPENBAO_AGE_RECIPIENT_FILE: ${{ vars.OPENBAO_AGE_RECIPIENT_FILE }}
+      OPENBAO_AGE_IDENTITY_FILE: ${{ vars.OPENBAO_AGE_IDENTITY_FILE }}
+      OPENBAO_OFFHOST_REMOTE: ${{ vars.OPENBAO_OFFHOST_REMOTE }}
+      OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION: ${{ vars.OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION }}
+    steps:
+      - name: Check out exact production authority
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: production
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify production source and take immutable off-host snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          export OPENBAO_BACKUP_EVIDENCE="$RUNNER_TEMP/openbao-production-backup-evidence.json"
+          production_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/production" --jq .object.sha)"
+          [[ "$(git rev-parse HEAD)" == "$production_sha" ]]
+          [[ "$(jq -r .runtimeApplyAuthorized config/environments/production/environment.json)" == true ]]
+          export BAO_TOKEN="$(< "$OPENBAO_OPERATOR_TOKEN_FILE")"
+          scripts/backup.sh
+          unset BAO_TOKEN
+      - name: Upload sanitized evidence but never snapshot data
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-production-backup-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/openbao-production-backup-evidence.json
+          if-no-files-found: error
+          retention-days: 90

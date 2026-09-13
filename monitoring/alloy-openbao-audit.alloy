@@ -1,0 +1,39 @@
+local.file_match "openbao_audit" {
+  path_targets = [{
+    __path__    = "/var/log/openbao/openbao-audit.jsonl",
+    service     = "openbao",
+    environment = sys.env("CODESTRA_ENVIRONMENT"),
+  }]
+}
+
+loki.source.file "openbao_audit" {
+  targets    = local.file_match.openbao_audit.targets
+  forward_to = [loki.process.openbao_audit.receiver]
+}
+
+loki.process "openbao_audit" {
+  stage.json {
+    expressions = {
+      type       = "type",
+      request_id = "request.id",
+      operation  = "request.operation",
+      path       = "request.path",
+      auth_error = "error",
+    }
+  }
+
+  stage.labels {
+    values = {
+      type      = "",
+      operation = "",
+    }
+  }
+
+  forward_to = [loki.write.codestra.receiver]
+}
+
+loki.write "codestra" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

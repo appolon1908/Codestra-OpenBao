@@ -1,0 +1,91 @@
+name: OpenBao immutable image authority
+
+on:
+  pull_request:
+  push:
+    branches: [development, test, staging, production, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbao-image-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image-build:
+    name: OpenBao / image-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Set up exact plugin build toolchain
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.25.13'
+          cache: false
+      - name: Pull and verify the exact official linux/amd64 image
+        run: |
+          image="$(jq -r .image_reference CODESTRA_UPSTREAM.json)"
+          expected_digest="$(jq -r .image_digest CODESTRA_UPSTREAM.json)"
+          expected_source="$(jq -r .upstream_ref CODESTRA_UPSTREAM.json)"
+          expected_version="$(jq -r .upstream_version CODESTRA_UPSTREAM.json)"
+          docker pull --platform linux/amd64 "$image" > /dev/null
+          inspect="$(docker image inspect "$image" --format '{{json .}}')"
+          test "$(jq -r .Architecture <<<"$inspect")" = amd64
+          test "$(jq -r .Os <<<"$inspect")" = linux
+          jq -e --arg expected "ghcr.io/openbao/openbao@${expected_digest}" \
+            '.RepoDigests | index($expected) != null' <<<"$inspect" > /dev/null
+          version="$(docker run --rm --platform linux/amd64 "$image" version)"
+          grep -Fq "OpenBao v${expected_version}" <<<"$version"
+          grep -Fq "(${expected_source})" <<<"$version"
+      - name: Reproduce the exact replay-protected JWT plugin
+        run: |
+          mkdir -p "$RUNNER_TEMP/openbao-runtime-plugin"
+          output="$RUNNER_TEMP/openbao-runtime-plugin/codestra-jwt-replay"
+          OPENBAO_PLUGIN_OUTPUT="$output" scripts/build_jti_plugin.sh
+          test "$(sha256sum "$output" | awk '{print $1}')" = \
+            "$(jq -r .binarySha256 plugins/codestra-jwt-replay/plugin.v1.json)"
+      - name: Upload the exact secret-free runtime plugin
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-runtime-plugin-${{ github.sha }}
+          path: ${{ runner.temp }}/openbao-runtime-plugin/
+          if-no-files-found: error
+          retention-days: 30
+
+  sbom-provenance:
+    name: OpenBao / sbom-provenance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Set up exact plugin build toolchain
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.25.13'
+          cache: false
+      - name: Install checksum-verified SBOM generator
+        run: scripts/install_ci_tools.sh syft
+      - name: Regenerate and verify exact package inventory
+        run: |
+          sbom="$(mktemp)"
+          trap 'find "$sbom" -type f -delete' EXIT
+          image="$(jq -r .image_reference CODESTRA_UPSTREAM.json)"
+          syft scan "registry:${image}" -o "cyclonedx-json=${sbom}" > /dev/null
+          python3 scripts/verify_sbom.py --candidate "$sbom"
+          plugin_dir="$RUNNER_TEMP/plugin-sbom"
+          mkdir -p "$plugin_dir"
+          OPENBAO_PLUGIN_OUTPUT="$plugin_dir/codestra-jwt-replay" scripts/build_jti_plugin.sh
+          plugin_sbom="$(mktemp)"
+          syft scan "file:$plugin_dir/codestra-jwt-replay" \
+            -o "cyclonedx-json=$plugin_sbom" >/dev/null
+          python3 scripts/verify_plugin_supply_chain.py --sbom "$plugin_sbom"
+          (cd artifacts/supply-chain && sha256sum -c SHA256SUMS)

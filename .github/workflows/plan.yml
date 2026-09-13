@@ -1,0 +1,91 @@
+name: OpenBao protected runtime plan
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Exact environment branch and remote state to inspect
+        required: true
+        type: choice
+        options: [development, test, staging, production]
+      expected_source_sha:
+        description: Exact current protected environment-branch SHA
+        required: true
+        type: string
+      change_id:
+        description: Reviewed CHG-* identifier
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: openbao-${{ inputs.environment }}-plan
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: OpenBao protected plan only
+    environment: openbao-${{ inputs.environment }}-plan
+    runs-on: [self-hosted, linux, x64, codestra-openbao]
+    timeout-minutes: 45
+    env:
+      CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+      CHANGE_ID: ${{ inputs.change_id }}
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OPERATOR_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OPERATOR_KEY_PATH }}
+      OPENBAO_OPERATOR_TOKEN_FILE: ${{ vars.OPENBAO_OPERATOR_TOKEN_FILE }}
+    steps:
+      - name: Check out the exact requested source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.expected_source_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up pinned Python toolchain
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Verify exact current environment source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_SOURCE_SHA" ]]
+          [[ "$CHANGE_ID" =~ ^CHG-[A-Z0-9][A-Z0-9._-]{7,}$ ]]
+          branch_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)"
+          [[ "$branch_sha" == "$EXPECTED_SOURCE_SHA" ]]
+          test -z "$(git status --porcelain)"
+      - name: Re-run exact source validation
+        run: |
+          python3 -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
+          scripts/validate.sh
+      - name: Read remote state and create checksummed plan only
+        run: |
+          for path in "$BAO_CACERT" "$BAO_CLIENT_CERT" "$BAO_CLIENT_KEY" "$OPENBAO_OPERATOR_TOKEN_FILE"; do
+            test -f "$path" && test ! -L "$path"
+          done
+          umask 077
+          export BAO_TOKEN="$(< "$OPENBAO_OPERATOR_TOKEN_FILE")"
+          export OPENBAO_PLAN_OUTPUT="$RUNNER_TEMP/openbao-plan/plan.json"
+          mkdir -p "$(dirname "$OPENBAO_PLAN_OUTPUT")"
+          scripts/plan.sh
+          unset BAO_TOKEN
+          jq -e --arg sha "$EXPECTED_SOURCE_SHA" --arg environment "$CODESTRA_ENVIRONMENT" '
+            .planSourceSha == $sha and .environment == $environment and
+            .planOnly == true and .counts.destroy == 0
+          ' "$OPENBAO_PLAN_OUTPUT" > /dev/null
+      - name: Upload only the sanitized exact plan and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-plan-${{ inputs.environment }}-${{ inputs.expected_source_sha }}
+          path: |
+            ${{ runner.temp }}/openbao-plan/plan.json
+            ${{ runner.temp }}/openbao-plan/plan.json.sha256
+          if-no-files-found: error
+          retention-days: 30

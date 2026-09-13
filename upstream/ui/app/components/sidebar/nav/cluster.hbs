@@ -1,0 +1,58 @@
+<Hds::SideNav::Portal @ariaLabel="Cluster Navigation Links" data-test-sidebar-nav-panel="Cluster" as |Nav|>
+  <Nav.Title data-test-sidebar-nav-heading="OpenBao">OpenBao</Nav.Title>
+
+  <Nav.Link
+    @route="vault.cluster.secrets"
+    @current-when="vault.cluster.secrets vault.cluster.settings.mount-secret-backend vault.cluster.settings.configure-secret-backend"
+    @text="Secrets engines"
+    data-test-sidebar-nav-link="Secrets engines"
+  />
+  {{#if (has-permission "access")}}
+    <Nav.Link
+      @route={{get (route-params-for "access") "route"}}
+      @models={{get (route-params-for "access") "models"}}
+      @current-when="vault.cluster.access vault.cluster.settings.auth"
+      @text="Access"
+      @hasSubItems={{true}}
+      data-test-sidebar-nav-link="Access"
+    />
+  {{/if}}
+  {{#if (has-permission "policies")}}
+    <Nav.Link
+      @route="vault.cluster.policies"
+      @models={{get (route-params-for "policies") "models"}}
+      @text="Policies"
+      @hasSubItems={{true}}
+      data-test-sidebar-nav-link="Policies"
+    />
+  {{/if}}
+  {{#if (has-permission "tools")}}
+    <Nav.Link
+      @route="vault.cluster.tools.tool"
+      @models={{get (route-params-for "tools") "models"}}
+      @text="Tools"
+      @hasSubItems={{true}}
+      data-test-sidebar-nav-link="Tools"
+    />
+  {{/if}}
+
+  {{#if (and this.namespace.inRootNamespace (has-permission "status" routeParams=(array "raft" "seal")))}}
+    <Nav.Title data-test-sidebar-nav-heading="Monitoring">Monitoring</Nav.Title>
+  {{/if}}
+  {{#if (and this.cluster.usingRaft this.namespace.inRootNamespace (has-permission "status" routeParams="raft"))}}
+    <Nav.Link
+      @route="vault.cluster.storage"
+      @model={{this.cluster.name}}
+      @text="Raft Storage"
+      data-test-sidebar-nav-link="Raft Storage"
+    />
+  {{/if}}
+  {{#if (and this.namespace.inRootNamespace (has-permission "status" routeParams="seal"))}}
+    <Nav.Link
+      @route="vault.cluster.settings.seal"
+      @model={{this.cluster.name}}
+      @text="Seal OpenBao"
+      data-test-sidebar-nav-link="Seal OpenBao"
+    />
+  {{/if}}
+</Hds::SideNav::Portal>

@@ -1,0 +1,50 @@
+name: OpenBao read-only drift detection
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbao-drift-detection
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    name: Read-only desired versus live drift
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [development, test, staging, production]
+    environment: openbao-${{ matrix.environment }}-observe
+    runs-on: [self-hosted, linux, x64, codestra-openbao]
+    timeout-minutes: 30
+    env:
+      CODESTRA_ENVIRONMENT: ${{ matrix.environment }}
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OBSERVER_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OBSERVER_KEY_PATH }}
+      OPENBAO_OPERATOR_TOKEN_FILE: ${{ vars.OPENBAO_OBSERVER_TOKEN_FILE }}
+      OPENBAO_DRIFT_METRIC_FILE: ${{ vars.OPENBAO_DRIFT_METRIC_FILE }}
+      OPENBAO_RUNTIME_METRIC_FILE: ${{ vars.OPENBAO_RUNTIME_METRIC_FILE }}
+      OPENBAO_CONTAINER_NAME: ${{ vars.OPENBAO_CONTAINER_NAME }}
+      OPENBAO_DATA_DIR: ${{ vars.OPENBAO_DATA_DIR }}
+    steps:
+      - name: Check out exact current environment authority
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ matrix.environment }}
+          persist-credentials: false
+      - name: Compare sanitized live metadata with protected Git
+        run: |
+          for path in "$BAO_CACERT" "$BAO_CLIENT_CERT" "$BAO_CLIENT_KEY" "$OPENBAO_OPERATOR_TOKEN_FILE"; do
+            test -f "$path" && test ! -L "$path"
+          done
+          export BAO_TOKEN="$(< "$OPENBAO_OPERATOR_TOKEN_FILE")"
+          scripts/export_runtime_metrics.sh
+          scripts/drift.sh
+          unset BAO_TOKEN

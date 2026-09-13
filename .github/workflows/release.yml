@@ -1,0 +1,165 @@
+name: OpenBao immutable production release
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_source_sha:
+        description: Exact current production branch SHA
+        required: true
+        type: string
+      release_id:
+        description: Reviewed immutable release identifier
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  attestations: write
+  contents: write
+  id-token: write
+
+concurrency:
+  group: openbao-production-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: OpenBao immutable release
+    if: github.ref == 'refs/heads/production'
+    environment: openbao-release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CODESTRA_ENVIRONMENT: production
+      OPENBAO_APPROVAL_ENVIRONMENT: openbao-release
+    steps:
+      - name: Check out exact production source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up pinned Python toolchain
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Set up exact plugin build toolchain
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.25.13'
+          cache: false
+      - name: Verify exact protected source and release identifier
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          [[ "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_SOURCE_SHA" == "$GITHUB_SHA" ]]
+          [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/production" --jq .object.sha)" == "$EXPECTED_SOURCE_SHA" ]]
+          [[ "$RELEASE_ID" =~ ^openbao-v[0-9]+\.[0-9]+\.[0-9]+-[0-9]{8}\.[0-9]+$ ]]
+          [[ "$(gh api "repos/${GITHUB_REPOSITORY}/immutable-releases" --jq .enabled)" == true ]]
+          scripts/verify_environment_approval.sh
+          test -z "$(git status --porcelain)"
+      - name: Install pinned validation dependencies
+        run: |
+          python3 -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
+          scripts/install_ci_tools.sh gitleaks
+      - name: Re-run exact release source gates
+        run: |
+          scripts/validate.sh
+          scripts/security.sh
+      - name: Build deterministic secret-free rollback package
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          release_dir="$RUNNER_TEMP/release"
+          mkdir -p "$release_dir/package/plugins"
+          python3 scripts/build_release.py --expected-source-sha "$EXPECTED_SOURCE_SHA" \
+            --output "$release_dir/package/release-manifest.json"
+          OPENBAO_PLUGIN_OUTPUT="$release_dir/package/plugins/codestra-jwt-replay" \
+            scripts/build_jti_plugin.sh
+          mkdir -p "$release_dir/package/supply-chain"
+          install -m 0444 \
+            artifacts/supply-chain/codestra-jwt-replay-v1.1.0-linux-amd64.cdx.json \
+            artifacts/supply-chain/codestra-jwt-replay-v1.1.0-linux-amd64.trivy.json \
+            "$release_dir/package/supply-chain/"
+          git archive --format=tar --output="$release_dir/package/source.tar" "$EXPECTED_SOURCE_SHA"
+          (cd "$release_dir/package" && sha256sum \
+            release-manifest.json source.tar \
+            plugins/codestra-jwt-replay plugins/codestra-jwt-replay.sha256 \
+            supply-chain/codestra-jwt-replay-v1.1.0-linux-amd64.cdx.json \
+            supply-chain/codestra-jwt-replay-v1.1.0-linux-amd64.trivy.json > SHA256SUMS)
+          source_epoch="$(git show -s --format=%ct "$EXPECTED_SOURCE_SHA")"
+          tar --sort=name --mtime="@${source_epoch}" --owner=0 --group=0 --numeric-owner \
+            -C "$release_dir/package" -czf "$release_dir/${RELEASE_ID}.tar.gz" \
+            SHA256SUMS release-manifest.json source.tar plugins supply-chain
+          (cd "$release_dir" && sha256sum "${RELEASE_ID}.tar.gz" > "${RELEASE_ID}.tar.gz.sha256")
+      - name: Install pinned Sigstore client
+        uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62
+      - name: Sign the exact release bundle with GitHub OIDC
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          cosign sign-blob --yes \
+            --bundle "$RUNNER_TEMP/release/${RELEASE_ID}.sigstore.json" \
+            "$RUNNER_TEMP/release/${RELEASE_ID}.tar.gz"
+          cosign verify-blob \
+            --bundle "$RUNNER_TEMP/release/${RELEASE_ID}.sigstore.json" \
+            --certificate-identity "https://github.com/appolon1908-hue/Codestra-OpenBao/.github/workflows/release.yml@refs/heads/production" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$RUNNER_TEMP/release/${RELEASE_ID}.tar.gz" >/dev/null
+      - name: Attest exact release provenance
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
+        with:
+          subject-path: ${{ runner.temp }}/release/${{ inputs.release_id }}.tar.gz
+      - name: Upload immutable release evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ inputs.release_id }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/release/${{ inputs.release_id }}.tar.gz
+            ${{ runner.temp }}/release/${{ inputs.release_id }}.tar.gz.sha256
+            ${{ runner.temp }}/release/${{ inputs.release_id }}.sigstore.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish and read back the immutable GitHub release
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          release_dir="$RUNNER_TEMP/release"
+          [[ "$(gh api "repos/${GITHUB_REPOSITORY}/immutable-releases" --jq .enabled)" == true ]]
+          if gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'Release identifier already exists; immutable substitution is prohibited.' >&2
+            exit 2
+          fi
+          gh release create "$RELEASE_ID" \
+            --repo "$GITHUB_REPOSITORY" --target "$EXPECTED_SOURCE_SHA" --draft \
+            --title "$RELEASE_ID" \
+            --notes "Immutable Codestra OpenBao release from production source ${EXPECTED_SOURCE_SHA}. Provider business effects remain disabled."
+          gh release upload "$RELEASE_ID" \
+            "$release_dir/${RELEASE_ID}.tar.gz" \
+            "$release_dir/${RELEASE_ID}.tar.gz.sha256" \
+            "$release_dir/${RELEASE_ID}.sigstore.json" \
+            --repo "$GITHUB_REPOSITORY"
+          draft_release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_ID}")"
+          jq -e --arg tag "$RELEASE_ID" '
+            .tag_name == $tag and .draft == true and .immutable == false and
+            ([.assets[].name] | sort) == ([$tag + ".sigstore.json", $tag + ".tar.gz", $tag + ".tar.gz.sha256"] | sort) and
+            ([.assets[].digest] | all(startswith("sha256:")))
+          ' <<<"$draft_release" >/dev/null
+          draft_release_id="$(jq -r .id <<<"$draft_release")"
+          [[ "$draft_release_id" =~ ^[0-9]+$ ]]
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${draft_release_id}" \
+            -F draft=false >/dev/null
+          [[ "$(gh api "repos/${GITHUB_REPOSITORY}/commits/${RELEASE_ID}" --jq .sha)" == "$EXPECTED_SOURCE_SHA" ]]
+          release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_ID}")"
+          jq -e --arg tag "$RELEASE_ID" '
+            .tag_name == $tag and .draft == false and .prerelease == false and
+            .immutable == true and
+            ([.assets[].name] | sort) == ([$tag + ".sigstore.json", $tag + ".tar.gz", $tag + ".tar.gz.sha256"] | sort) and
+            ([.assets[].digest] | all(startswith("sha256:")))
+          ' <<<"$release" >/dev/null
+          echo 'OPENBAO_IMMUTABLE_GITHUB_RELEASE=PASS'

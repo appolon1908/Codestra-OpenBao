@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-09-01T19:25:00+02:00",
+  "upstreamProject": "https://github.com/openbao/openbao",
+  "upstreamVersion": "2.6.2",
+  "upstreamTag": "v2.6.2",
+  "upstreamGitSha": "dd9c19c37a878cf4a81b18efb8d6f0599c7da923",
+  "releaseUrl": "https://github.com/openbao/openbao/releases/tag/v2.6.2",
+  "image": "ghcr.io/openbao/openbao@sha256:e29524ba7c3f20d01f562c481e3eccbad6c91df45a2f2531433da4951e408cff",
+  "multiArchitectureIndexDigest": "sha256:11fd73a2102cda9c55d5d881a8c3210303146a7ec1e8ac76f526e175c6d24641",
+  "platform": "linux/amd64",
+  "reportedBinaryVersion": "OpenBao v2.6.2 (dd9c19c37a878cf4a81b18efb8d6f0599c7da923)",
+  "upstreamCosignSignature": {
+    "verified": false,
+    "reason": "no signatures found on the official GHCR platform manifest"
+  },
+  "releaseRequirements": {
+    "codestraSignatureRequired": true,
+    "codestraSlsaProvenanceRequired": true,
+    "exactDigestDeploymentRequired": true
+  }
+}

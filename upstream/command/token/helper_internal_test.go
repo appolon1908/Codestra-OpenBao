@@ -1,0 +1,59 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package token
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+// TestCommand re-uses the existing Test function to ensure proper behavior of
+// the internal token helper
+func TestCommand(t *testing.T) {
+	helper, err := NewInternalTokenHelper()
+	if err != nil {
+		t.Fatal(err)
+	}
+	Test(t, helper)
+}
+
+func TestInternalHelperFilePerms(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	helper, err := NewInternalTokenHelper()
+	if err != nil {
+		t.Fatal(err)
+	}
+	helper.tokenPath = filepath.Join(tmpDir, ".vault-token")
+
+	f, err := os.Create(helper.tokenPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	fi, err := os.Stat(helper.tokenPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if fi.Mode().Perm()&0o04 != 0o04 {
+		t.Fatalf("expected world-readable/writable permission bits, got: %o", fi.Mode().Perm())
+	}
+
+	err = helper.Store("bogus_token")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fi, err = os.Stat(helper.tokenPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if fi.Mode().Perm()&0o04 != 0 {
+		t.Fatalf("expected no world-readable/writable permission bits, got: %o", fi.Mode().Perm())
+	}
+}

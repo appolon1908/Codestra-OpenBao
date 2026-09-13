@@ -1,0 +1,114 @@
+name: OpenBao exact saved-plan deployment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      expected_source_sha:
+        required: true
+        type: string
+      plan_run_id:
+        required: true
+        type: string
+      plan_sha256:
+        required: true
+        type: string
+      confirmation:
+        required: true
+        type: string
+      release_id:
+        required: false
+        default: NOT_APPLICABLE
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  apply:
+    name: OpenBao exact saved-plan apply
+    environment: openbao-${{ inputs.environment }}
+    runs-on: [self-hosted, linux, x64, codestra-openbao]
+    timeout-minutes: 60
+    env:
+      CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      CODESTRA_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+      OPENBAO_EXPECTED_PLAN_SHA256: ${{ inputs.plan_sha256 }}
+      OPENBAO_APPLY_CONFIRMATION: ${{ inputs.confirmation }}
+      OPENBAO_RELEASE_ID: ${{ inputs.release_id }}
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OPERATOR_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OPERATOR_KEY_PATH }}
+      OPENBAO_OPERATOR_TOKEN_FILE: ${{ vars.OPENBAO_OPERATOR_TOKEN_FILE }}
+      OPENBAO_CONTAINER_NAME: ${{ vars.OPENBAO_CONTAINER_NAME }}
+      OPENBAO_PLUGIN_BINARY: ${{ vars.OPENBAO_PLUGIN_BINARY }}
+      OPENBAO_BACKUP_ROOT: ${{ vars.OPENBAO_BACKUP_ROOT }}
+      OPENBAO_AGE_RECIPIENT_FILE: ${{ vars.OPENBAO_AGE_RECIPIENT_FILE }}
+      OPENBAO_AGE_IDENTITY_FILE: ${{ vars.OPENBAO_AGE_IDENTITY_FILE }}
+      OPENBAO_OFFHOST_REMOTE: ${{ vars.OPENBAO_OFFHOST_REMOTE }}
+      OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION: ${{ vars.OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION }}
+    steps:
+      - name: Check out the exact certified source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.expected_source_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up pinned Python toolchain
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Verify exact current environment branch and approval inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLAN_RUN_ID: ${{ inputs.plan_run_id }}
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          [[ "$CODESTRA_ENVIRONMENT" =~ ^(development|test|staging|production)$ ]]
+          [[ "$CODESTRA_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$PLAN_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$OPENBAO_EXPECTED_PLAN_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$OPENBAO_APPLY_CONFIRMATION" == "APPLY_EXACT_OPENBAO_PLAN_${CODESTRA_SOURCE_SHA}" ]]
+          [[ "$(git rev-parse HEAD)" == "$CODESTRA_SOURCE_SHA" ]]
+          branch_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)"
+          [[ "$branch_sha" == "$CODESTRA_SOURCE_SHA" ]]
+          if [[ "$CODESTRA_ENVIRONMENT" == production ]]; then
+            [[ "$RELEASE_ID" =~ ^openbao-v[0-9]+\.[0-9]+\.[0-9]+-[0-9]{8}\.[0-9]+$ ]]
+            [[ "$(gh api "repos/${GITHUB_REPOSITORY}/commits/${RELEASE_ID}" --jq .sha)" == "$CODESTRA_SOURCE_SHA" ]]
+            release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_ID}")"
+            jq -e --arg tag "$RELEASE_ID" '
+              .tag_name == $tag and .draft == false and .prerelease == false and
+              .immutable == true and
+              ([.assets[].name] | sort) == ([$tag + ".sigstore.json", $tag + ".tar.gz", $tag + ".tar.gz.sha256"] | sort) and
+              ([.assets[].digest] | all(startswith("sha256:")))
+            ' <<<"$release" >/dev/null
+          else
+            [[ "$RELEASE_ID" == NOT_APPLICABLE ]]
+          fi
+          test -z "$(git status --porcelain)"
+      - name: Download only the exact reviewed plan run artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: openbao-plan-${{ inputs.environment }}-${{ inputs.expected_source_sha }}
+          path: ${{ runner.temp }}/openbao-plan
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.plan_run_id }}
+      - name: Back up, apply only the saved plan, and independently read back
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPENBAO_SAVED_PLAN: ${{ runner.temp }}/openbao-plan/plan.json
+          OPENBAO_SAVED_PLAN_CHECKSUM: ${{ runner.temp }}/openbao-plan/plan.json.sha256
+          OPENBAO_DEPLOYMENT_EVIDENCE_DIR: ${{ runner.temp }}/openbao-deployment-evidence
+        run: scripts/apply_saved_plan.sh
+      - name: Upload sanitized deployment evidence only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-${{ inputs.environment }}-readback-${{ inputs.expected_source_sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/openbao-deployment-evidence/
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,164 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package vault
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"slices"
+	"sync"
+	"sync/atomic"
+
+	"github.com/openbao/openbao/sdk/v2/helper/consts"
+	"github.com/openbao/openbao/sdk/v2/logical"
+)
+
+var StdAllowedHeaders = []string{
+	"Content-Type",
+	"Authorization",
+	consts.AuthHeaderName,
+	consts.MFAHeaderName,
+	consts.NoRequestForwardingHeaderName,
+	consts.WrapFormatHeaderName,
+	consts.WrapTTLHeaderName,
+	"X-Requested-With",
+	"X-Vault-AWS-IAM-Server-ID",
+	"X-Vault-Policy-Override",
+}
+
+// CORSConfig stores the state of the CORS configuration.
+type CORSConfig struct {
+	sync.RWMutex     `json:"-"`
+	core             *Core
+	Enabled          *uint32  `json:"enabled"`
+	AllowedOrigins   []string `json:"allowed_origins,omitempty"`
+	AllowedHeaders   []string `json:"allowed_headers,omitempty"`
+	AllowCredentials bool     `json:"allow_credentials,omitempty"`
+}
+
+func (c *Core) saveCORSConfig(ctx context.Context) error {
+	enabled := atomic.LoadUint32(c.corsConfig.Enabled)
+	localConfig := &CORSConfig{
+		Enabled: &enabled,
+	}
+
+	c.corsConfig.RLock()
+	localConfig.AllowedOrigins = c.corsConfig.AllowedOrigins
+	localConfig.AllowedHeaders = c.corsConfig.AllowedHeaders
+	localConfig.AllowCredentials = c.corsConfig.AllowCredentials
+	c.corsConfig.RUnlock()
+
+	entry, err := logical.StorageEntryJSON("config/cors", localConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create CORS config entry: %w", err)
+	}
+
+	if err := c.systemBarrierView.Put(ctx, entry); err != nil {
+		return fmt.Errorf("failed to save CORS config: %w", err)
+	}
+
+	return nil
+}
+
+// This should only be called with the core state lock held for writing
+func (c *Core) loadCORSConfig(ctx context.Context) error {
+	// Load the config in
+	out, err := c.systemBarrierView.Get(ctx, "config/cors")
+	if err != nil {
+		return fmt.Errorf("failed to read CORS config: %w", err)
+	}
+	if out == nil {
+		return nil
+	}
+
+	config := new(CORSConfig)
+	if err = out.DecodeJSON(config); err != nil {
+		return err
+	}
+
+	if config.Enabled == nil {
+		config.Enabled = new(uint32)
+	}
+
+	config.core = c
+	c.corsConfig = config
+
+	return nil
+}
+
+// Enable takes either a '*' or a comma-separated list of URLs that can make
+// cross-origin requests to Vault.
+func (c *CORSConfig) Enable(ctx context.Context, urls []string, headers []string, allow_credentials bool) error {
+	if len(urls) == 0 {
+		return errors.New("at least one origin or the wildcard must be provided")
+	}
+
+	if slices.Contains(urls, "*") && len(urls) > 1 {
+		return errors.New("to allow all origins the '*' must be the only value for allowed_origins")
+	}
+
+	c.Lock()
+	c.AllowedOrigins = urls
+
+	// Start with the standard headers to Vault accepts.
+	c.AllowedHeaders = append([]string{}, StdAllowedHeaders...)
+
+	// Whether to return the "Access-Control-Allow-Credentials: true" header
+	c.AllowCredentials = allow_credentials
+
+	// Allow the user to add additional headers to the list of
+	// headers allowed on cross-origin requests.
+	if len(headers) > 0 {
+		c.AllowedHeaders = append(c.AllowedHeaders, headers...)
+	}
+	c.Unlock()
+
+	// as true
+	atomic.StoreUint32(c.Enabled, 1)
+
+	return c.core.saveCORSConfig(ctx)
+}
+
+// IsEnabled returns the value of CORSConfig.Enabled as bool.
+func (c *CORSConfig) IsEnabled() bool {
+	return atomic.LoadUint32(c.Enabled) == 1
+}
+
+// Disable sets CORS to disabled and clears the allowed origins & headers.
+func (c *CORSConfig) Disable(ctx context.Context) error {
+	// as false
+	atomic.StoreUint32(c.Enabled, 0)
+	c.Lock()
+
+	c.AllowedOrigins = nil
+	c.AllowedHeaders = nil
+	c.AllowCredentials = false
+
+	c.Unlock()
+
+	return c.core.saveCORSConfig(ctx)
+}
+
+// IsValidOrigin determines if the origin of the request is allowed to make
+// cross-origin requests based on the CORSConfig.
+func (c *CORSConfig) IsValidOrigin(origin string) bool {
+	// If we aren't enabling CORS then all origins are valid
+	if !c.IsEnabled() {
+		return true
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+
+	if len(c.AllowedOrigins) == 0 {
+		return false
+	}
+
+	if len(c.AllowedOrigins) == 1 && c.AllowedOrigins[0] == "*" {
+		return true
+	}
+
+	return slices.Contains(c.AllowedOrigins, origin)
+}

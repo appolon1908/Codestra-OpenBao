@@ -1,0 +1,85 @@
+name: OpenBao security gates
+
+on:
+  pull_request:
+  push:
+    branches: [development, test, staging, production, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbao-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    name: OpenBao / security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact source and history
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install checksum-verified scanner
+        run: scripts/install_ci_tools.sh gitleaks
+      - name: Run source, history, checksum and VEX gates
+        run: scripts/security.sh
+
+  secret-scan:
+    name: OpenBao / secret-scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact source and history
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install checksum-verified secret scanner
+        run: scripts/install_ci_tools.sh gitleaks
+      - name: Scan working tree and full Git history without artifacts
+        run: |
+          scan_dir="$(mktemp -d)"
+          trap 'find "$scan_dir" -type f -delete; find "$scan_dir" -depth -type d -empty -delete' EXIT
+          scripts/reject_repository_secrets.sh .
+          gitleaks dir . --no-banner --redact --config .gitleaks.toml \
+            --report-format json --report-path "$scan_dir/working-tree.json"
+          gitleaks git . --no-banner --redact --config .gitleaks.toml \
+            --report-format json --report-path "$scan_dir/history.json" --log-opts='--all'
+          test "$(jq length "$scan_dir/working-tree.json")" -eq 0
+          test "$(jq length "$scan_dir/history.json")" -eq 0
+
+  image-vulnerability:
+    name: OpenBao / image-vulnerability
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Set up exact plugin build toolchain
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.25.13'
+          cache: false
+      - name: Install checksum-verified vulnerability scanner
+        run: scripts/install_ci_tools.sh trivy
+      - name: Scan exact linux/amd64 digest and enforce current VEX
+        run: |
+          report="$(mktemp)"
+          trap 'find "$report" -type f -delete' EXIT
+          image="$(jq -r .image_reference CODESTRA_UPSTREAM.json)"
+          trivy image --scanners vuln --format json --output "$report" \
+            --platform linux/amd64 "$image"
+          python3 scripts/verify_vulnerability_gate.py --report "$report"
+          plugin_dir="$RUNNER_TEMP/plugin-vulnerability"
+          mkdir -p "$plugin_dir"
+          OPENBAO_PLUGIN_OUTPUT="$plugin_dir/codestra-jwt-replay" scripts/build_jti_plugin.sh
+          plugin_report="$(mktemp)"
+          trivy rootfs --scanners vuln --format json --output "$plugin_report" "$plugin_dir"
+          python3 scripts/verify_plugin_supply_chain.py --report "$plugin_report"

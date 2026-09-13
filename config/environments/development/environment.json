@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "environment": "development",
+  "production": false,
+  "canonicalApiAddress": "https://bao-development.codestra.internal",
+  "clusterAddress": "https://codestra-bao-development-01:8201",
+  "nodeId": "codestra-bao-development-01",
+  "raftPath": "/openbao/data",
+  "desiredVotingNodes": 1,
+  "runtimeApplyAuthorized": false,
+  "networks": {
+    "client": "codestra-security-development",
+    "cluster": "codestra-openbao-cluster-development",
+    "observability": "codestra-observability-development",
+    "trustedProxyCidr": "172.31.10.0/24",
+    "nativeHostPortsPublished": false
+  },
+  "secretHierarchy": "codestra/development/"
+}

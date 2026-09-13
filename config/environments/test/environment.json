@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "environment": "test",
+  "production": false,
+  "canonicalApiAddress": "https://bao-test.codestra.internal",
+  "clusterAddress": "https://codestra-bao-test-01:8201",
+  "nodeId": "codestra-bao-test-01",
+  "raftPath": "/openbao/data",
+  "desiredVotingNodes": 1,
+  "runtimeApplyAuthorized": false,
+  "networks": {
+    "client": "codestra-security-test",
+    "cluster": "codestra-openbao-cluster-test",
+    "observability": "codestra-observability-test",
+    "trustedProxyCidr": "172.31.20.0/24",
+    "nativeHostPortsPublished": false
+  },
+  "secretHierarchy": "codestra/test/"
+}

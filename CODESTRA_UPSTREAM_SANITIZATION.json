@@ -1,0 +1,1668 @@
+{
+  "purpose": "GitHub push-protection-safe upstream source snapshot",
+  "sanitizations": [
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "a54ff182c7e8acf56acfd6e4b9c3ff41e2c41a31c9b211b2deb9df75d9a478f9"
+      ],
+      "path": "upstream/CLAUDE.md",
+      "replacements": 1,
+      "rule": "materialize reviewed in-tree upstream documentation symlink"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1b737e4ed7d70253439e3bcb1b3172d25a8351d640370a043a03e08bce498469"
+      ],
+      "path": "upstream/api/test-fixtures/keys/bad-cert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "857b21b7dd82aaa434799b3ef36eabbb7a9cc4206df384820e316d0df3175772"
+      ],
+      "path": "upstream/api/test-fixtures/keys/bad-key.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "8cf583b699a9d9330526148d5a385bcd73a69a193b6306df8b4c95ec6747534e"
+      ],
+      "path": "upstream/api/test-fixtures/keys/cert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "82694654b35cb1542b64fbc66de387bddc6e07cefc5c64f14fbb5db04458b40b"
+      ],
+      "path": "upstream/api/test-fixtures/keys/key.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c21f761908bf393bc7689ec50e9117fbe45b43b28d1559d9fdb65da9160668e0"
+      ],
+      "path": "upstream/api/test-fixtures/root/rootcacert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1ae6bbeb566b2615a3f2a28732392255a5f8a133affbb1e6fd220542e8b9f407"
+      ],
+      "path": "upstream/api/test-fixtures/root/rootcakey.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2803de12828ad18d1f06aceaaac41ac8f0df74e1d03507d314996d4e615cb265"
+      ],
+      "path": "upstream/builtin/credential/jwt/README.md",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1853e1e096d53ff60ab9d59a31094d11503a14381b6f3143defd8ac2e374b43e",
+        "3f8ef7d37a05656d181a0ddbc4fab97c427666b3da10e627c46ce66bb3c08045",
+        "437a8898953d170c6aee43b542dd9806ea50f8de50623ffe88be5ec1b96907ba",
+        "7d2bfb7dfa52fab5a996c89f9c31a1a6b2ddd2ebc356a312df48049dc923fd5c"
+      ],
+      "path": "upstream/builtin/credential/jwt/path_config_test.go",
+      "replacements": 4,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "8434a7b1161cbc0099810e7b463acb2b55adf4b88b70fee112d2c9f2512aba37",
+        "985f01c2d9aef8bb6748d589f02326f0ae598522f7e44ab10d526a7169dcb777"
+      ],
+      "path": "upstream/builtin/credential/jwt/path_login_test.go",
+      "replacements": 2,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "3f8ef7d37a05656d181a0ddbc4fab97c427666b3da10e627c46ce66bb3c08045",
+        "437a8898953d170c6aee43b542dd9806ea50f8de50623ffe88be5ec1b96907ba",
+        "437a8898953d170c6aee43b542dd9806ea50f8de50623ffe88be5ec1b96907ba",
+        "c3efef8a02edaa818486d907e6e163a325b6a009f98f8215cfb42bc8bfd2449f"
+      ],
+      "path": "upstream/builtin/credential/jwt/path_oidc_test.go",
+      "replacements": 4,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "437a8898953d170c6aee43b542dd9806ea50f8de50623ffe88be5ec1b96907ba"
+      ],
+      "path": "upstream/builtin/credential/jwt/provider_azure_test.go",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "437a8898953d170c6aee43b542dd9806ea50f8de50623ffe88be5ec1b96907ba"
+      ],
+      "path": "upstream/builtin/credential/jwt/provider_ibmisam_test.go",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "437a8898953d170c6aee43b542dd9806ea50f8de50623ffe88be5ec1b96907ba"
+      ],
+      "path": "upstream/builtin/credential/jwt/provider_secureauth_test.go",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "7932a59062be5ce36ce19ec9fae96521446e331a71a712441b4118e60c555be9"
+      ],
+      "path": "upstream/builtin/credential/jwt/tests/test.bats",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "d61311ef548de949cfbaa2da707dc973bd568ad59b503c2907848c4801dc4acc"
+      ],
+      "path": "upstream/builtin/credential/kerberos/path_config_test.go",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2bcaa5a7a6f9fd472d8e46c4177dc2a86f24cc6065bf9d74f8c73a85903b9b60"
+      ],
+      "path": "upstream/builtin/credential/kubernetes/common_test.go",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: jwt"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2b937cf0ef3dbefd5e68a948b305eaa9b1f43d89495f372c2b1cd22a1e9e832d"
+      ],
+      "path": "upstream/builtin/credential/kubernetes/integrationtest/integration_test.go",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: jwt"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "07ea54aedcc8468064c895b45622cd05b42d9f9f8b304b16e54389a9308bbeb6",
+        "3de7ae0ae46a652b4538c058e382245cc35611bbce4fa623571c06c746c95c58",
+        "e416fd1dc361763db26a1abdd87722d02180d60a0f349733718ac9ac54723a5d",
+        "fee1d948cfa5e67443552f861828d26adf287058fdd3bc73f1e76e825f8f6eed"
+      ],
+      "path": "upstream/builtin/logical/pki/backend_test.go",
+      "replacements": 4,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "993648ba2bc1e8345016511efc2cf083cf78b042f34ff7d8d810134c54c9088c"
+      ],
+      "path": "upstream/builtin/logical/pki/crl_test.go",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "727493317ddcb3ab9664b2083bfe091584f9c03dc8f6391070216f6d8e74f48c"
+      ],
+      "path": "upstream/builtin/logical/pki/storage_migrations_test.go",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "25534d0be012d7ba0de6805ee0af4fb6566d430dd037f3c0cb586072569c0589",
+        "338614339187f5bf0c40812b66c36ab45f3423ff69b8d062abd0cbe087a005d9",
+        "5714cf9f2e008a37405a1a6fb0db4e060d71b2607a57f69cb75f9986b87477fd",
+        "c5934190541b572315e55bd3fef4ac523d9a8e6c4790dd393572c9d55f0c2c0f"
+      ],
+      "path": "upstream/builtin/logical/ssh/backend_test.go",
+      "replacements": 4,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "5714cf9f2e008a37405a1a6fb0db4e060d71b2607a57f69cb75f9986b87477fd"
+      ],
+      "path": "upstream/builtin/logical/ssh/path_config_ca_test.go",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "4bfe94578f3a4cd08d97ebcbcaec44733221c4a065b5a1b5d84f30b059a538ad",
+        "4bfe94578f3a4cd08d97ebcbcaec44733221c4a065b5a1b5d84f30b059a538ad",
+        "4bfe94578f3a4cd08d97ebcbcaec44733221c4a065b5a1b5d84f30b059a538ad",
+        "4bfe94578f3a4cd08d97ebcbcaec44733221c4a065b5a1b5d84f30b059a538ad",
+        "a064e2e37afe0883d17fbb85a05bb04a8566f6a60667b1ece9be4c0dc6822ad3",
+        "a064e2e37afe0883d17fbb85a05bb04a8566f6a60667b1ece9be4c0dc6822ad3",
+        "a064e2e37afe0883d17fbb85a05bb04a8566f6a60667b1ece9be4c0dc6822ad3",
+        "a064e2e37afe0883d17fbb85a05bb04a8566f6a60667b1ece9be4c0dc6822ad3",
+        "a62db897705aa0225c53e7651f9cfa0ec2b1ede7e755dd697b7ac807d7b3adb8",
+        "a62db897705aa0225c53e7651f9cfa0ec2b1ede7e755dd697b7ac807d7b3adb8",
+        "a62db897705aa0225c53e7651f9cfa0ec2b1ede7e755dd697b7ac807d7b3adb8",
+        "a62db897705aa0225c53e7651f9cfa0ec2b1ede7e755dd697b7ac807d7b3adb8"
+      ],
+      "path": "upstream/builtin/logical/transit/path_export_test.go",
+      "replacements": 12,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "0dff920b1284567a681d7905ad11758bea460931d5d3d14e2aa81b62dd38d632"
+      ],
+      "path": "upstream/builtin/logical/transit/path_import_test.go",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "5d9c73d21e60a4f0d5322d9767524d7ee7be4ba66838d893925d57fade17af13",
+        "d17ee3b3e7e0dc5265370fc383432909920f220c495940af32652620d906959c"
+      ],
+      "path": "upstream/builtin/logical/transit/path_sign_verify_test.go",
+      "replacements": 2,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c48d2776cc2c187d685092d56a45cdad7aad446e71f4c882fb852fb5f65a842c"
+      ],
+      "path": "upstream/command/agent/test-fixtures/reload/reload_bar.key",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "67fa9b17e1dc192f847df4fa4eec32c314e68f7df647cc3e6cad60d6ef56a00e"
+      ],
+      "path": "upstream/command/agent/test-fixtures/reload/reload_bar.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "30113fde4e116b0083faf5bca195cc36ac793208b2f5e42b56234e22b3b8ac9c"
+      ],
+      "path": "upstream/command/agent/test-fixtures/reload/reload_ca.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "8493baa05bd52d8889373b52836d0c676ae7e26c183c15aba919315de531a69e"
+      ],
+      "path": "upstream/command/agent/test-fixtures/reload/reload_foo.key",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "843d5bed0abcbf1da519f5a2a4fa58954646fe447025893fe60f381190162f41"
+      ],
+      "path": "upstream/command/agent/test-fixtures/reload/reload_foo.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "985f01c2d9aef8bb6748d589f02326f0ae598522f7e44ab10d526a7169dcb777"
+      ],
+      "path": "upstream/command/agent/testing.go",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "e3d9007d7cb6195039899ce50ad49256fca07e058b6919fa3f274808c64482d3"
+      ],
+      "path": "upstream/command/agentproxyshared/auth/cert/test-fixtures/keys/cert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "f776bd22e8ac0a1ed2b76ddd9e3f4ea0cf5ad1e8d7165033b28532214ed9ce2a"
+      ],
+      "path": "upstream/command/agentproxyshared/auth/cert/test-fixtures/keys/key.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "39e28760146f4867ddbfeed4a3a337361989b6b28be24f4b469bdef66dbd970e"
+      ],
+      "path": "upstream/command/agentproxyshared/auth/cert/test-fixtures/keys/pkioutput",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "07ea54aedcc8468064c895b45622cd05b42d9f9f8b304b16e54389a9308bbeb6"
+      ],
+      "path": "upstream/command/agentproxyshared/auth/cert/test-fixtures/root/pkioutput",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c466289c207e72cb0bf57e9e6559b4ff5ccbeff189eaedf982d2ed6a5a267acb"
+      ],
+      "path": "upstream/command/agentproxyshared/auth/cert/test-fixtures/root/rootcacert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "9e32eacb685fc948ff353f7d66411e0e95a47f58705c7885258e7dd169f8bb8e"
+      ],
+      "path": "upstream/command/agentproxyshared/auth/cert/test-fixtures/root/rootcakey.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "a206d8a47f752dc693d324826af3ef58668a267943e1976266970880e69db539",
+        "baa1cbfba4770c75eab227dd6eebace4d723f540e65d5c614f88ab69b70d6c05"
+      ],
+      "path": "upstream/command/agentproxyshared/auth/kubernetes/kubernetes_test.go",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: jwt"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c48d2776cc2c187d685092d56a45cdad7aad446e71f4c882fb852fb5f65a842c"
+      ],
+      "path": "upstream/command/proxy/test-fixtures/reload/reload_bar.key",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "67fa9b17e1dc192f847df4fa4eec32c314e68f7df647cc3e6cad60d6ef56a00e"
+      ],
+      "path": "upstream/command/proxy/test-fixtures/reload/reload_bar.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "30113fde4e116b0083faf5bca195cc36ac793208b2f5e42b56234e22b3b8ac9c"
+      ],
+      "path": "upstream/command/proxy/test-fixtures/reload/reload_ca.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "8493baa05bd52d8889373b52836d0c676ae7e26c183c15aba919315de531a69e"
+      ],
+      "path": "upstream/command/proxy/test-fixtures/reload/reload_foo.key",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "843d5bed0abcbf1da519f5a2a4fa58954646fe447025893fe60f381190162f41"
+      ],
+      "path": "upstream/command/proxy/test-fixtures/reload/reload_foo.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3",
+        "78314b11be2e581549ac1c4f616563fad3fdf0c3b71678f6e2299182080e0598"
+      ],
+      "path": "upstream/command/server/test-fixtures/config3.hcl",
+      "replacements": 2,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "9046103cebfe3f876df73f757b9994173fb598b2b92026a332f765855fe5acf8"
+      ],
+      "path": "upstream/command/server/test-fixtures/hcp_link_config.hcl",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c48d2776cc2c187d685092d56a45cdad7aad446e71f4c882fb852fb5f65a842c"
+      ],
+      "path": "upstream/command/server/test-fixtures/reload/reload_bar.key",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "67fa9b17e1dc192f847df4fa4eec32c314e68f7df647cc3e6cad60d6ef56a00e"
+      ],
+      "path": "upstream/command/server/test-fixtures/reload/reload_bar.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "30113fde4e116b0083faf5bca195cc36ac793208b2f5e42b56234e22b3b8ac9c"
+      ],
+      "path": "upstream/command/server/test-fixtures/reload/reload_ca.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "8493baa05bd52d8889373b52836d0c676ae7e26c183c15aba919315de531a69e"
+      ],
+      "path": "upstream/command/server/test-fixtures/reload/reload_foo.key",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "843d5bed0abcbf1da519f5a2a4fa58954646fe447025893fe60f381190162f41"
+      ],
+      "path": "upstream/command/server/test-fixtures/reload/reload_foo.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "ff2bea10041cceb054dd6417bc70e8e796edb94dfaeb7046b536509743fab619",
+        "ff2bea10041cceb054dd6417bc70e8e796edb94dfaeb7046b536509743fab619"
+      ],
+      "path": "upstream/command/server/test-fixtures/self-init.hcl",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: hashicorp-tf-password"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "122a4916d2ee43b9f8e95f125bebb31081e1def0262adc113ac9cdf4bcb139a2"
+      ],
+      "path": "upstream/command/server/test-fixtures/static-seal.hcl",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "9046103cebfe3f876df73f757b9994173fb598b2b92026a332f765855fe5acf8"
+      ],
+      "path": "upstream/command/server_test.go",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "9ec8d9b7ae75a8d42ca44f497cb4c28971b7ad8df2e12dec062b727302d98df7",
+        "a18f265092de80a61ea624900bf7d7ca3292efe75cf45760d380f320eedfa390",
+        "efaa16f233bb6f0dddf9a125f87cda89e5948f45ad001a1a5ba802f61b2f1cd1"
+      ],
+      "path": "upstream/helper/pgpkeys/test_keys.go",
+      "replacements": 3,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2ef70581a7bcbc366bec2f43cb48d1a04620ba17d0f5cecce5857d5f75b61435",
+        "2ef70581a7bcbc366bec2f43cb48d1a04620ba17d0f5cecce5857d5f75b61435"
+      ],
+      "path": "upstream/helper/profiles/history_test.go",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "55d4cce7f62c1f36cc09475feac1cd5020cd4ba3439a6527362c17f8cc43846e",
+        "db2b1fb70c27d8badc1bff056eb6b0db5f63198f22a087714183f4e071922f80"
+      ],
+      "path": "upstream/http/sys_seal_test.go",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "7935f2663b61b885b12809efc4801a4c2bde036a88c9bdb0fb9b03dd10f4d62a"
+      ],
+      "path": "upstream/physical/raft/snapshot/testdata/spaces-meta.tar",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "47d0c2db2125c9cc7225e6ad7ed09d41ca3f92feb6c89e3f3e1abc4a2e8ddb4c",
+        "47d0c2db2125c9cc7225e6ad7ed09d41ca3f92feb6c89e3f3e1abc4a2e8ddb4c"
+      ],
+      "path": "upstream/plugins/database/cassandra/cassandra_test.go",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "45046f973de647348ab2b35eca4517db3ca85a35d26d08ba688dfd65f46e5793",
+        "6537ed1e1712d6a7816c2b75a1ee6c5455968481970458c574e45d214a89b3ba",
+        "6537ed1e1712d6a7816c2b75a1ee6c5455968481970458c574e45d214a89b3ba",
+        "6537ed1e1712d6a7816c2b75a1ee6c5455968481970458c574e45d214a89b3ba",
+        "6537ed1e1712d6a7816c2b75a1ee6c5455968481970458c574e45d214a89b3ba",
+        "6537ed1e1712d6a7816c2b75a1ee6c5455968481970458c574e45d214a89b3ba"
+      ],
+      "path": "upstream/plugins/database/influxdb/influxdb_test.go",
+      "replacements": 6,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd",
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd",
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd",
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd",
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd",
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd",
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd",
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd",
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd",
+        "9cb330281bd9358bff4ebe9897e20a5704abd183c7c4b2ae9f91070ebf1b91dd"
+      ],
+      "path": "upstream/plugins/database/mysql/mysql_test.go",
+      "replacements": 10,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "338b13e36315b0a2114e0ea1b2157327e8310edb5faacbb9120b1f643ba1130b",
+        "d9ff74dd9787b1610e243969c2d00861111b273ec5047c3ea4cb96eb142e41b7",
+        "d9ff74dd9787b1610e243969c2d00861111b273ec5047c3ea4cb96eb142e41b7",
+        "d9ff74dd9787b1610e243969c2d00861111b273ec5047c3ea4cb96eb142e41b7",
+        "d9ff74dd9787b1610e243969c2d00861111b273ec5047c3ea4cb96eb142e41b7",
+        "d9ff74dd9787b1610e243969c2d00861111b273ec5047c3ea4cb96eb142e41b7",
+        "d9ff74dd9787b1610e243969c2d00861111b273ec5047c3ea4cb96eb142e41b7"
+      ],
+      "path": "upstream/plugins/database/valkey/valkey_test.go",
+      "replacements": 7,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "0d8ba0da14f1aa4ee1db92b63408f10677f1ebc78a374de342a375744985a8ea",
+        "0d8ba0da14f1aa4ee1db92b63408f10677f1ebc78a374de342a375744985a8ea",
+        "0d8ba0da14f1aa4ee1db92b63408f10677f1ebc78a374de342a375744985a8ea",
+        "0d8ba0da14f1aa4ee1db92b63408f10677f1ebc78a374de342a375744985a8ea"
+      ],
+      "path": "upstream/sdk/database/dbplugin/v5/grpc_client_test.go",
+      "replacements": 4,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "302b21e167c02e5bd76abd370b7e3e50a778f02b65a40a5e3a16869eaae287f0"
+      ],
+      "path": "upstream/sdk/helper/xor/xor_test.go",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2500f435fc76a0260420baad5d7422d11f6693c757ac8722d02d517d6fe6de95"
+      ],
+      "path": "upstream/sdk/plugin/grpc_system_test.go",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "4ebc2429e57d76bac21ca73b54b844f3796940d413cfde470794cd74315fae70"
+      ],
+      "path": "upstream/serviceregistration/kubernetes/testing/token",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: jwt"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "545eba4da2903345d7b4673d01f078d624424f160324e3edd29de840cb6c060e"
+      ],
+      "path": "upstream/ui/mirage/handlers/kubernetes.js",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "18b9f11d581abf503a401d58fa15df77c621d08ef235dabd0d80ea4e16962c8f",
+        "18b9f11d581abf503a401d58fa15df77c621d08ef235dabd0d80ea4e16962c8f"
+      ],
+      "path": "upstream/ui/tests/acceptance/init-test.js",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c64c030140ebae13d30f94eeccffc3a70faf1fb307971bea5142de2dd8c16dcb"
+      ],
+      "path": "upstream/ui/tests/acceptance/mfa-setup-test.js",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "545eba4da2903345d7b4673d01f078d624424f160324e3edd29de840cb6c060e"
+      ],
+      "path": "upstream/ui/tests/acceptance/secrets/backend/kubernetes/credentials-test.js",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "237fa6cfd0f5dcf506fb1c52b238ec5ee9ee557440bda08426624020333d3081"
+      ],
+      "path": "upstream/ui/tests/acceptance/tools-test.js",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "03b8d5738c8d126990c06713abf975ee62af1b869a7dd8df1021aa6cf2a4e563",
+        "790fd75fc161dc51a324e1af0ae8d0c85e1810318746e2162b7305caa7371124",
+        "ca1005278eae5612046646ca8f89a7785c505afe864bc35ab9051c128c745abc"
+      ],
+      "path": "upstream/ui/tests/helpers/oidc-config.js",
+      "replacements": 3,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "307759309db6cbde9bc6bdefcece3740abea2f249035659700885c7fff61540a"
+      ],
+      "path": "upstream/ui/tests/helpers/pki/values.js",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "613cf68e468a8fd7b93169d0fa3d4b13de2bfb925ce189463c9b4ba65a64873f"
+      ],
+      "path": "upstream/ui/tests/integration/components/keymgmt/provider-edit-test.js",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "545eba4da2903345d7b4673d01f078d624424f160324e3edd29de840cb6c060e",
+        "545eba4da2903345d7b4673d01f078d624424f160324e3edd29de840cb6c060e"
+      ],
+      "path": "upstream/ui/tests/integration/components/kubernetes/page/credentials-test.js",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "3021d90eb9437b2d8f30e8363695c4418b5e5f1870801b5c317e9398ee0f572d"
+      ],
+      "path": "upstream/ui/tests/integration/components/pki/page/pki-certificate-details-test.js",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "8bcac7908eb950419537b91e19adc83ce2c9cbfdacf4f81157fdadfec11f7017"
+      ],
+      "path": "upstream/ui/tests/integration/components/pki/page/pki-issuer-rotate-root-test.js",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "3501a7ac14390221e947d165ca0560d08d2ea5034fce9c5196c113d369f49e5a",
+        "3501a7ac14390221e947d165ca0560d08d2ea5034fce9c5196c113d369f49e5a",
+        "3501a7ac14390221e947d165ca0560d08d2ea5034fce9c5196c113d369f49e5a"
+      ],
+      "path": "upstream/ui/tests/integration/components/pki/page/pki-key-details-test.js",
+      "replacements": 3,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "a30a50ac826954b829d663344ea03e7e147f0218ea009751a4418fea6ad67cab"
+      ],
+      "path": "upstream/ui/tests/integration/components/pki/pki-generate-csr-test.js",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "834987400b3fb8800feeeeba62cb543f87e66ae5107f1a63963ab9f3e1641f16",
+        "88baf129bf945c1cd09896be850a0c710eabd24e70507ca01112e15b0c4abb5b"
+      ],
+      "path": "upstream/ui/tests/integration/services/auth-test.js",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "f5ae8a4a49ce891868b5dcc3b6b9306a09dfceb95eeafd8730f71866a72b6de4",
+        "f5ae8a4a49ce891868b5dcc3b6b9306a09dfceb95eeafd8730f71866a72b6de4",
+        "f5ae8a4a49ce891868b5dcc3b6b9306a09dfceb95eeafd8730f71866a72b6de4",
+        "f5ae8a4a49ce891868b5dcc3b6b9306a09dfceb95eeafd8730f71866a72b6de4"
+      ],
+      "path": "upstream/ui/tests/unit/lib/console-helpers-test.js",
+      "replacements": 4,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "65307f271017d2b8f6a0f69784cff362e0f5aa91b372851e5a650e4ae58ac747",
+        "65307f271017d2b8f6a0f69784cff362e0f5aa91b372851e5a650e4ae58ac747",
+        "65307f271017d2b8f6a0f69784cff362e0f5aa91b372851e5a650e4ae58ac747",
+        "65307f271017d2b8f6a0f69784cff362e0f5aa91b372851e5a650e4ae58ac747"
+      ],
+      "path": "upstream/ui/tests/unit/lib/console-helpers-test.js",
+      "replacements": 4,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "64b61ff467819cf788fd9aa67e6bcd998f6d6363a13578239f547a8502b37a07"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/chain.crt.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "aff42ddc4d1ca50bb51d379fed12f347433eb0cec6c59088336af090ca5aa0ed"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/ecdsa.key",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "6fbd917276edbaca7e8709e8fe6899dd2ad6d8d80a53fc0ef94bfba2e1a5cca3"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/expiredcert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "441e03e133960d49435921fcf9e4e57e8dfd2731bf4ed7681db38d92c07bfdb4"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/expiredprivatekey.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "67a0ccfc7e8832897ec44c5e8d4999e8a0c86173eed2da942e603aafb0f9dd84"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/fakecert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1f47acb205df453a0ae7d03a790ac3cad7e814f37ca1af1f9414334dba7e7cf9"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/goodcertbadroot.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "d0f39b57cb3079dab0f5d62c4737c646b2208d9cb309a4a39264acbb0a0c8a7b"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/goodcertwithroot.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "82694654b35cb1542b64fbc66de387bddc6e07cefc5c64f14fbb5db04458b40b"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/goodkey.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "6d345dc9ce84556f5b6218b4a8c91f9acec81c67dbab1e787a92b9227b7b7f55"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/intermediateCert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "d4b0ba9764b1afc46db47e46bbd824a776aecafa45ceaf7922f5350695d970f5"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/selfSignedCert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c901b38cb503e7ca610693c40bb11f396b9c5024653746a8f19acee1c9a03ac8"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/selfSignedCertKey.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "84c7afa0f8104625d06c55014acb9b2308aa03fa6b4181d1ad0532755fcc59de"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/trailingdatacert.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "66025e9e3529e4886ddd775e16cbf971167667fc0985a17c2c08d0c9091791a0"
+      ],
+      "path": "upstream/vault/diagnose/test-fixtures/twoRootCA.pem",
+      "replacements": 1,
+      "rule": "replace exact pinned upstream forbidden-filename test fixture"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "8ac6ec394b72b884cdb406bd4f82dc5e5fa5eb6e3e8b5ef2591c876b9a01f732",
+        "8ac6ec394b72b884cdb406bd4f82dc5e5fa5eb6e3e8b5ef2591c876b9a01f732",
+        "8ac6ec394b72b884cdb406bd4f82dc5e5fa5eb6e3e8b5ef2591c876b9a01f732",
+        "fa55cae24e1a9433154e98b14f60cfb9e2532c3559ebf26aa41a164b796ab274"
+      ],
+      "path": "upstream/vault/external_tests/mfa/login_mfa_test.go",
+      "replacements": 4,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "8ba3a641451ee56d4cc84e8a7c64f54246e417247e953075fcf18865e547f5ea",
+        "e436fe20538c453d6ab0866255ea956ffbc5da3c262255f074b6ddd18edb4a25"
+      ],
+      "path": "upstream/vault/logical_system_generate_root_test.go",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c340944ad18ec5435c94ff45af91b5e24eb36c7aab42b820cb486086f723d6c8"
+      ],
+      "path": "upstream/vault/logical_system_namespaces_test.go",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "e4db6af1d28cfaa9932c8091661f83295549496ff2e6a06e4467dd6cc7106769"
+      ],
+      "path": "upstream/website/content/community/deprecation/unauthed-rekey.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "56a1829e15bc1096df8de5fb3be9976df91625e1acf38c85b1b7c32d47f4a30e"
+      ],
+      "path": "upstream/website/content/community/rfcs/cel-jwt.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "4d61e6ad10273e1067c7b6d964d76e6b960b9a0ca0c82569809f2d908ad0d1cf"
+      ],
+      "path": "upstream/website/content/community/rfcs/control-groups.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "0f362ca63457b0d10fad049f6522cf92f0b73738ef51be7e5c5cfe01cb0ae995",
+        "12b79835ad92a66bf024967f16cfd2d712ccb834149d5440b095188a1c53e674",
+        "c87cc7d238afff43ea9d17b04fed0f4d5f53cc80b6c6880b43a141d188463ca4",
+        "e27909eb8c1fd8b722814c10df256c24d0d107f05f1f5ec8c19e02f803448a4a"
+      ],
+      "path": "upstream/website/content/community/rfcs/namespace-sealing.mdx",
+      "replacements": 4,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "5663151d50c5dc9050e74516e57b54f3e661dcb5f2a8d599edd8fb54f5ba80cb"
+      ],
+      "path": "upstream/website/content/docs/agent-and-proxy/agent/caching/index.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "5663151d50c5dc9050e74516e57b54f3e661dcb5f2a8d599edd8fb54f5ba80cb"
+      ],
+      "path": "upstream/website/content/docs/agent-and-proxy/proxy/caching/index.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "952c94dc35c8be89a6ed9922d825c2f85c5191af5ebac9a99b78df9f7c8ce604",
+        "952c94dc35c8be89a6ed9922d825c2f85c5191af5ebac9a99b78df9f7c8ce604",
+        "952c94dc35c8be89a6ed9922d825c2f85c5191af5ebac9a99b78df9f7c8ce604",
+        "952c94dc35c8be89a6ed9922d825c2f85c5191af5ebac9a99b78df9f7c8ce604",
+        "952c94dc35c8be89a6ed9922d825c2f85c5191af5ebac9a99b78df9f7c8ce604",
+        "952c94dc35c8be89a6ed9922d825c2f85c5191af5ebac9a99b78df9f7c8ce604",
+        "952c94dc35c8be89a6ed9922d825c2f85c5191af5ebac9a99b78df9f7c8ce604",
+        "952c94dc35c8be89a6ed9922d825c2f85c5191af5ebac9a99b78df9f7c8ce604",
+        "b596eca5f46045d42b456db3b040a4aa23aa94ecf5347e6b9e05c22b26d12167",
+        "b73500ec67651af34f5c58a92f6a60fe84746ddd0728311b0915bb1a3a78a5d4"
+      ],
+      "path": "upstream/website/content/docs/api/auth/approle.mdx",
+      "replacements": 10,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "bfff9322262fb61102c6efc2d8a82f81a7c2b179af6f575c37fb43fbbfb9d48d",
+        "bfff9322262fb61102c6efc2d8a82f81a7c2b179af6f575c37fb43fbbfb9d48d",
+        "bfff9322262fb61102c6efc2d8a82f81a7c2b179af6f575c37fb43fbbfb9d48d",
+        "bfff9322262fb61102c6efc2d8a82f81a7c2b179af6f575c37fb43fbbfb9d48d"
+      ],
+      "path": "upstream/website/content/docs/api/auth/jwt.mdx",
+      "replacements": 4,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "dcb097d811dc494fe6abef605140f948820ca8deaeebf3d0ab36021d194c419b"
+      ],
+      "path": "upstream/website/content/docs/api/auth/kerberos.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2b610cfe3c9632671f14c20d36d71ccbedb6bdda9299d90deeb8176a730470a7"
+      ],
+      "path": "upstream/website/content/docs/api/auth/kubernetes.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "fb3e88a0b774e069baed1cca995ec8f493f59679dde6c1894412d78801962b3b"
+      ],
+      "path": "upstream/website/content/docs/api/auth/ldap.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "09b6cb65d1a2af727b308d40076dc20b64e8a6a3bbe8223eea0130789c829e08"
+      ],
+      "path": "upstream/website/content/docs/api/auth/radius.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "3983a743a90aa4419fbe60952eaaf1c22902bb5b01fa845b679796361cbaeb0e"
+      ],
+      "path": "upstream/website/content/docs/api/auth/token.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "10a52ff47343e7dc4fc7979ed82ab1ace1300b4c9a03937ed1ee7f53e1dda214"
+      ],
+      "path": "upstream/website/content/docs/api/auth/userpass.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c68fae8f1995d796153ada04813dc0e4da18b2ff439e5bbec6b14f22c3c5c5d2",
+        "c68fae8f1995d796153ada04813dc0e4da18b2ff439e5bbec6b14f22c3c5c5d2",
+        "c68fae8f1995d796153ada04813dc0e4da18b2ff439e5bbec6b14f22c3c5c5d2",
+        "c68fae8f1995d796153ada04813dc0e4da18b2ff439e5bbec6b14f22c3c5c5d2",
+        "c68fae8f1995d796153ada04813dc0e4da18b2ff439e5bbec6b14f22c3c5c5d2",
+        "c68fae8f1995d796153ada04813dc0e4da18b2ff439e5bbec6b14f22c3c5c5d2",
+        "c68fae8f1995d796153ada04813dc0e4da18b2ff439e5bbec6b14f22c3c5c5d2",
+        "c68fae8f1995d796153ada04813dc0e4da18b2ff439e5bbec6b14f22c3c5c5d2"
+      ],
+      "path": "upstream/website/content/docs/api/index.mdx",
+      "replacements": 8,
+      "rule": "neutralize pinned Gitleaks fixture rules: curl-auth-header,generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "28dafcc5cabe57952cf4a3088d93d76aaebae2bb6f8b3fcaca23502df346d0cf",
+        "28dafcc5cabe57952cf4a3088d93d76aaebae2bb6f8b3fcaca23502df346d0cf"
+      ],
+      "path": "upstream/website/content/docs/api/secret/databases/index.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "336486ce4c2c59b6972d340755668052cda5d87107973c426f5f1b629d3d0ad8",
+        "336486ce4c2c59b6972d340755668052cda5d87107973c426f5f1b629d3d0ad8",
+        "87c8a239755951b002efc233ddd1205a7265dbbc502ec60db5ed7dd93e73c106",
+        "87c8a239755951b002efc233ddd1205a7265dbbc502ec60db5ed7dd93e73c106"
+      ],
+      "path": "upstream/website/content/docs/api/secret/identity/mfa/duo.mdx",
+      "replacements": 4,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "b2915c08cbcd9a9687c51ca9ea9817389ab9007779bf7c84fdfbd1a323806173",
+        "b2915c08cbcd9a9687c51ca9ea9817389ab9007779bf7c84fdfbd1a323806173"
+      ],
+      "path": "upstream/website/content/docs/api/secret/identity/mfa/okta.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "b3ce9abb87880686ff349f2e3c2a837ca6b1b889c8554903c2238ddbd9707c54"
+      ],
+      "path": "upstream/website/content/docs/api/secret/identity/mfa/totp.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "fb77362958c1aaefcaaf10116690eba0b57ab43220e7de40dd41c5c12ec58bcb"
+      ],
+      "path": "upstream/website/content/docs/api/secret/identity/oidc-provider.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: jwt"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c1952c6faf80cb7bb4b740626cd3c11087b6f0bf6365fc7cb24fdec97af9d4bb",
+        "d467814373d6991daf8fa512934227e9f40631973e8bae437a651c401e2cb4c8"
+      ],
+      "path": "upstream/website/content/docs/api/secret/identity/oidc-provider.mdx",
+      "replacements": 2,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "379a2454d7cdcd7e1990978fff24b7ea6fa23f93c2f0fdd04774ead158b17449",
+        "f5d9a69274a5148120981ca7c7de3021e001a0dd37cedace36cfc969587875de"
+      ],
+      "path": "upstream/website/content/docs/api/secret/identity/tokens.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: jwt"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "012903bd230d2d7da4569f351264adfa78abf5e43942a88b3e18532df3128da3",
+        "3233a2124bcafba01bffc2089c42e5c8fd0a6b0e8eb215de29e1db188959be32"
+      ],
+      "path": "upstream/website/content/docs/api/secret/ldap.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "40025c10319621a404cb2b90237fc3d652b3e846116a0746eb05b9ede0db7d0c",
+        "782532a37d3883baa85102dbf43fc08ed6962074d70ff5fe7dd0fd87af7ef22a",
+        "8bcac7908eb950419537b91e19adc83ce2c9cbfdacf4f81157fdadfec11f7017",
+        "8bcac7908eb950419537b91e19adc83ce2c9cbfdacf4f81157fdadfec11f7017",
+        "d4a535e2eb8b9d47858b7f170221cbc3b9534ba35f251b1fb4636b95badb9289"
+      ],
+      "path": "upstream/website/content/docs/api/secret/pki.mdx",
+      "replacements": 5,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "f9b47f4588b00bc8b8dfea284f49437bfacf78e6c11fe6b88b41e1cb63c090da",
+        "f9b47f4588b00bc8b8dfea284f49437bfacf78e6c11fe6b88b41e1cb63c090da"
+      ],
+      "path": "upstream/website/content/docs/api/secret/ssh.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2e5761fb866b0bfb10b2e9fd5831ac3a664d6fb8a61279a233f01ba0d50d5f2f"
+      ],
+      "path": "upstream/website/content/docs/api/secret/ssh.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "63695a3e3666b1d8e531f56b6f4ee21822014be30d7118fdc08a917d6ab75f51"
+      ],
+      "path": "upstream/website/content/docs/api/secret/totp.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2686725910a239b0bdf1cb901c55dc972f602c3ff61e1f17f661a1a1cee4ab5c",
+        "2686725910a239b0bdf1cb901c55dc972f602c3ff61e1f17f661a1a1cee4ab5c"
+      ],
+      "path": "upstream/website/content/docs/api/secret/transit.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "e436fe20538c453d6ab0866255ea956ffbc5da3c262255f074b6ddd18edb4a25"
+      ],
+      "path": "upstream/website/content/docs/api/system/decode-token.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "45e72fd1b3fb985766925aa048970f925c07ae5b516520babe640884af9b251f"
+      ],
+      "path": "upstream/website/content/docs/api/system/generate-recovery-token.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "45e72fd1b3fb985766925aa048970f925c07ae5b516520babe640884af9b251f"
+      ],
+      "path": "upstream/website/content/docs/api/system/generate-root-token.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "45e72fd1b3fb985766925aa048970f925c07ae5b516520babe640884af9b251f"
+      ],
+      "path": "upstream/website/content/docs/api/system/generate-root.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "0059782996f2c882a41ad73e9865137efaf92cfeef08dd817570646f46f96e28"
+      ],
+      "path": "upstream/website/content/docs/api/system/inspect/request.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "0068df484e86634efe576203f91d1217152b795c095cad7a35917cb9e21a3f1e"
+      ],
+      "path": "upstream/website/content/docs/api/system/mfa-validate.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "56da4fff2c2121470e51f92408e996bf4ea06da5bc4e18b18e41b2f282bda3f4"
+      ],
+      "path": "upstream/website/content/docs/api/system/storage/raft.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "09ef98fb808aeacd1a6c3a4eae84745374239f1b5021d1328033f08509dab7a5"
+      ],
+      "path": "upstream/website/content/docs/api/system/wrapping-rewrap.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "f1d787c670df8518c5c1c1f360698c40b84ce629408f5a2065db27c33dae46b8",
+        "f1d787c670df8518c5c1c1f360698c40b84ce629408f5a2065db27c33dae46b8"
+      ],
+      "path": "upstream/website/content/docs/api/system/wrapping-unwrap.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: curl-auth-header"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "04bb9c7e1f73411265d5d0c1851397751454fe2069e2f998dd3b7dbdd6778417",
+        "28a534a0b0646f740dbf53caee23013ac0e772f058bd41733431a96a2b138d29",
+        "63d93fb2f0dd12407a955e90ffef564dad89ee39f93faf08e2feb803f971616a",
+        "63d93fb2f0dd12407a955e90ffef564dad89ee39f93faf08e2feb803f971616a"
+      ],
+      "path": "upstream/website/content/docs/auth/approle.mdx",
+      "replacements": 4,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1c42158368fe6461fe6f88af826c8b0d0d37c65f84088ee559b7fa11030b3d4f"
+      ],
+      "path": "upstream/website/content/docs/auth/jwt/index.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "06b39c7b9ec5a6229deee70a9b7797a141ccbf473c6a3ae0383864ce26f2cff9",
+        "b43625faee49ece5677ff0ba5515f3581bf94b8fd06249aadd14cc07a9648b15"
+      ],
+      "path": "upstream/website/content/docs/auth/jwt/index.mdx",
+      "replacements": 2,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "5744ec5a665fbaf9089e8bc279e3d293f328c01843babe0dc0ed124f713b0102",
+        "e1018be841c48550bc71d329c31c1cdb82146c264408b9d499de2dd5a19ddb27"
+      ],
+      "path": "upstream/website/content/docs/auth/jwt/oidc-providers/azuread.mdx",
+      "replacements": 2,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "e1018be841c48550bc71d329c31c1cdb82146c264408b9d499de2dd5a19ddb27"
+      ],
+      "path": "upstream/website/content/docs/auth/jwt/oidc-providers/forgerock.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "0bd6073bd8acf1a560c3767a2fe4193392800881b1797dac2ceb1533c739fd6d"
+      ],
+      "path": "upstream/website/content/docs/auth/jwt/oidc-providers/google.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "4ea66a7f94b46dec8b6268b3416b7a099255eaec1d4f8924dc8a9f5f1cd3cdb3"
+      ],
+      "path": "upstream/website/content/docs/auth/jwt/oidc-providers/ibmisam.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "4ea66a7f94b46dec8b6268b3416b7a099255eaec1d4f8924dc8a9f5f1cd3cdb3"
+      ],
+      "path": "upstream/website/content/docs/auth/jwt/oidc-providers/secureauth.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1c42158368fe6461fe6f88af826c8b0d0d37c65f84088ee559b7fa11030b3d4f"
+      ],
+      "path": "upstream/website/content/docs/auth/kubernetes.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "fb3e88a0b774e069baed1cca995ec8f493f59679dde6c1894412d78801962b3b"
+      ],
+      "path": "upstream/website/content/docs/auth/ldap.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "fb3e88a0b774e069baed1cca995ec8f493f59679dde6c1894412d78801962b3b"
+      ],
+      "path": "upstream/website/content/docs/auth/radius.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "fb3e88a0b774e069baed1cca995ec8f493f59679dde6c1894412d78801962b3b"
+      ],
+      "path": "upstream/website/content/docs/auth/userpass.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2af5507cab5e9a277bc5c554224f9f37c6d5aec1474674e5331544acd8b70a04",
+        "4a7bc30619d92538da21dd1cf0b0ac5da614aa9d9e1e42494f11d5eb0d790292",
+        "4a7bc30619d92538da21dd1cf0b0ac5da614aa9d9e1e42494f11d5eb0d790292",
+        "6564cd07d211eb7da4f3ed4da6b1f7ca32502a3e742efb86a75e335c29a2e47c",
+        "d1a9739597518b2fba39f18ff9a7936e42e31232d968a6091a7b1c9ba730757d"
+      ],
+      "path": "upstream/website/content/docs/commands/login.mdx",
+      "replacements": 5,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "068c3174c06097732f98b7ffd52b02fedf2b73166ffa5a99c3edced3ea77785a",
+        "0f362ca63457b0d10fad049f6522cf92f0b73738ef51be7e5c5cfe01cb0ae995",
+        "12b79835ad92a66bf024967f16cfd2d712ccb834149d5440b095188a1c53e674",
+        "bb05f5b2264d1185d9409b3b54a9144b6269c8f8154e9728b9a6b617a3efeddb",
+        "e27909eb8c1fd8b722814c10df256c24d0d107f05f1f5ec8c19e02f803448a4a"
+      ],
+      "path": "upstream/website/content/docs/commands/operator/index.mdx",
+      "replacements": 5,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "5ed04df5784f5c0a17ae88ea87d4c58004cdb3776909700357f20b8c1c01d640",
+        "dde390c15327678ea9313844c36d1114b883165e6d3766da22b250bd2ef1a1d9"
+      ],
+      "path": "upstream/website/content/docs/commands/plugin/index.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "474132051ecb9857a1e01726303226696b480afb44eb4dc52c5d60927dc277b1"
+      ],
+      "path": "upstream/website/content/docs/commands/print.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1e1dca26768b2228ceb6bfbe18a9e03f86749371ffdbba83bcab952fe7434b4f",
+        "1e1dca26768b2228ceb6bfbe18a9e03f86749371ffdbba83bcab952fe7434b4f",
+        "d062d8d3d8da55994c8f98b102895fb711dd3f65ccdd7806bbbf179ce556d531",
+        "d062d8d3d8da55994c8f98b102895fb711dd3f65ccdd7806bbbf179ce556d531",
+        "dbf1cec13fc2fd719c9bee93b6f269a9c53c82942732fe2e6aa62aaaf8cc886e",
+        "dbf1cec13fc2fd719c9bee93b6f269a9c53c82942732fe2e6aa62aaaf8cc886e"
+      ],
+      "path": "upstream/website/content/docs/concepts/pgp-gpg-keybase.mdx",
+      "replacements": 6,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2aae6f11531b615fb84e994e935e9107ba697f9800c3946d8a496cd993b7e736",
+        "9474d97350181a011836466a04f530e61b8aca8ac7ed113037373f043b4549dd"
+      ],
+      "path": "upstream/website/content/docs/configuration/seal/alicloudkms.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3",
+        "78314b11be2e581549ac1c4f616563fad3fdf0c3b71678f6e2299182080e0598"
+      ],
+      "path": "upstream/website/content/docs/configuration/seal/awskms.mdx",
+      "replacements": 2,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "68efb2dc14cdfb20799328c1706af31321ef3f363b77929942178f974fe4ae7a"
+      ],
+      "path": "upstream/website/content/docs/configuration/seal/azurekeyvault.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c340944ad18ec5435c94ff45af91b5e24eb36c7aab42b820cb486086f723d6c8"
+      ],
+      "path": "upstream/website/content/docs/configuration/seal/transit.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "2058948b569f50af8f61a1e6374504b2f4b960fac8131f060276e3dab12d3d69",
+        "38df2e8545f65c9df7448e4d826074f344aede457dff5fb1a01f62ae8a3681a6",
+        "47159c6cd9ccc2ccfb42612dae684261cbef27afabf0d7add2376be68e79ef8c",
+        "61c8809faf150b4be1055bdfe6eb10a978ec20b0ec8a240fea4d20c9f3aaed2e",
+        "78ec8a74802ceeb69e2ea9cdb45f2e2f69ce687bf69e77c9685f91010382c1b5",
+        "80e3b2348378a3b4bbd894fb6621efdbe15ece4b4bedd14e0b733f69e09c5e29",
+        "d2538a60c2c37acc933a8ebb78ec57d5333812554c8fff0791547d5a54e6bd06",
+        "d2ca1e114c631c9578754a6c910490fba88c29e4484eea5cef73afa2c5c79c15",
+        "d486576fabd36ef0b7deac4dffe8ba7b4f6e9ad7118de6d0a7ad91d6f91ecac9",
+        "f50d16eae311e7df0d2f104ef1dbad2240246b249143d3392388e6eb4da4b999"
+      ],
+      "path": "upstream/website/content/docs/guides/sealable-namespaces.mdx",
+      "replacements": 10,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "95ce5e65db7e7cb6e1a75631ea471e222d4c82aba6b7bb847cc5052168016342"
+      ],
+      "path": "upstream/website/content/docs/guides/sealable-namespaces.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "69e8dce8188c48828a9b7e0c6ebeabe1c08daf72b04f90a4cf57f3217077c8b9"
+      ],
+      "path": "upstream/website/content/docs/guides/unseal/pkcs11/duokey.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "1ce1a49b4940c19069e493831095451a1994e34fadf414e575fd0a94eb774642"
+      ],
+      "path": "upstream/website/content/docs/guides/unseal/pkcs11/utimaco.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "0ee6b7be0767691147c34c8fb8219ac4b0ef011ee645eda3c3ac59b74b76a792",
+        "1afdae2debc20e76b4f63ea4146096d774160161bdd033524343776a0e035a18",
+        "9cdefbc8882cd9a04328ec6ccb1ff26e9c2e6e87ca051ff55c1c7721c0bac44a",
+        "b1bd5588338cdf5531d5a3079f6f85ba9ca07775d6d15cfcd188558f29be46f4",
+        "d72a22c34c090461de522950b7d90a108b7e0ad73f7839f84167f73b51e33b66"
+      ],
+      "path": "upstream/website/content/docs/platform/k8s/helm/run.mdx",
+      "replacements": 5,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "66431f77e89b8a919fe5843e38654fb7b9d46e17ae2884bf887b31468a7073e2"
+      ],
+      "path": "upstream/website/content/docs/platform/k8s/helm/run.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "9fd9595910e06ef61d4bb679e46e66f2098857b7b40d6e1432e73e833ad3b21c",
+        "9fd9595910e06ef61d4bb679e46e66f2098857b7b40d6e1432e73e833ad3b21c"
+      ],
+      "path": "upstream/website/content/docs/platform/k8s/injector/index.mdx",
+      "replacements": 2,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "c71854ad460c633bf31ee148b67608a51200f8417bb8e538102a64e08f473d4b",
+        "c71854ad460c633bf31ee148b67608a51200f8417bb8e538102a64e08f473d4b"
+      ],
+      "path": "upstream/website/content/docs/secrets/kubernetes.mdx",
+      "replacements": 2,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "7126e10f6120db4fe8d4eb9e7193b0f44ee0ade7009a1fa3217ce5d5e0076d3c"
+      ],
+      "path": "upstream/website/content/docs/secrets/pki/quick-start-intermediate-ca.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "899abba623822b0c33524c32988d498aefa9da7684a9c0e145f9ae4ec2fb28c1"
+      ],
+      "path": "upstream/website/content/docs/secrets/pki/quick-start-root-ca.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "8bcac7908eb950419537b91e19adc83ce2c9cbfdacf4f81157fdadfec11f7017"
+      ],
+      "path": "upstream/website/content/docs/secrets/pki/setup.mdx",
+      "replacements": 1,
+      "rule": "neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance"
+    },
+    {
+      "files_changed": 1,
+      "original_block_sha256": [
+        "b52d48225e0fc4daf510a89b1cb7dbbb2b20598246511d9d205bed8931929434"
+      ],
+      "path": "upstream/website/content/docs/secrets/totp.mdx",
+      "replacements": 1,
+      "rule": "neutralize pinned Gitleaks fixture rules: generic-api-key"
+    }
+  ],
+  "schema_version": "1.0",
+  "source_behavior_changed": "test_and_documentation_fixtures_only",
+  "upstream_clone_url": "https://github.com/openbao/openbao.git",
+  "upstream_commit": "dd9c19c37a878cf4a81b18efb8d6f0599c7da923",
+  "upstream_ref": "dd9c19c37a878cf4a81b18efb8d6f0599c7da923"
+}

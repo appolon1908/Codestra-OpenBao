@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if [[ -f /opt/openbao/tls/tls.crt ]] && [[ -f /opt/openbao/tls/tls.key ]]; then
+  echo "OpenBao TLS key and certificate already exist. Exiting."
+  exit 0
+fi
+
+echo "Generating OpenBao TLS key and self-signed certificate..."
+
+# Create TLS and Data directory
+mkdir --parents /opt/openbao/tls
+mkdir --parents /opt/openbao/data
+
+# Generate TLS key and certificate
+cd /opt/openbao/tls
+openssl req \
+  -out tls.crt \
+  -new \
+  -keyout tls.key \
+  -newkey rsa:4096 \
+  -nodes \
+  -sha256 \
+  -x509 \
+  -subj "/O=OpenBao/CN=OpenBao" \
+  -days 1095 # 3 years
+
+# Update file permissions
+chown --recursive openbao:openbao /etc/openbao
+chown --recursive openbao:openbao /opt/openbao
+chmod 600 /opt/openbao/tls/tls.crt /opt/openbao/tls/tls.key
+chmod 700 /opt/openbao/tls
+
+echo "OpenBao TLS key and self-signed certificate have been generated in '/opt/openbao/tls'."
+
+if [ -d /run/systemd/system ]; then
+    systemctl --system daemon-reload >/dev/null || true
+fi

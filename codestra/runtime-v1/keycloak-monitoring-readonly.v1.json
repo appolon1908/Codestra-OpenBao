@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "source_repository": "appolon1908-hue/Keycloak",
+  "source_branch": "main",
+  "source_sha": "fd9771bcf756c3ef1611422838beacb2d2575caa",
+  "source_files": [
+    {
+      "path": "config/clients/monitoring-readonly.json",
+      "sha256": "sha256:04dfb317ba4df345d4d326d4845d18eb3da8aeda2218e8e3c8bb629888b51f11"
+    },
+    {
+      "path": "config/client-scopes/health.read.json",
+      "sha256": "sha256:540fa67431c8c5c482acd5fa11a9578d51822b0e80a95d430bc188ccac0f346c"
+    },
+    {
+      "path": "config/client-scopes/metrics.read.json",
+      "sha256": "sha256:cd46f1a3883d5161e85cb7a9ebaf0c45fab5c06922554c89c7e01f4c94c86bc2"
+    }
+  ],
+  "client": {
+    "client_id": "monitoring-readonly",
+    "protocol_mapper_names": ["audience-middleware-api"],
+    "audiences": ["middleware-api"],
+    "default_client_scopes": [],
+    "optional_client_scopes": ["health.read", "metrics.read"],
+    "full_scope_allowed": false,
+    "service_accounts_enabled": true
+  },
+  "client_scopes": [
+    {
+      "name": "health.read",
+      "include_in_token_scope": true,
+      "protocol_mappers": []
+    },
+    {
+      "name": "metrics.read",
+      "include_in_token_scope": true,
+      "protocol_mappers": []
+    }
+  ],
+  "secret_values_included": false
+}

@@ -4,12 +4,56 @@ Canonical service hostname: `bao.codestra.media`
 Canonical DNS A target: `37.27.128.39`
 DNS TTL: `600`
 
-This repository is the principal source authority for the Codestra OpenBao deployment/configuration. Do not introduce alternate public hostnames or legacy domain names in configuration, documentation, examples, health checks, or deployment manifests.
+This repository is the principal source authority for the Codestra OpenBao
+deployment and configuration. Do not introduce alternate public hostnames or
+legacy domain names in configuration, documentation, examples, health checks
+or deployment manifests.
 
-Exposure policy: PROTECTED BROWSER/API ACCESS ONLY. `bao.codestra.media` may be routed through Caddy only with strong authentication, strict network policy, TLS, security headers, rate limits, audit logging, and least-privilege policies. Native storage/backend/admin ports must remain private. Never expose unsealed bootstrap/recovery material, root tokens, private keys, or provider credentials.
+Exposure policy: **restricted operator and private API access only**.
+`bao.codestra.media` may be routed through the external edge authority only
+with strong authentication, strict network policy, TLS, security headers, rate
+limits, audit logging and least-privilege policies. Native storage, cluster and
+administration ports must remain private. Never expose bootstrap or recovery
+material, root tokens, private keys, secret values or provider credentials.
 
-Upstream/downstream: approved platform services authenticate to OpenBao using least-privilege machine identities -> OpenBao returns scoped secrets/leases -> audit logs and operational health flow to the observability stack. OpenBao must never be used as a general data store or bypass Middleware authorization.
+Approved platform services authenticate to OpenBao with individually admitted,
+least-privilege machine identities. OpenBao returns only their scoped secrets
+or leases. Audit metadata and bounded operational health flow to the
+observability stack. OpenBao is not a general data store and must never bypass
+Middleware business authorization.
 
-Persistent branch model: `main`, `development`, `test`, `staging`, `production`. Temporary branches: `feature/*`, `fix/*`, `upgrade/*`, `security/*`, `docs/*`, `hotfix/*`, `release/*`, `rollback/*`.
+## Branch and promotion authority
 
-Promotion: feature/fix/upgrade/security -> development -> test -> staging -> production -> main. Never upgrade directly on staging, production, or main.
+Persistent protected branches:
+
+```text
+development -> test -> staging -> production -> main
+```
+
+Only these temporary branch classes may target `development`:
+
+```text
+remediation/*
+sync/openbao-upstream-*
+```
+
+Other historical branch prefixes may remain visible for traceability, but they
+are not admissible into a protected integration branch. Their valid changes
+must be rebuilt on the current `development` head under `remediation/*`.
+Deterministic upstream synchronization may target `development` only through a
+reviewed `sync/openbao-upstream-*` pull request.
+
+Protected branches must never be force-pushed or bypassed. Upgrades must not be
+performed directly on `test`, `staging`, `production` or `main`.
+
+## Runtime mutation boundary
+
+Runtime mutation is not implied by a merge. A checksummed plan must be created
+from the exact current environment branch, independently reviewed and applied
+without regeneration only after `@kazan555` approves the protected environment.
+
+Initialization, recovery custody, operator access, business-effect
+authorization and SSH access are separate authorities. Orbit adoption is also
+separate: a valid consumer manifest does not install packages, alter native
+OpenBao behavior, publish a domain, enable SSO or authorize runtime
+deployment.

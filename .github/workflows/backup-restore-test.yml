@@ -1,0 +1,152 @@
+name: OpenBao backup and isolated restore certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Non-production source environment
+        required: true
+        type: choice
+        options: [development, test, staging]
+      expected_source_sha:
+        description: Exact current environment branch SHA
+        required: true
+        type: string
+      production_cluster_id:
+        description: Source cluster ID used only to prohibit in-place restore
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: openbao-${{ inputs.environment }}-restore-certification
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Create encrypted off-host snapshot
+    environment: openbao-${{ inputs.environment }}-backup
+    runs-on: [self-hosted, linux, x64, codestra-openbao]
+    timeout-minutes: 45
+    outputs:
+      artifact: ${{ steps.snapshot.outputs.artifact }}
+      checksum: ${{ steps.snapshot.outputs.checksum }}
+    env:
+      CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      CODESTRA_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+      OPENBAO_APPROVAL_ENVIRONMENT: openbao-${{ inputs.environment }}-backup
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OPERATOR_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OPERATOR_KEY_PATH }}
+      OPENBAO_OPERATOR_TOKEN_FILE: ${{ vars.OPENBAO_OPERATOR_TOKEN_FILE }}
+      OPENBAO_BACKUP_ROOT: ${{ vars.OPENBAO_BACKUP_ROOT }}
+      OPENBAO_AGE_RECIPIENT_FILE: ${{ vars.OPENBAO_AGE_RECIPIENT_FILE }}
+      OPENBAO_AGE_IDENTITY_FILE: ${{ vars.OPENBAO_AGE_IDENTITY_FILE }}
+      OPENBAO_OFFHOST_REMOTE: ${{ vars.OPENBAO_OFFHOST_REMOTE }}
+      OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION: ${{ vars.OPENBAO_OFFHOST_IMMUTABILITY_ATTESTATION }}
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.expected_source_sha }}
+          persist-credentials: false
+      - name: Take, encrypt, verify and copy immutable snapshot off-host
+        id: snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          export OPENBAO_BACKUP_EVIDENCE="$RUNNER_TEMP/backup-evidence.json"
+          [[ "$(git rev-parse HEAD)" == "$CODESTRA_SOURCE_SHA" ]]
+          [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)" == "$CODESTRA_SOURCE_SHA" ]]
+          scripts/verify_environment_approval.sh
+          export BAO_TOKEN="$(< "$OPENBAO_OPERATOR_TOKEN_FILE")"
+          result="$(scripts/backup.sh)"
+          unset BAO_TOKEN
+          printf '%s\n' "$result"
+          artifact="$(sed -n 's/^BACKUP_ARTIFACT=//p' <<<"$result")"
+          sha256="$(sed -n 's/^BACKUP_SHA256=//p' <<<"$result")"
+          [[ "$artifact" =~ ^openbao-[a-z]+-[0-9]{8}T[0-9]{6}Z\.raft\.snap\.age$ ]]
+          [[ "$sha256" =~ ^[0-9a-f]{64}$ ]]
+          echo "artifact=$artifact" >> "$GITHUB_OUTPUT"
+          echo "checksum=${artifact}.sha256" >> "$GITHUB_OUTPUT"
+      - name: Upload sanitized backup evidence, never snapshot data
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-${{ inputs.environment }}-backup-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/backup-evidence.json
+          if-no-files-found: error
+          retention-days: 90
+
+  isolated-restore:
+    name: Restore and verify on isolated non-production cluster
+    needs: backup
+    environment: openbao-${{ inputs.environment }}-restore
+    runs-on: [self-hosted, linux, x64, codestra-openbao-restore]
+    timeout-minutes: 90
+    env:
+      CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      CODESTRA_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+      OPENBAO_APPROVAL_ENVIRONMENT: openbao-${{ inputs.environment }}-restore
+      BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
+      BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
+      BAO_CLIENT_CERT: ${{ vars.OPENBAO_OPERATOR_CERT_PATH }}
+      BAO_CLIENT_KEY: ${{ vars.OPENBAO_OPERATOR_KEY_PATH }}
+      OPENBAO_OPERATOR_TOKEN_FILE: ${{ vars.OPENBAO_OPERATOR_TOKEN_FILE }}
+      OPENBAO_RESTORED_PROBE_TOKEN_FILE: ${{ vars.OPENBAO_RESTORED_PROBE_TOKEN_FILE }}
+      OPENBAO_RESTORED_PROBE_EXPECTED_POLICY: ${{ vars.OPENBAO_RESTORED_PROBE_EXPECTED_POLICY }}
+      OPENBAO_AGE_IDENTITY_FILE: ${{ vars.OPENBAO_AGE_IDENTITY_FILE }}
+      OPENBAO_UNSEAL_KEY_FILES: ${{ vars.OPENBAO_UNSEAL_KEY_FILES }}
+      OPENBAO_OFFHOST_REMOTE: ${{ vars.OPENBAO_OFFHOST_REMOTE }}
+      OPENBAO_PRODUCTION_CLUSTER_ID: ${{ inputs.production_cluster_id }}
+      OPENBAO_RESTORE_PROBE_PATH: ${{ vars.OPENBAO_RESTORE_PROBE_PATH }}
+      OPENBAO_RESTORE_PROBE_FIELD: ${{ vars.OPENBAO_RESTORE_PROBE_FIELD }}
+      OPENBAO_RESTORE_PROBE_SHA256: ${{ vars.OPENBAO_RESTORE_PROBE_SHA256 }}
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.expected_source_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify exact source and protected restore approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$(git rev-parse HEAD)" == "$CODESTRA_SOURCE_SHA" ]]
+          [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)" == "$CODESTRA_SOURCE_SHA" ]]
+          scripts/verify_environment_approval.sh
+      - name: Retrieve encrypted snapshot directly from protected off-host storage
+        env:
+          SNAPSHOT_NAME: ${{ needs.backup.outputs.artifact }}
+          CHECKSUM_NAME: ${{ needs.backup.outputs.checksum }}
+        run: |
+          umask 077
+          mkdir -p "$RUNNER_TEMP/restore-input"
+          rclone copyto --immutable --no-traverse \
+            "$OPENBAO_OFFHOST_REMOTE/$SNAPSHOT_NAME" "$RUNNER_TEMP/restore-input/$SNAPSHOT_NAME"
+          rclone copyto --immutable --no-traverse \
+            "$OPENBAO_OFFHOST_REMOTE/$CHECKSUM_NAME" "$RUNNER_TEMP/restore-input/$CHECKSUM_NAME"
+      - name: Force restore only on isolated target and verify representative hash
+        env:
+          SNAPSHOT_NAME: ${{ needs.backup.outputs.artifact }}
+          CHECKSUM_NAME: ${{ needs.backup.outputs.checksum }}
+        run: |
+          export OPENBAO_RESTORE_EVIDENCE="$RUNNER_TEMP/restore-evidence.json"
+          export BAO_TOKEN="$(< "$OPENBAO_OPERATOR_TOKEN_FILE")"
+          export OPENBAO_RESTORE_ARTIFACT="$RUNNER_TEMP/restore-input/$SNAPSHOT_NAME"
+          export OPENBAO_RESTORE_CHECKSUM="$RUNNER_TEMP/restore-input/$CHECKSUM_NAME"
+          export OPENBAO_ISOLATED_RESTORE_ACKNOWLEDGED=true
+          export OPENBAO_RESTORE_STARTED_EPOCH="$(date +%s)"
+          scripts/restore-test.sh
+          unset BAO_TOKEN
+      - name: Upload only sanitized restore certification evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openbao-${{ inputs.environment }}-restore-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/restore-evidence.json
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,138 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Metrics reachability",
+      "targets": [{"expr": "up{job=\"codestra-openbao\"}", "refId": "A"}],
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}
+    },
+    {
+      "type": "stat",
+      "title": "Unsealed nodes",
+      "targets": [{"expr": "sum(vault_core_unsealed{job=\"codestra-openbao\"})", "refId": "A"}],
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}
+    },
+    {
+      "type": "stat",
+      "title": "Active leaders",
+      "targets": [{"expr": "sum(vault_core_active{job=\"codestra-openbao\"})", "refId": "A"}],
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+    },
+    {
+      "type": "stat",
+      "title": "Current leases",
+      "targets": [{"expr": "sum(vault_expire_num_leases{job=\"codestra-openbao\"})", "refId": "A"}],
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0}
+    },
+    {
+      "type": "timeseries",
+      "title": "Request latency",
+      "targets": [{"expr": "rate(vault_core_handle_request_sum{job=\"codestra-openbao\"}[5m]) / rate(vault_core_handle_request_count{job=\"codestra-openbao\"}[5m])", "refId": "A"}],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+    },
+    {
+      "type": "timeseries",
+      "title": "Audit failures",
+      "targets": [
+        {"expr": "increase(vault_audit_log_request_failure{job=\"codestra-openbao\"}[5m])", "refId": "A"},
+        {"expr": "increase(vault_audit_log_response_failure{job=\"codestra-openbao\"}[5m])", "refId": "B"}
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+    },
+    {
+      "type": "timeseries",
+      "title": "Token creation",
+      "targets": [{"expr": "sum(rate(vault_token_creation{job=\"codestra-openbao\"}[5m]))", "refId": "A"}],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+    },
+    {
+      "type": "timeseries",
+      "title": "Backup age",
+      "targets": [{"expr": "time() - codestra_openbao_backup_last_success_unixtime", "refId": "A"}],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+    },
+    {
+      "type": "stat",
+      "title": "Initialized state",
+      "targets": [{"expr": "codestra_openbao_initialized", "refId": "A"}],
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 20}
+    },
+    {
+      "type": "stat",
+      "title": "Standby nodes",
+      "targets": [{"expr": "sum(1 - vault_core_active{job=\"codestra-openbao\"})", "refId": "A"}],
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 20}
+    },
+    {
+      "type": "stat",
+      "title": "Raft voting peers",
+      "targets": [{"expr": "max(vault_raft_peers{job=\"codestra-openbao\"})", "refId": "A"}],
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 20}
+    },
+    {
+      "type": "stat",
+      "title": "Current tokens",
+      "targets": [{"expr": "sum(vault_token_count{job=\"codestra-openbao\"})", "refId": "A"}],
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 20}
+    },
+    {
+      "type": "timeseries",
+      "title": "Request rate",
+      "targets": [
+        {"expr": "sum(rate(vault_core_handle_request_count{job=\"codestra-openbao\"}[5m]))", "refId": "A"},
+        {"expr": "sum(rate(vault_core_handle_login_request_count{job=\"codestra-openbao\"}[5m]))", "refId": "B"}
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+    },
+    {
+      "type": "timeseries",
+      "title": "Lease expiration and revocation",
+      "targets": [
+        {"expr": "increase(vault_expire_lease_expiration_error{job=\"codestra-openbao\"}[5m])", "refId": "A"},
+        {"expr": "sum(rate(vault_expire_revoke_count{job=\"codestra-openbao\"}[5m]))", "refId": "B"}
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+    },
+    {
+      "type": "timeseries",
+      "title": "Raft storage activity",
+      "targets": [
+        {"expr": "sum(rate(vault_raft_apply{job=\"codestra-openbao\"}[5m]))", "refId": "A"},
+        {"expr": "rate(vault_raft_snapshot_takeSnapshot_sum{job=\"codestra-openbao\"}[5m]) / rate(vault_raft_snapshot_takeSnapshot_count{job=\"codestra-openbao\"}[5m])", "refId": "B"}
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32}
+    },
+    {
+      "type": "timeseries",
+      "title": "Process memory and CPU",
+      "targets": [
+        {"expr": "vault_runtime_sys_bytes{job=\"codestra-openbao\"}", "refId": "A"},
+        {"expr": "sum(rate(process_cpu_seconds_total{job=\"codestra-openbao\"}[5m]))", "refId": "B"}
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+    },
+    {
+      "type": "timeseries",
+      "title": "Filesystem capacity",
+      "targets": [{"expr": "codestra_openbao_filesystem_free_bytes / codestra_openbao_filesystem_size_bytes", "refId": "A"}],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40}
+    },
+    {
+      "type": "timeseries",
+      "title": "Container restarts",
+      "targets": [{"expr": "increase(codestra_openbao_container_restarts_total[1h])", "refId": "A"}],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40}
+    }
+  ],
+  "schemaVersion": 41,
+  "tags": ["codestra", "openbao", "secrets"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Codestra OpenBao",
+  "uid": "codestra-openbao-v1",
+  "version": 1
+}
