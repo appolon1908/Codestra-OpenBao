@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-13T22:15:50+02:00",
+  "discoveryMode": "read-only",
+  "nodes": [
+    {
+      "privateAddress": "10.40.0.1",
+      "publicAddress": "65.109.65.169",
+      "privateIcmpReachable": true,
+      "privateSshPortReachable": true,
+      "authenticatedDiscovery": "BLOCKED",
+      "reason": "available root and SentinelX credentials were denied"
+    },
+    {
+      "privateAddress": "10.40.0.3",
+      "publicAddress": "49.12.145.107",
+      "privateIcmpReachable": true,
+      "privateSshPortReachable": true,
+      "authenticatedDiscovery": "BLOCKED",
+      "reason": "available root and SentinelX credentials were denied; Docker-socket remediation could not be assessed"
+    },
+    {
+      "privateAddress": "10.40.0.4",
+      "publicAddress": "37.27.128.39",
+      "authenticatedDiscovery": "PASS",
+      "os": "Ubuntu 22.04",
+      "kernel": "Linux 5.15.0-187-generic x86_64",
+      "cpuCount": 20,
+      "memoryGiB": 62,
+      "memoryAvailableGiB": 38,
+      "rootFilesystem": {
+        "type": "ext4",
+        "raid": "md2 RAID1 healthy 2/2",
+        "sizeGiB": 436,
+        "availableGiB": 92,
+        "usedPercent": 78
+      },
+      "timeSynchronized": true,
+      "dockerEngine": "29.7.2",
+      "dockerCompose": "5.4.0",
+      "dockerSocket": {
+        "mode": "0660",
+        "owner": "root",
+        "group": "docker"
+      },
+      "openbao": {
+        "container": "codestra-openbao",
+        "version": "2.6.1",
+        "sourceSha": "ba7ad8861d0578cd4da4f7b9e5a6756d30484f8f",
+        "imageDigest": "sha256:5b2486ab0fb90bbc788cc345b0a08616dfb375873ee8be5df3a2fd4d378a67e0",
+        "initialized": false,
+        "sealed": true,
+        "storage": "raft",
+        "haEnabled": true,
+        "votingMembers": 0,
+        "readOnlyRoot": true,
+        "privileged": false,
+        "restartPolicy": "unless-stopped",
+        "hostPort": "127.0.0.1:18200",
+        "publicNativePorts": 0,
+        "network": "codestra-openbao_openbao_private",
+        "requiredProductionNetworksPresent": false,
+        "nativeMtlsMaterialPresent": false,
+        "backupTimerPresent": false
+      },
+      "swap": {
+        "device": "/dev/md0",
+        "type": "unencrypted RAID1 partition",
+        "sizeGiB": 32,
+        "usedGiB": 4.7,
+        "validation": "FAIL"
+      },
+      "edge": {
+        "dnsTargetMatchesNode": true,
+        "httpsStatus": 403,
+        "server": "nginx",
+        "caddyActive": false,
+        "tlsCertificateNotAfter": "2026-11-29T11:03:24Z",
+        "tlsCertificateSha256Fingerprint": "B3:04:59:A9:80:14:66:D2:E7:20:FA:64:44:FA:EC:1E:48:5F:92:7F:F2:43:0A:85:18:BC:DB:23:BB:1F:94:82"
+      }
+    }
+  ],
+  "hostMutationsPerformed": false,
+  "secretValuesIncluded": false
+}
+

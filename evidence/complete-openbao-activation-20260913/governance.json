@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-13T22:15:50+02:00",
+  "repository": "appolon1908-hue/Codestra-OpenBao",
+  "branches": {
+    "development": {
+      "sha": "15d8ded836f4b08746c791249d7cfd9f170168bf",
+      "signatureVerified": true
+    },
+    "test": {
+      "sha": "bf89089510627417c0564344b8691a1683ef43bd",
+      "signatureVerified": true
+    },
+    "staging": {
+      "sha": "6e092ce5cf8e1cd76587118103653ebb7e7620b0",
+      "signatureVerified": true
+    },
+    "production": {
+      "sha": "38ff3f3d7a2dcd9f03455415c26b2562a50adb34",
+      "signatureVerified": false,
+      "signatureReason": "unsigned"
+    },
+    "main": {
+      "sha": "5f5e3583585081e450f945440a1fab503bfa8399",
+      "signatureVerified": false,
+      "signatureReason": "unsigned"
+    }
+  },
+  "promotionAncestry": {
+    "developmentContainedInTest": false,
+    "testContainedInStaging": false,
+    "stagingContainedInProduction": false,
+    "productionContainedInMain": true
+  },
+  "divergence": {
+    "developmentAheadOfTest": 14,
+    "developmentBehindTest": 3,
+    "testAheadOfStaging": 1,
+    "testBehindStaging": 1,
+    "stagingAheadOfProduction": 71,
+    "stagingBehindProduction": 0
+  },
+  "visibleRepositoryRulesets": [
+    {
+      "name": "AI automated production branch gates",
+      "target": "production",
+      "enforcement": "active",
+      "pullRequestRequired": true,
+      "linearHistoryRequired": true,
+      "nonFastForwardRequired": true,
+      "deletionBlocked": true,
+      "reviewThreadsRequired": true,
+      "requiredApprovals": 0,
+      "codeOwnerReviewRequired": false,
+      "signedCommitsRequired": false,
+      "requiredStatusChecks": []
+    }
+  ],
+  "legacyBranchProtectionDetailsAvailable": false,
+  "requiredEnvironmentReviewersObserved": false,
+  "protectedPromotionComplete": false,
+  "secretValuesIncluded": false
+}
+

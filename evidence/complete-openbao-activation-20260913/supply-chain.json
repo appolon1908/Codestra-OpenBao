@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-13T22:15:50+02:00",
+  "authorizedImage": "ghcr.io/openbao/openbao@sha256:e29524ba7c3f20d01f562c481e3eccbad6c91df45a2f2531433da4951e408cff",
+  "platform": "linux/amd64",
+  "imageDigestVerified": true,
+  "reportedVersion": "OpenBao v2.6.2",
+  "reportedSourceSha": "dd9c19c37a878cf4a81b18efb8d6f0599c7da923",
+  "expectedVersionAndSourceMatch": true,
+  "freshSbom": {
+    "generator": "syft",
+    "verification": "PASS",
+    "componentCount": 1172,
+    "imageDigestMatch": true
+  },
+  "committedEvidenceChecksums": "PASS",
+  "cosign": {
+    "upstreamSignatureVerified": false,
+    "result": "no signatures found"
+  },
+  "codestraProductionProvenance": "ABSENT",
+  "freshVulnerabilityScan": {
+    "generator": "trivy",
+    "highCriticalObservations": 11,
+    "unresolvedExploitableWhileRuntimeDisabled": 0,
+    "runtimeDisabledConditionalDispositions": 1,
+    "gateResultAtCurrentDisabledState": "PASS",
+    "activationSafe": false,
+    "activationBlocker": "grpc-go CVE disposition explicitly becomes invalid if this image is deployed",
+    "conditionalDispositionExpiresAt": "2026-09-16"
+  },
+  "protectedSignedReleaseCreated": false,
+  "productionDeploymentAuthorized": false,
+  "secretValuesIncluded": false
+}
+
