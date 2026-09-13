@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "authority": "appolon1908-hue/Codestra-OpenBao",
   "environment": "production",
   "canonical_endpoint": "https://bao.codestra.media",
@@ -14,17 +14,115 @@
     "apply": "scripts/apply_saved_plan.sh",
     "verify": "scripts/verify.sh"
   },
+  "authority_binding": {
+    "source": "config/workload-secret-authority.v1.json",
+    "source_blob_sha": "50b7a8041823d2eac0c36821b091b727e1071bf8",
+    "derivation": "Exact production serviceIdentity and pathPrefixes; no parent-prefix broadening.",
+    "default_policy": "deny",
+    "runtime_binding_authorized": false
+  },
   "consumers": [
-    {"repo":"appolon1908-hue/Middleware-","identities":["middleware-api","middleware-worker"],"prefixes":["codestra/production/middleware/api/","codestra/production/middleware/worker/"],"rendered_files":["observability-alerts.env","klyrow-alert-oidc-client-secret","klyrow-alert-ca","klyrow-alert-client-cert","klyrow-alert-client-key"]},
-    {"repo":"appolon1908-hue/Odoo","identity":"odoo","prefix":"codestra/production/odoo/","constraint":"credentials only; no business data"},
-    {"repo":"appolon1908-hue/klyrow.com","identity":"klyrow","prefix":"codestra/production/klyrow/","aliases":["middleware/client-secret","middleware/hmac-secret","postal/api-key","smtp/tls-cert","smtp/tls-key","n8n/credential-reference"]},
-    {"repo":"appolon1908-hue/telnexa","identity":"telnexa","prefix":"codestra/production/telnexa/","classes":["provider","callback-hmac","mtls","keycloak-client"],"constraint":"live SMS remains separately gated"},
-    {"repo":"appolon1908-hue/Vicidialer-Codestra","identity":"vicidial","prefix":"codestra/production/vicidial/","classes":["mtls","api-auth","database"],"constraint":"live PSTN remains separately gated"},
-    {"repo":"appolon1908-hue/Keycloak","identity":"keycloak","prefix":"codestra/production/keycloak/","rendered_files":["openbao_oidc_client_secret","grafana_oidc_client_secret","superset_oidc_client_secret"],"issuer":"https://auth.codestra.co/realms/codestra"},
-    {"repo":"appolon1908-hue/Codestra-Grafana-","identity":"grafana","prefix":"codestra/production/grafana/","constraint":"OIDC/data-source credentials only"},
-    {"repo":"appolon1908-hue/Superset","identity":"superset","prefix":"codestra/production/superset/","constraint":"OIDC/data-source credentials only"},
-    {"repo":"appolon1908-hue/Codestra-Prometheus","identity":"prometheus","prefix":"codestra/production/prometheus/","constraint":"scrape credentials only"},
-    {"repo":"appolon1908-hue/Codestra-Alertmanager","identity":"alertmanager","prefix":"codestra/production/alertmanager/","constraint":"Middleware receiver credentials only"}
+    {
+      "repo": "appolon1908-hue/Middleware-",
+      "access": [
+        {
+          "identity": "middleware-api",
+          "prefixes": [
+            "codestra/production/middleware/api/"
+          ]
+        },
+        {
+          "identity": "middleware-worker",
+          "prefixes": [
+            "codestra/production/middleware/worker/email/",
+            "codestra/production/middleware/worker/sms/",
+            "codestra/production/middleware/worker/social/",
+            "codestra/production/middleware/worker/advertising/",
+            "codestra/production/middleware/worker/ai/",
+            "codestra/production/middleware/worker/telephony/",
+            "codestra/production/middleware/worker/crawler/"
+          ]
+        }
+      ]
+    },
+    {
+      "repo": "appolon1908-hue/Odoo",
+      "access": [
+        {
+          "identity": "odoo-integration",
+          "prefixes": [
+            "codestra/production/odoo/integration/"
+          ]
+        }
+      ],
+      "constraint": "credentials only; no business data"
+    },
+    {
+      "repo": "appolon1908-hue/klyrow.com",
+      "access": [
+        {
+          "identity": "klyrow-email-adapter",
+          "prefixes": [
+            "codestra/production/middleware/worker/email/klyrow/"
+          ]
+        }
+      ],
+      "constraint": "live email delivery remains separately gated"
+    },
+    {
+      "repo": "appolon1908-hue/telnexa",
+      "access": [
+        {
+          "identity": "telnexa-sms-adapter",
+          "prefixes": [
+            "codestra/production/middleware/worker/sms/telnexa/"
+          ]
+        }
+      ],
+      "constraint": "live SMS remains separately gated"
+    },
+    {
+      "repo": "appolon1908-hue/Vicidialer-Codestra",
+      "access": [
+        {
+          "identity": "vicidial-adapter",
+          "prefixes": [
+            "codestra/production/middleware/worker/telephony/vicidial/"
+          ]
+        }
+      ],
+      "constraint": "production dialing remains separately gated"
+    },
+    {
+      "repo": "appolon1908-hue/Codestra-Prometheus",
+      "access": [
+        {
+          "identity": "prometheus-openbao",
+          "prefixes": [
+            "codestra/production/observability/openbao/metrics-client/"
+          ]
+        }
+      ],
+      "constraint": "private OpenBao metrics client material only"
+    }
+  ],
+  "integrations_without_openbao_workload_identity": [
+    {
+      "repo": "appolon1908-hue/Keycloak",
+      "role": "JWT issuer and confidential-client authority; not an admitted OpenBao secret-reading workload"
+    },
+    {
+      "repo": "appolon1908-hue/Codestra-Grafana-",
+      "role": "read-only dashboard consumer; no production OpenBao role admitted"
+    },
+    {
+      "repo": "appolon1908-hue/Superset",
+      "role": "read-only analytics consumer; no production OpenBao role admitted"
+    },
+    {
+      "repo": "appolon1908-hue/Codestra-Alertmanager",
+      "role": "routes authenticated events through Middleware; no production OpenBao role admitted"
+    }
   ],
   "required_runtime_gates": {
     "exact_scanned_image": true,
@@ -44,6 +142,8 @@
     "cross_environment_reads": false,
     "observability_application_provider_credentials": false,
     "odoo_business_data_in_openbao": false,
-    "native_port_public": false
+    "native_port_public": false,
+    "parent_prefix_broadening": false,
+    "unadmitted_workload_identities": false
   }
 }
