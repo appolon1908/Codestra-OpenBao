@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "authority": "appolon1908-hue/Codestra-OpenBao",
+  "environment": "production",
+  "canonical_endpoint": "https://bao.codestra.media",
+  "canonical_framework": {
+    "deployment": "deploy/compose/compose.yaml",
+    "workload_authority": "config/workload-secret-authority.v1.json",
+    "keycloak_jwt": "config/auth/keycloak-jwt.v1.json",
+    "jwt_roles": "openbao/auth/jwt-roles.v1.json",
+    "audit": "config/audit/audit.v1.json",
+    "secret_engines": "config/secrets/engines.v1.json",
+    "initialize": "scripts/initialize.sh",
+    "apply": "scripts/apply_saved_plan.sh",
+    "verify": "scripts/verify.sh"
+  },
+  "consumers": [
+    {"repo":"appolon1908-hue/Middleware-","identities":["middleware-api","middleware-worker"],"prefixes":["codestra/production/middleware/api/","codestra/production/middleware/worker/"],"rendered_files":["observability-alerts.env","klyrow-alert-oidc-client-secret","klyrow-alert-ca","klyrow-alert-client-cert","klyrow-alert-client-key"]},
+    {"repo":"appolon1908-hue/Odoo","identity":"odoo","prefix":"codestra/production/odoo/","constraint":"credentials only; no business data"},
+    {"repo":"appolon1908-hue/klyrow.com","identity":"klyrow","prefix":"codestra/production/klyrow/","aliases":["middleware/client-secret","middleware/hmac-secret","postal/api-key","smtp/tls-cert","smtp/tls-key","n8n/credential-reference"]},
+    {"repo":"appolon1908-hue/telnexa","identity":"telnexa","prefix":"codestra/production/telnexa/","classes":["provider","callback-hmac","mtls","keycloak-client"],"constraint":"live SMS remains separately gated"},
+    {"repo":"appolon1908-hue/Vicidialer-Codestra","identity":"vicidial","prefix":"codestra/production/vicidial/","classes":["mtls","api-auth","database"],"constraint":"live PSTN remains separately gated"},
+    {"repo":"appolon1908-hue/Keycloak","identity":"keycloak","prefix":"codestra/production/keycloak/","rendered_files":["openbao_oidc_client_secret","grafana_oidc_client_secret","superset_oidc_client_secret"],"issuer":"https://auth.codestra.co/realms/codestra"},
+    {"repo":"appolon1908-hue/Codestra-Grafana-","identity":"grafana","prefix":"codestra/production/grafana/","constraint":"OIDC/data-source credentials only"},
+    {"repo":"appolon1908-hue/Superset","identity":"superset","prefix":"codestra/production/superset/","constraint":"OIDC/data-source credentials only"},
+    {"repo":"appolon1908-hue/Codestra-Prometheus","identity":"prometheus","prefix":"codestra/production/prometheus/","constraint":"scrape credentials only"},
+    {"repo":"appolon1908-hue/Codestra-Alertmanager","identity":"alertmanager","prefix":"codestra/production/alertmanager/","constraint":"Middleware receiver credentials only"}
+  ],
+  "required_runtime_gates": {
+    "exact_scanned_image": true,
+    "sbom_and_provenance": true,
+    "three_voting_nodes": true,
+    "pgp_offline_custody_3_of_5": true,
+    "native_ports_private": true,
+    "mtls": true,
+    "keycloak_jwt_exact_claims": true,
+    "audit_before_secret_use": true,
+    "saved_plan_zero_destroy": true,
+    "runtime_apply_authorized": true
+  },
+  "invariants": {
+    "secret_values_in_git": false,
+    "browser_provider_secrets": false,
+    "cross_environment_reads": false,
+    "observability_application_provider_credentials": false,
+    "odoo_business_data_in_openbao": false,
+    "native_port_public": false
+  }
+}
