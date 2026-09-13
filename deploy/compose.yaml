@@ -11,8 +11,8 @@ services:
       - "127.0.0.1:18200:8200"
     volumes:
       - ../config/openbao.hcl:/openbao/config/openbao.hcl:ro
-      - openbao_data:/openbao/data
-      - openbao_audit:/openbao/audit
+      - ../data:/openbao/data
+      - ../audit:/openbao/audit
     cap_drop: ["ALL"]
     security_opt: ["no-new-privileges:true"]
     read_only: true
@@ -25,10 +25,6 @@ services:
       retries: 5
       start_period: 15s
     networks: [openbao_private]
-
-volumes:
-  openbao_data:
-  openbao_audit:
 
 networks:
   openbao_private:
