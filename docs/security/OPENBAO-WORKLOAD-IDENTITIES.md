@@ -14,7 +14,7 @@ prepared roles across four environments. All runtime bindings remain disabled.
 | `odoo-integration` | business-integrations | all | exact Odoo integration credential only |
 | `prometheus-openbao` | observability-platform | all | authenticated metrics only; no general secret reads |
 | `grafana-runtime` | observability-platform | staging, production | datasource, Middleware read-token and OIDC client secret only |
-| `alertmanager-runtime` | observability-platform | staging, production | Middleware alert-webhook bearer only |
+| `alertmanager` | observability-platform | staging, production | Middleware alert-webhook bearer only |
 | `alloy-collector` | observability-platform | staging, production | Loki push and OTLP gateway client credentials only |
 | `otel-gateway` | observability-platform | staging, production | gateway receiver and Tempo/Loki exporter credentials only |
 | `loki-runtime` | observability-platform | staging, production | Loki object-storage credentials only |

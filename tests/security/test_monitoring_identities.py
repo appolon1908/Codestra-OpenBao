@@ -12,7 +12,7 @@ PRODUCTION_ISSUER = "https://auth.codestra.co/realms/codestra"
 STAGING_ISSUER = "https://auth-staging.codestra.co/realms/codestra"
 MONITORING_IDENTITIES = {
     "grafana-runtime": "observability/grafana/",
-    "alertmanager-runtime": "observability/alertmanager/",
+    "alertmanager": "observability/alertmanager/",
     "alloy-collector": "observability/alloy/",
     "otel-gateway": "observability/otel-gateway/",
     "loki-runtime": "observability/loki/",

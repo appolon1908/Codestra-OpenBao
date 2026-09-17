@@ -18,7 +18,7 @@
   },
   "authority_binding": {
     "source": "config/workload-secret-authority.v1.json",
-    "source_blob_sha": "c4fd06defa77097dc3dc3745610bb681b885a1ef",
+    "source_blob_sha": "1985d3c4948c961a03ff6624bc03b41b70a06419",
     "derivation": "Exact production serviceIdentity and pathPrefixes; no parent-prefix broadening.",
     "default_policy": "deny",
     "runtime_binding_authorized": false
@@ -124,7 +124,7 @@
       "repo": "appolon1908-hue/Codestra-Alertmanager",
       "access": [
         {
-          "identity": "alertmanager-runtime",
+          "identity": "alertmanager",
           "prefixes": [
             "codestra/production/observability/alertmanager/"
           ]

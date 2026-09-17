@@ -109,10 +109,10 @@
     },
     {
       "environment": "production",
-      "serviceIdentity": "alertmanager-runtime",
-      "policyName": "workload-alertmanager-runtime-production",
-      "path": "openbao/policies/production/alertmanager-runtime.hcl",
-      "sha256": "c7d54393404c20438975ec83fe1056e290d251c2bfed3b82bb5dde2fee996c33",
+      "serviceIdentity": "alertmanager",
+      "policyName": "workload-alertmanager-production",
+      "path": "openbao/policies/production/alertmanager.hcl",
+      "sha256": "8ee18b57659dc5b31f6c79b314f17aa60260bc47e2d02822527346888942c456",
       "runtimeApplyAuthorized": false
     },
     {
@@ -317,10 +317,10 @@
     },
     {
       "environment": "staging",
-      "serviceIdentity": "alertmanager-runtime",
-      "policyName": "workload-alertmanager-runtime-staging",
-      "path": "openbao/policies/staging/alertmanager-runtime.hcl",
-      "sha256": "c9987f158ecef957fdf38b31a42f9e647b55037343454d90ce671bffcc74728a",
+      "serviceIdentity": "alertmanager",
+      "policyName": "workload-alertmanager-staging",
+      "path": "openbao/policies/staging/alertmanager.hcl",
+      "sha256": "f1e9183f1dfc916e001ee0ef45d12ebafbdb8cb58b71b9e16289c66889c9f392",
       "runtimeApplyAuthorized": false
     },
     {

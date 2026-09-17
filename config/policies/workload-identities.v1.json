@@ -270,7 +270,7 @@
       "providerBusinessEffectsEnabled": false
     },
     {
-      "serviceIdentity": "alertmanager-runtime",
+      "serviceIdentity": "alertmanager",
       "owner": "observability-platform",
       "environments": [
         "staging",

@@ -37,7 +37,7 @@ class SecretReferenceContractTests(unittest.TestCase):
     def test_catalog_covers_every_monitoring_identity(self) -> None:
         identities = {reference["workload_identity"] for reference in self.catalog["references"]}
         for required in (
-            "middleware-api", "prometheus-openbao", "alertmanager-runtime", "grafana-runtime",
+            "middleware-api", "prometheus-openbao", "alertmanager", "grafana-runtime",
             "alloy-collector", "otel-gateway", "loki-runtime", "tempo-runtime",
             "redis-exporter", "postgres-exporter", "superset-analytics",
         ):

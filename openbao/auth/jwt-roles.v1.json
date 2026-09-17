@@ -62,11 +62,11 @@
   "runtimeApplyAuthorized": false,
   "roles": [
     {
-      "name": "alertmanager-runtime-production",
-      "endpoint": "auth/jwt-codestra/cel/role/alertmanager-runtime-production",
+      "name": "alertmanager-production",
+      "endpoint": "auth/jwt-codestra/cel/role/alertmanager-production",
       "payload": {
         "cel_program": {
-          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'alertmanager-runtime' && claims.codestra_environment == 'production' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'alertmanager-runtime-production', policies: ['workload-alertmanager-runtime-production'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth.codestra.co/realms/codestra' && claims.azp == 'alertmanager' && claims.codestra_environment == 'production' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'alertmanager-production', policies: ['workload-alertmanager-production'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
         },
         "message": "Codestra workload JWT rejected",
         "clock_skew_leeway": 30,
@@ -79,11 +79,11 @@
       "runtimeApplyAuthorized": false
     },
     {
-      "name": "alertmanager-runtime-staging",
-      "endpoint": "auth/jwt-codestra/cel/role/alertmanager-runtime-staging",
+      "name": "alertmanager-staging",
+      "endpoint": "auth/jwt-codestra/cel/role/alertmanager-staging",
       "payload": {
         "cel_program": {
-          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth-staging.codestra.co/realms/codestra' && claims.azp == 'alertmanager-runtime' && claims.codestra_environment == 'staging' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'alertmanager-runtime-staging', policies: ['workload-alertmanager-runtime-staging'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
+          "expression": "'iss' in claims && 'sub' in claims && 'aud' in claims && 'azp' in claims && 'iat' in claims && 'exp' in claims && 'jti' in claims && 'codestra_environment' in claims && claims.iss == 'https://auth-staging.codestra.co/realms/codestra' && claims.azp == 'alertmanager' && claims.codestra_environment == 'staging' && (claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud)) && string(claims.sub).size() > 0 && string(claims.jti).size() > 0 && int(claims.iat) > 0 && int(claims.exp) > int(claims.iat) && int(claims.exp) - int(claims.iat) <= 300 ? pb.Auth{display_name: 'alertmanager-staging', policies: ['workload-alertmanager-staging'], lease_options: pb.LeaseOptions{TTL: 300000000000, renewable: true, issue_time: now, MaxTTL: 300000000000}, explicit_max_ttl: 300000000000, no_default_policy: true} : false"
         },
         "message": "Codestra workload JWT rejected",
         "clock_skew_leeway": 30,

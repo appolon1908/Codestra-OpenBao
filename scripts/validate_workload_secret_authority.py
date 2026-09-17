@@ -55,7 +55,7 @@ EXPECTED_IDENTITIES = {
         ],
     ),
     "grafana-runtime": ("observability-platform", ["observability/grafana/"]),
-    "alertmanager-runtime": ("observability-platform", ["observability/alertmanager/"]),
+    "alertmanager": ("observability-platform", ["observability/alertmanager/"]),
     "alloy-collector": ("observability-platform", ["observability/alloy/"]),
     "otel-gateway": ("observability-platform", ["observability/otel-gateway/"]),
     "loki-runtime": ("observability-platform", ["observability/loki/"]),
@@ -66,7 +66,7 @@ EXPECTED_IDENTITIES = {
 }
 # Monitoring and analytics workloads exist only where the platform runs them.
 STAGING_PRODUCTION_ONLY = {
-    "grafana-runtime", "alertmanager-runtime", "alloy-collector", "otel-gateway",
+    "grafana-runtime", "alertmanager", "alloy-collector", "otel-gateway",
     "loki-runtime", "tempo-runtime", "redis-exporter", "postgres-exporter",
     "superset-analytics",
 }

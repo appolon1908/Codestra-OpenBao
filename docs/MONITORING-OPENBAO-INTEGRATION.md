@@ -26,7 +26,7 @@ validation failure.
 | --- | --- | --- | --- |
 | `prometheus-openbao` | dev, test, staging, production | `observability/openbao/metrics-client/`, `observability/prometheus/scrape-credentials/` | OpenBao metrics token/mTLS material; `monitoring-readonly` client secret and exporter basic-auth for scrapes; the only role with `sys/metrics` read |
 | `grafana-runtime` | staging, production | `observability/grafana/` | datasource basic-auth, Middleware read token, OIDC client secret |
-| `alertmanager-runtime` | staging, production | `observability/alertmanager/` | Middleware webhook bearer only |
+| `alertmanager` | staging, production | `observability/alertmanager/` | Middleware webhook bearer only |
 | `alloy-collector` | staging, production | `observability/alloy/` | Loki push and OTLP gateway credentials |
 | `otel-gateway` | staging, production | `observability/otel-gateway/` | receiver and Tempo/Loki exporter credentials |
 | `loki-runtime` / `tempo-runtime` | staging, production | `observability/loki/`, `observability/tempo/` | object-storage credentials |
