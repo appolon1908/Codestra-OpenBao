@@ -1,0 +1,26 @@
+[
+  {
+    "targets": ["https://codestra-bao-production-01:8200/v1/sys/health"],
+    "labels": {
+      "service": "openbao",
+      "environment": "production",
+      "probe_enabled": "true",
+      "probe_module": "https_openbao_health",
+      "probe_method": "GET",
+      "owner": "observability-platform",
+      "unseal_on_sealed_probe": "never"
+    }
+  },
+  {
+    "targets": ["https://codestra-bao-staging-01:8200/v1/sys/health"],
+    "labels": {
+      "service": "openbao",
+      "environment": "staging",
+      "probe_enabled": "true",
+      "probe_module": "https_openbao_health",
+      "probe_method": "GET",
+      "owner": "observability-platform",
+      "unseal_on_sealed_probe": "never"
+    }
+  }
+]

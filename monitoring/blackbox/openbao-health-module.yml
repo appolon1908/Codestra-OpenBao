@@ -1,0 +1,21 @@
+# Blackbox Exporter module for GET /v1/sys/health. OpenBao encodes state in the
+# status code: 200 active, 429 standby, 472/473 DR or performance standby,
+# 501 not initialised, 503 sealed. Only active and standby count as healthy;
+# the probe never unseals, initialises or authenticates.
+modules:
+  https_openbao_health:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      preferred_ip_protocol: ip4
+      follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: true
+      valid_status_codes: [200, 429]
+      tls_config:
+        ca_file: /run/secrets/codestra-openbao-ca
+        insecure_skip_verify: false
+      fail_if_body_not_matches_regexp:
+        - '"initialized":\s*true'
+        - '"sealed":\s*false'

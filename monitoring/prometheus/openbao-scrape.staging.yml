@@ -1,0 +1,23 @@
+# Staging counterpart of openbao-scrape.yml. Same private mTLS listener, same
+# file-mounted short-lived token, staging hostnames and labels only.
+scrape_configs:
+  - job_name: codestra-openbao
+    scheme: https
+    metrics_path: /v1/sys/metrics
+    params:
+      format: [prometheus]
+    authorization:
+      type: Bearer
+      credentials_file: /run/secrets/openbao-prometheus-token
+    tls_config:
+      ca_file: /run/secrets/codestra-openbao-ca
+      cert_file: /run/secrets/openbao-prometheus-client-cert
+      key_file: /run/secrets/openbao-prometheus-client-key
+      server_name: codestra-bao-staging-01
+      insecure_skip_verify: false
+    static_configs:
+      - targets:
+          - codestra-bao-staging-01:8200
+        labels:
+          service: openbao
+          environment: staging
