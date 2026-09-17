@@ -12,10 +12,17 @@ AUTH_CONFIG = ROOT / "config/auth/keycloak-jwt.v1.json"
 OUTPUT = ROOT / "openbao/auth/jwt-roles.v1.json"
 
 
-def expression(role: dict) -> str:
+def issuer_for(auth_config: dict, environment: str) -> str:
+    """Return the exact Keycloak issuer an environment's OpenBao instance trusts."""
+    issuers = auth_config.get("issuersByEnvironment") or {}
+    return issuers.get(environment, auth_config["boundIssuer"])
+
+
+def expression(role: dict, auth_config: dict) -> str:
     identity = role["serviceIdentity"]
     environment = role["environment"]
     policy = f"workload-{identity}-{environment}"
+    issuer = issuer_for(auth_config, environment)
     conditions = [
         "'iss' in claims",
         "'sub' in claims",
@@ -25,7 +32,7 @@ def expression(role: dict) -> str:
         "'exp' in claims",
         "'jti' in claims",
         "'codestra_environment' in claims",
-        "claims.iss == 'https://auth.codestra.co/realms/codestra'",
+        f"claims.iss == '{issuer}'",
         f"claims.azp == '{identity}'",
         f"claims.codestra_environment == '{environment}'",
         "(claims.aud == 'openbao' || (type(claims.aud) == list && 'openbao' in claims.aud))",
@@ -57,7 +64,7 @@ def build(authority: dict, auth_config: dict) -> dict:
                 "name": name,
                 "endpoint": f"auth/{auth_config['mount']}/cel/role/{name}",
                 "payload": {
-                    "cel_program": {"expression": expression(role)},
+                    "cel_program": {"expression": expression(role, auth_config)},
                     "message": "Codestra workload JWT rejected",
                     "clock_skew_leeway": auth_config["clockSkewLeewaySeconds"],
                     "expiration_leeway": auth_config["expirationLeewaySeconds"],
@@ -67,6 +74,8 @@ def build(authority: dict, auth_config: dict) -> dict:
                 "runtimeApplyAuthorized": False,
             }
         )
+    environments = ("development", "test", "staging", "production")
+    discovery = auth_config.get("discoveryUrlsByEnvironment") or {}
     return {
         "schemaVersion": 1,
         "status": "PREPARED_DISABLED",
@@ -78,6 +87,16 @@ def build(authority: dict, auth_config: dict) -> dict:
             "default_role": "",
             "jwt_supported_algs": ["RS256"],
         },
+        "mountConfigurationByEnvironment": {
+            environment: {
+                "oidc_discovery_url": discovery.get(environment, auth_config["discoveryUrl"]),
+                "bound_issuer": issuer_for(auth_config, environment),
+                "default_role": "",
+                "jwt_supported_algs": ["RS256"],
+            }
+            for environment in environments
+        },
+        "foreignIssuerAccepted": False,
         "requiredClaims": auth_config["requiredClaims"],
         "maximumJwtLifetimeSeconds": auth_config["maximumJwtLifetimeSeconds"],
         "jtiReplayCacheRequired": auth_config["jtiReplayCacheRequired"],

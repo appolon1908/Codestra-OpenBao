@@ -150,7 +150,10 @@ def build(environment: str, live_dir: Path, source_sha: str) -> dict:
         auth_compatible = True
 
     live_config = data(load(live_dir / "jwt-config.json", {}))
-    desired_config = roles["mountConfiguration"]
+    desired_config = (
+        roles.get("mountConfigurationByEnvironment", {}).get(environment)
+        or roles["mountConfiguration"]
+    )
     config_keys = ("oidc_discovery_url", "bound_issuer", "default_role", "jwt_supported_algs")
     if auth_compatible and selected(live_config, config_keys) != selected(desired_config, config_keys):
         operations.append({

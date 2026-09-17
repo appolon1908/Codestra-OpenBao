@@ -53,6 +53,12 @@ def build_authority(inventory: dict) -> dict:
         "runtimeApplyAuthorized": False,
         "identitySource": "config/policies/workload-identities.v1.json",
         "issuer": "https://auth.codestra.co/realms/codestra",
+        "issuersByEnvironment": {
+            "development": "https://auth-staging.codestra.co/realms/codestra",
+            "test": "https://auth-staging.codestra.co/realms/codestra",
+            "staging": "https://auth-staging.codestra.co/realms/codestra",
+            "production": "https://auth.codestra.co/realms/codestra",
+        },
         "authMethod": "jwt",
         "audience": "openbao",
         "requiredClaims": [
