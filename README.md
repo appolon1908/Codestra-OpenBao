@@ -56,6 +56,11 @@ evidence and checksums are under `artifacts/supply-chain/`.
   adoption contract.
 - `docs/production/OPENBAO-PRODUCTION-CERTIFICATION.md` records production
   blockers and certification evidence.
+- `docs/MONITORING-OPENBAO-INTEGRATION.md` records the monitoring-plane
+  workload identities, per-environment issuer binding, the secret-reference
+  contract (`contracts/secret-reference.v1.schema.json`,
+  `config/secret-references.v1.json`), the private metrics/health/audit
+  surfaces and the failure modes.
 
 ## Orbit adoption
 
