@@ -176,6 +176,36 @@ queries a secret path, token value, unseal or recovery key.
   serving secrets; only monitoring coverage degrades and the corresponding
   alerts fire from the surviving components.
 
+## Staging runtime certification tooling
+
+Two runnable, fail-closed certifiers turn the checklist below into evidence.
+Both refuse anything but `staging`, never unseal, never write a secret, read
+credentials only from `*_FILE` paths, and refuse to write evidence that
+contains a token, a JWT or secret-shaped material.
+
+- `scripts/certify_staging_identity.py` proves one workload identity end to
+  end against the live `bao.codestra.media` authority: the public name answers
+  TLS on 443 only (native 8200/8201 unreachable), `GET /v1/sys/health` answers
+  unauthenticated while seal/unseal/policy/audit mutations are refused, the
+  Keycloak token carries `iss`/`aud=openbao`/`azp`/`codestra_environment`/`jti`
+  with a ≤ 300 s lifetime, `auth/jwt-codestra/cel/login` returns exactly
+  `workload-<identity>-staging`, the own prefix is authorised, and the
+  production path, another service's prefix, the wrong role, a token minted
+  without `scope=openbao.workload`, a modified signature and a rewritten issuer
+  are all refused; `revoke-self` is then proven to deny the next read.
+  Optional: `OPENBAO_IDENTITY_WAIT_FOR_EXPIRY=true` proves the expired-token
+  rejection, `MONITORING_READONLY_CLIENT_SECRET_FILE` proves that
+  `monitoring-readonly` is never admitted. Evidence:
+  `STAGING_OPENBAO_IDENTITY_GO=YES|NO` plus a per-check record.
+- `config/rotation-certification.v1.json` is the eight-step rotation matrix
+  (credential obtained → functions on N → CAS rotate to N+1 → agent renders
+  N+1 → new credential verified → old revoked and denied → workload healthy
+  again → sanitised evidence) bound to the hooks of `scripts/rotate-test.sh`,
+  `scripts/revoke-test.sh` and the identity certifier;
+  `tests/security/test_rotation_certification_contract.py` keeps the matrix
+  and the scripts aligned. Production rotation is not authorised by this
+  contract (`productionRotationAuthorized: false`).
+
 ## Staging certification checklist (source view)
 
 | Requirement | Source evidence | Runtime evidence needed |

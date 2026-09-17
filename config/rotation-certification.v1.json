@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "title": "Staging secret rotation certification matrix",
+  "environments": ["staging"],
+  "productionRotationAuthorized": false,
+  "destructiveProductionRotation": "forbidden",
+  "executor": "scripts/rotate-test.sh",
+  "revocationExecutor": "scripts/revoke-test.sh",
+  "identityCertifier": "scripts/certify_staging_identity.py",
+  "evidenceRedaction": "hashes, versions, identities and sanitized paths only; secretValuesIncluded must be false",
+  "steps": [
+    {
+      "step": 1,
+      "name": "workload-obtains-credential",
+      "proof": "Keycloak client_credentials + scope=openbao.workload, then auth/jwt-codestra/cel/login returns exactly workload-<identity>-staging with TTL <= 300 s",
+      "executor": "scripts/certify_staging_identity.py",
+      "checks": ["keycloak-token", "login-own-role", "own-path-read"]
+    },
+    {
+      "step": 2,
+      "name": "workload-functions-on-version-n",
+      "proof": "the agent-rendered file for version N exists with mode 0400, service uid/gid and the reviewed sha256; the service health verifier passes before rotation",
+      "executor": "scripts/rotate-test.sh",
+      "inputs": ["OPENBAO_ROTATION_EXPECTED_CURRENT_VERSION", "OPENBAO_ROTATION_HEALTH_VERIFIER"]
+    },
+    {
+      "step": 3,
+      "name": "rotate-n-to-n-plus-1",
+      "proof": "bao kv put -cas=<N> writes version N+1 under the identity's own prefix only; the path is checked against workload-secret-authority.v1.json before the write",
+      "executor": "scripts/rotate-test.sh",
+      "inputs": ["OPENBAO_ROTATION_SECRET_PATH", "OPENBAO_ROTATION_NEW_SECRET_FILE", "OPENBAO_ROTATION_CONFIRMATION"]
+    },
+    {
+      "step": 4,
+      "name": "agent-renders-n-plus-1",
+      "proof": "within 120 s the rendered file carries the expected sha256 of the N+1 payload with unchanged mode and ownership",
+      "executor": "scripts/rotate-test.sh",
+      "inputs": ["OPENBAO_ROTATION_RENDERED_FILE", "OPENBAO_ROTATION_EXPECTED_SHA256", "OPENBAO_ROTATION_SERVICE_UID", "OPENBAO_ROTATION_SERVICE_GID"]
+    },
+    {
+      "step": 5,
+      "name": "new-credential-verified",
+      "proof": "the read-only N+1 verifier succeeds against the consuming service (no provider or business effect)",
+      "executor": "scripts/rotate-test.sh",
+      "inputs": ["OPENBAO_ROTATION_NEW_VERIFIER", "OPENBAO_PROVIDER_EFFECTS_DISABLED_ACKNOWLEDGED"]
+    },
+    {
+      "step": 6,
+      "name": "old-credential-revoked-and-denied",
+      "proof": "the old credential is revoked, then the old-credential verifier must fail; a still-succeeding old credential aborts the run with exit 2",
+      "executor": "scripts/rotate-test.sh",
+      "inputs": ["OPENBAO_ROTATION_OLD_REVOKE", "OPENBAO_ROTATION_OLD_VERIFIER"]
+    },
+    {
+      "step": 7,
+      "name": "workload-re-authenticates-and-stays-healthy",
+      "proof": "the service health verifier passes after revocation; the identity certifier's token-revocation check proves a revoked OpenBao token is denied on the next read",
+      "executor": "scripts/rotate-test.sh",
+      "inputs": ["OPENBAO_ROTATION_HEALTH_VERIFIER"],
+      "checks": ["token-revocation"]
+    },
+    {
+      "step": 8,
+      "name": "sanitized-evidence-recorded",
+      "proof": "evidence JSON (mode 0400) holds environment, identity, sanitized path, previous/current version, payload sha256 and PASS flags; secretValuesIncluded=false and providerBusinessEffectsEnabled=false are asserted",
+      "executor": "scripts/rotate-test.sh",
+      "inputs": ["OPENBAO_ROTATION_EVIDENCE"],
+      "evidenceFields": ["environment", "serviceIdentity", "sanitizedPath", "previousVersion", "currentVersion", "payloadSha256", "agentRender", "newCredential", "oldCredentialRevoked", "oldCredentialDenied", "serviceHealth", "providerBusinessEffectsEnabled", "secretValuesIncluded", "rotation", "completedAt"]
+    }
+  ],
+  "revocationMatrix": {
+    "executor": "scripts/revoke-test.sh",
+    "inputs": ["OPENBAO_REVOCATION_IDENTITY", "OPENBAO_REVOCATION_DRIVER", "OPENBAO_REVOCATION_TARGET_DENY_VERIFIER", "OPENBAO_REVOCATION_UNRELATED_VERIFIER", "OPENBAO_REVOCATION_CROSS_ENV_DENY_VERIFIER", "OPENBAO_REVOCATION_AUDIT_VERIFIER"],
+    "proves": ["target identity denied after revocation", "unrelated workload unaffected", "cross-environment access still denied", "sanitized audit alert observed"]
+  }
+}
