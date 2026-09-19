@@ -17,6 +17,7 @@ for validator in \
   scripts/validate_codestra_review_boundaries.py \
   scripts/validate_workload_secret_authority.py \
   scripts/validate_secret_references.py \
+  scripts/validate_middleware_v3_secret_binding.py \
   scripts/validate_orbit_adoption.py; do
   python3 "$validator"
 done
