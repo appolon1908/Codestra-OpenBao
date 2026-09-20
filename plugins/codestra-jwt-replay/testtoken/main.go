@@ -32,7 +32,7 @@ func identifier() string {
 
 func token(signer jose.Signer, now time.Time, overrides map[string]any) string {
 	claims := map[string]any{
-		"iss": "https://auth.codestra.co/realms/codestra",
+		"iss": "https://auth-staging.codestra.co/realms/codestra",
 		"sub": "integration-workload",
 		"aud": []string{"openbao"},
 		"azp": "middleware-api",
