@@ -20,22 +20,29 @@ Committed evidence includes:
 - source/image identity; and
 - `SHA256SUMS` for independent verification.
 
-The current raw scan reports ten HIGH/CRITICAL observations. Five OpenBao observations
-are version-comparison false positives caused by its embedded pseudo-version;
-the binary is v2.6.2, later than each fixed release. The OpenSSL observation is
-limited to QUIC server processing, which OpenBao does not enable. The archive
-finding is outside workload reach because external runtime plugin installation
-is prohibited. The SSH library finding is outside the execution path because
-OpenBao is not an SSH server and the SSH engine is prohibited.
+The current raw scan (Trivy 0.74.0, database of 2026-09-19, committed as the
+exact bytes the VEX revision 2 was reviewed against) reports eleven
+HIGH/CRITICAL observations. Five OpenBao observations are version-comparison
+false positives caused by its embedded pseudo-version; the binary's Go build
+info records upstream commit dd9c19c37a878cf4a81b18efb8d6f0599c7da923 and
+`bao version` reports v2.6.2, later than each fixed release. The OpenSSL
+observation is limited to the QUIC server listener; `bao` is a statically
+linked Go binary that never loads the Alpine OpenSSL packages and declares only
+a tcp listener. The archive finding is outside the execution path: go-archive
+is linked only through Docker test-environment helpers that no server or API
+path invokes, and runtime plugin installation is prohibited. The SSH library
+finding is outside the execution path because OpenBao runs no SSH server and
+the SSH engine is prohibited.
 
 The image also contains grpc-go v1.82.1, affected by CVE-2026-84304 and
 CVE-2026-84445. OpenBao does compile internal gRPC servers, so the code is not
 declared absent. The time-bounded disposition applies only because no Codestra
 OpenBao runtime is deployed or authorized, and release construction fails while
-runtime authority and environment certification remain false. It expires on
-2026-09-16. Any runtime activation must first use the protected source-built
-image with grpc-go v1.83.2, or replace this disposition with a new
-evidence-backed review.
+runtime authority and environment certification remain false. Revision 2 of
+the VEX (reviewed 2026-09-20) expires on 2026-10-20; revision 1 is preserved
+under `artifacts/supply-chain/historical/`. Any runtime activation must first
+use the protected source-built image with grpc-go v1.83.2, or replace this
+disposition with a new evidence-backed review.
 
 The separately built replay plugin is a gRPC server and receives no such VEX
 disposition. Its deterministic overlay upgrades grpc-go from v1.82.1 to
@@ -43,8 +50,9 @@ v1.83.2; the regenerated binary, SBOM, vulnerability report and checksums show
 zero plugin High/Critical findings.
 
 Every disposition has an expiration. `scripts/verify_vulnerability_gate.py`
-fails when a HIGH/CRITICAL observation is missing, a disposition expires, or
-the image identity changes. There are no blanket ignores. A future scanner
+fails when a HIGH/CRITICAL observation is missing, a disposition expires, the
+image or source identity changes, or the committed scan no longer matches the
+bytes the VEX was reviewed against. There are no blanket ignores. A future scanner
 result must be reviewed rather than copied under the old VEX decision.
 
 Primary upstream evidence:
