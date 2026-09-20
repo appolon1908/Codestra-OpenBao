@@ -19,7 +19,7 @@ SOURCE_TREE = "2" * 40
 IMAGE_DIGEST = "sha256:" + "3" * 64
 ARTIFACT_SHA = "4" * 64
 IDENTITY = (
-    "https://github.com/appolon1908-hue/Codestra-OpenBao/"
+    "https://github.com/ingtrader21-spec/Codestra-OpenBao/"
     ".github/workflows/openbao-source-image-authority.yml@refs/heads/production"
 )
 
@@ -69,7 +69,7 @@ def valid_evidence() -> dict[str, object]:
             "builder_identity": IDENTITY,
         },
         "workflow": {
-            "repository": "appolon1908-hue/Codestra-OpenBao",
+            "repository": "ingtrader21-spec/Codestra-OpenBao",
             "path": ".github/workflows/openbao-source-image-authority.yml",
             "ref": "refs/heads/production",
             "run_id": 12345,

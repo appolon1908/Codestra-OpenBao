@@ -23,7 +23,7 @@ IMAGE_REPOSITORY = "ghcr.io/appolon1908-hue/codestra-openbao"
 WORKFLOW_PATH = ".github/workflows/openbao-source-image-authority.yml"
 WORKFLOW_REF = "refs/heads/production"
 WORKFLOW_IDENTITY = (
-    "https://github.com/appolon1908-hue/Codestra-OpenBao/"
+    "https://github.com/ingtrader21-spec/Codestra-OpenBao/"
     ".github/workflows/openbao-source-image-authority.yml@refs/heads/production"
 )
 DISTROLESS_BASE = (
@@ -259,7 +259,7 @@ def validate_image_evidence(
     workflow = evidence.get("workflow")
     if not isinstance(workflow, dict):
         raise ValueError("workflow evidence is missing")
-    if workflow.get("repository") != "appolon1908-hue/Codestra-OpenBao":
+    if workflow.get("repository") != "ingtrader21-spec/Codestra-OpenBao":
         raise ValueError("workflow repository mismatch")
     if workflow.get("path") != WORKFLOW_PATH or workflow.get("ref") != WORKFLOW_REF:
         raise ValueError("image evidence must originate from the protected production workflow")

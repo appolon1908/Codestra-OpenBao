@@ -8,10 +8,10 @@
     {
       "product": "larimia",
       "repositories": [
-        "appolon1908-hue/LARIM-A-Backend",
+        "ingtrader21-spec/LARIM-A-Backend",
         "appolon1908-hue/LARIM-A-Fornt-end"
       ],
-      "recordOwnerRepository": "appolon1908-hue/LARIM-A-Backend",
+      "recordOwnerRepository": "ingtrader21-spec/LARIM-A-Backend",
       "ownedRecordType": "bookings",
       "requestedApiGroups": [
         "service-catalog",
@@ -41,9 +41,9 @@
     {
       "product": "breero",
       "repositories": [
-        "appolon1908-hue/Breero.com"
+        "ingtrader21-spec/Breero.com"
       ],
-      "recordOwnerRepository": "appolon1908-hue/Breero.com",
+      "recordOwnerRepository": "ingtrader21-spec/Breero.com",
       "ownedRecordType": "work-orders",
       "requestedApiGroups": [
         "properties",
@@ -72,10 +72,10 @@
     {
       "product": "moneybee",
       "repositories": [
-        "appolon1908-hue/Moneybee-Backend",
-        "appolon1908-hue/Moneybee-frontend-"
+        "ingtrader21-spec/Moneybee-Backend",
+        "ingtrader21-spec/Moneybee-frontend-"
       ],
-      "recordOwnerRepository": "appolon1908-hue/Moneybee-Backend",
+      "recordOwnerRepository": "ingtrader21-spec/Moneybee-Backend",
       "ownedRecordType": "funding-applications",
       "requestedApiGroups": [
         "borrowers",
@@ -134,10 +134,10 @@
     {
       "product": "klyrow",
       "repositories": [
-        "appolon1908-hue/klyrow.com",
-        "appolon1908-hue/klyrow-Website-"
+        "ingtrader21-spec/klyrow.com",
+        "ingtrader21-spec/klyrow-Website-"
       ],
-      "recordOwnerRepository": "appolon1908-hue/klyrow.com",
+      "recordOwnerRepository": "ingtrader21-spec/klyrow.com",
       "ownedRecordType": "email-delivery",
       "requestedApiGroups": [
         "accounts",
@@ -170,10 +170,10 @@
     {
       "product": "telnexa",
       "repositories": [
-        "appolon1908-hue/telnexa",
-        "appolon1908-hue/Telnexa-web"
+        "ingtrader21-spec/telnexa",
+        "ingtrader21-spec/Telnexa-web"
       ],
-      "recordOwnerRepository": "appolon1908-hue/telnexa",
+      "recordOwnerRepository": "ingtrader21-spec/telnexa",
       "ownedRecordType": "sms-delivery",
       "requestedApiGroups": [
         "messages",
@@ -207,9 +207,9 @@
     {
       "product": "vicidial",
       "repositories": [
-        "appolon1908-hue/Vicidialer-Codestra"
+        "ingtrader21-spec/Vicidialer-Codestra"
       ],
-      "recordOwnerRepository": "appolon1908-hue/Vicidialer-Codestra",
+      "recordOwnerRepository": "ingtrader21-spec/Vicidialer-Codestra",
       "ownedRecordType": "call-execution",
       "requestedApiGroups": [
         "agents",
@@ -236,9 +236,9 @@
     {
       "product": "social",
       "repositories": [
-        "appolon1908-hue/social.codestra.co"
+        "ingtrader21-spec/social.codestra.co"
       ],
-      "recordOwnerRepository": "appolon1908-hue/social.codestra.co",
+      "recordOwnerRepository": "ingtrader21-spec/social.codestra.co",
       "ownedRecordType": "social-publications",
       "requestedApiGroups": [
         "channels",
@@ -283,9 +283,9 @@
     {
       "product": "odoo",
       "repositories": [
-        "appolon1908-hue/Odoo"
+        "ingtrader21-spec/Odoo"
       ],
-      "recordOwnerRepository": "appolon1908-hue/Odoo",
+      "recordOwnerRepository": "ingtrader21-spec/Odoo",
       "ownedRecordType": "crm-accounting-support",
       "requestedApiGroups": [
         "contacts",
@@ -310,10 +310,10 @@
     {
       "product": "beyvra",
       "repositories": [
-        "appolon1908-hue/beyvra-backend",
-        "appolon1908-hue/beyvra-frontend"
+        "ingtrader21-spec/beyvra-backend",
+        "ingtrader21-spec/beyvra-frontend"
       ],
-      "recordOwnerRepository": "appolon1908-hue/beyvra-backend",
+      "recordOwnerRepository": "ingtrader21-spec/beyvra-backend",
       "ownedRecordType": "trading-accounts-and-orders",
       "requestedApiGroups": [
         "authentication",
@@ -344,9 +344,9 @@
     {
       "product": "booked4seasons",
       "repositories": [
-        "appolon1908-hue/booked4seasons"
+        "ingtrader21-spec/booked4seasons"
       ],
-      "recordOwnerRepository": "appolon1908-hue/booked4seasons",
+      "recordOwnerRepository": "ingtrader21-spec/booked4seasons",
       "ownedRecordType": "service-intake",
       "requestedApiGroups": [
         "service-requests",

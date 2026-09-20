@@ -21,9 +21,18 @@ class ApplicationSecretTests(unittest.TestCase):
         expected = {"beyvra-frontend", "beyvra-backend", "Moneybee-frontend-", "Moneybee-Backend",
                     "transportaion-Frontend", "transportation-backend-", "LARIM-A-Fornt-end",
                     "LARIM-A-Backend", "Breero.com", "booked4seasons", "Frontend-Resturant-"}
+        # These four requested repositories resolve under neither GitHub owner after the
+        # transfer to ingtrader21-spec; their catalog rows keep the historical owner until
+        # the owner corrects or retires them.
+        unresolved = {"transportaion-Frontend", "transportation-backend-", "LARIM-A-Fornt-end",
+                      "Frontend-Resturant-"}
         rows = self.catalog["repositories"]
         self.assertEqual(len(rows), 11)
-        self.assertEqual({r["repository"] for r in rows}, {"appolon1908-hue/" + n for n in expected})
+        self.assertEqual(
+            {r["repository"] for r in rows},
+            {"ingtrader21-spec/" + n for n in expected - unresolved}
+            | {"appolon1908-hue/" + n for n in unresolved},
+        )
         self.assertIs(self.catalog["runtimeApplyAuthorized"], False)
         self.assertIs(self.catalog["browserSecretAccess"], False)
         self.assertTrue(all(r["runtimeVerified"] is False for r in rows))
