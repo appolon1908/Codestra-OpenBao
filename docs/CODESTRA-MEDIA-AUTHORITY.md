@@ -1,6 +1,6 @@
 # Codestra OpenBao Authority
 
-Principal repository: `appolon1908-hue/Codestra-OpenBao`
+Principal repository: `ingtrader21-spec/Codestra-OpenBao`
 Canonical service host: `bao.codestra.media`
 Canonical DNS target: `37.27.128.39`
 TTL: `600`
