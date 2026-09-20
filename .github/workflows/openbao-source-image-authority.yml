@@ -47,7 +47,7 @@ defaults:
     shell: bash
 
 env:
-  IMAGE_REPOSITORY: ghcr.io/appolon1908-hue/codestra-openbao
+  IMAGE_REPOSITORY: ghcr.io/ingtrader21-spec/codestra-openbao
   CERTIFICATE_IDENTITY: https://github.com/ingtrader21-spec/Codestra-OpenBao/.github/workflows/openbao-source-image-authority.yml@refs/heads/production
   OIDC_ISSUER: https://token.actions.githubusercontent.com
   ARCHIVE_VERSION: "0.3.2"

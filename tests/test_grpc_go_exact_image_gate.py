@@ -35,9 +35,9 @@ def valid_evidence() -> dict[str, object]:
         "archive_module_version": "0.3.2",
         "dependency_overlay_sha256": ARTIFACT_SHA,
         "runtime_target": "distroless",
-        "image_repository": "ghcr.io/appolon1908-hue/codestra-openbao",
+        "image_repository": "ghcr.io/ingtrader21-spec/codestra-openbao",
         "image_reference": (
-            "ghcr.io/appolon1908-hue/codestra-openbao@" + IMAGE_DIGEST
+            "ghcr.io/ingtrader21-spec/codestra-openbao@" + IMAGE_DIGEST
         ),
         "image_digest": IMAGE_DIGEST,
         "image_dependency_version": "1.83.2",
@@ -139,7 +139,7 @@ class ExactImageGateTests(unittest.TestCase):
     def test_digest_mismatch_is_rejected(self) -> None:
         evidence = valid_evidence()
         evidence["image_reference"] = (
-            "ghcr.io/appolon1908-hue/codestra-openbao@sha256:" + "9" * 64
+            "ghcr.io/ingtrader21-spec/codestra-openbao@sha256:" + "9" * 64
         )
         with self.assertRaises(ValueError):
             MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")

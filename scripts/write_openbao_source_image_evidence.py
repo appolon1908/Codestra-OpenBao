@@ -86,7 +86,7 @@ def main() -> int:
         raise SystemExit("dependency overlay does not bind reviewed archive module")
 
     critical, high, cve_present = vulnerability_counts(args.scan)
-    image_repository = "ghcr.io/appolon1908-hue/codestra-openbao"
+    image_repository = "ghcr.io/ingtrader21-spec/codestra-openbao"
     identity = (
         "https://github.com/ingtrader21-spec/Codestra-OpenBao/"
         ".github/workflows/openbao-source-image-authority.yml@refs/heads/production"
