@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Verify the replay plugin SBOM identity and zero-HIGH/CRITICAL scan."""
+"""Verify the replay plugin SBOM identity and zero-HIGH/CRITICAL scan.
+
+The plugin has no VEX, so any HIGH, CRITICAL or unscored (UNKNOWN) finding fails, a
+missing or unrecognised severity fails closed, and the scan must be current by its own
+machine-readable CreatedAt timestamp.
+"""
 
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 from pathlib import Path
 
@@ -11,6 +17,10 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "plugins/codestra-jwt-replay/plugin.v1.json"
 SBOM = ROOT / "artifacts/supply-chain/codestra-jwt-replay-v1.1.0-linux-amd64.cdx.json"
 REPORT = ROOT / "artifacts/supply-chain/codestra-jwt-replay-v1.1.0-linux-amd64.trivy.json"
+GATED_SEVERITIES = {"HIGH", "CRITICAL", "UNKNOWN"}
+KNOWN_SEVERITIES = GATED_SEVERITIES | {"LOW", "MEDIUM"}
+MAX_SCAN_AGE = dt.timedelta(days=30)
+MAX_CLOCK_SKEW = dt.timedelta(minutes=10)
 
 
 def load(path: Path) -> dict:
@@ -28,7 +38,26 @@ def packages(sbom: dict) -> dict[str, str]:
     }
 
 
-def validate(sbom_path: Path, report_path: Path) -> tuple[int, int]:
+def require_current_scan(report: dict, now: dt.datetime) -> None:
+    created_at = report.get("CreatedAt")
+    if not isinstance(created_at, str) or not created_at:
+        raise ValueError("plugin_scan_created_at_missing")
+    try:
+        created = dt.datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("plugin_scan_created_at_invalid") from exc
+    if created.tzinfo is None:
+        raise ValueError("plugin_scan_created_at_not_timezone_aware")
+    if created > now + MAX_CLOCK_SKEW:
+        raise ValueError("plugin_scan_created_in_future")
+    if now - created > MAX_SCAN_AGE:
+        raise ValueError(
+            f"plugin_scan_stale:scanned={created.date().isoformat()}:max_age_days={MAX_SCAN_AGE.days}"
+        )
+
+
+def validate(sbom_path: Path, report_path: Path, now: dt.datetime | None = None) -> tuple[int, int]:
+    now = now or dt.datetime.now(dt.timezone.utc)
     manifest = load(MANIFEST)
     sbom = load(sbom_path)
     report = load(report_path)
@@ -61,16 +90,33 @@ def validate(sbom_path: Path, report_path: Path) -> tuple[int, int]:
         if module in inventory and inventory[module] != version:
             raise ValueError(f"plugin_module_drift:{module}")
 
-    observations = 0
-    unresolved = 0
-    for result in report.get("Results", []):
-        for finding in result.get("Vulnerabilities") or []:
-            if finding.get("Severity") in {"HIGH", "CRITICAL"}:
-                observations += 1
-                unresolved += 1
+    require_current_scan(report, now)
+    results = report.get("Results")
+    if not isinstance(results, list):
+        raise ValueError("plugin_report_results_missing")
+    unresolved: list[str] = []
+    for result in results:
+        if not isinstance(result, dict):
+            raise ValueError("plugin_report_result_invalid")
+        vulnerabilities = result.get("Vulnerabilities")
+        if vulnerabilities is None:
+            continue
+        if not isinstance(vulnerabilities, list):
+            raise ValueError("plugin_report_vulnerabilities_invalid")
+        for finding in vulnerabilities:
+            if not isinstance(finding, dict):
+                raise ValueError("plugin_report_finding_invalid")
+            severity = finding.get("Severity")
+            identity = f"{finding.get('VulnerabilityID')}:{finding.get('PkgName')}"
+            if severity not in KNOWN_SEVERITIES:
+                raise ValueError(f"plugin_unrecognized_severity:{identity}:{severity!r}")
+            if severity in GATED_SEVERITIES:
+                unresolved.append(f"{identity}:{severity}")
     if unresolved:
-        raise ValueError(f"plugin_unresolved_high_critical:{unresolved}")
-    return len(inventory), observations
+        raise ValueError(
+            f"plugin_unresolved_high_critical:{len(unresolved)}:" + ",".join(sorted(unresolved))
+        )
+    return len(inventory), 0
 
 
 def main() -> None:
