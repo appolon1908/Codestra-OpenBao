@@ -45,7 +45,7 @@ class EnvironmentApprovalScriptTests(unittest.TestCase):
                 "PATH": f"{self.bin_dir}:{env['PATH']}",
                 "GH_APPROVAL_RESPONSE_FILE": str(self.response_file),
                 "CODESTRA_ENVIRONMENT": "development",
-                "GITHUB_REPOSITORY": "appolon1908-hue/Codestra-OpenBao",
+                "GITHUB_REPOSITORY": "ingtrader21-spec/Codestra-OpenBao",
                 "GITHUB_RUN_ID": "123456",
                 "OPENBAO_REQUIRED_REVIEWER": "kazan555",
                 "OPENBAO_APPROVAL_ENVIRONMENT": "openbao-development-backup",

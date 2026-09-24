@@ -2,7 +2,7 @@
 
 ## Authority
 
-- Repository: `appolon1908-hue/Codestra-OpenBao`
+- Repository: `ingtrader21-spec/Codestra-OpenBao`
 - Role: corporate secrets, PKI, workload identity, lease, revocation, transit, and audit authority
 - Canonical hostname: `bao.codestra.media`
 - Central production host: `37.27.128.39`

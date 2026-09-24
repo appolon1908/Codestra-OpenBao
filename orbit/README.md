@@ -3,7 +3,7 @@
 ## Classification
 
 ```text
-repository=appolon1908-hue/Codestra-OpenBao
+repository=ingtrader21-spec/Codestra-OpenBao
 classification=vendor-operator-ui
 adoptionMode=operator-theme-sso
 status=blocked
@@ -19,7 +19,7 @@ integration. It is not a first-party corporate-shell replacement.
 
 `adoption-manifest.json` conforms to the locally vendored Orbit v2 consumer
 schema in `adoption-manifest.schema.json`. The schema mirrors the provisional
-contract under review in `appolon1908-hue/SDK-repository` PR #75. This
+contract under review in `ingtrader21-spec/SDK-repository` PR #75. This
 repository does not publish Orbit packages and does not treat an unmerged or
 unreviewed external branch as production authority.
 
