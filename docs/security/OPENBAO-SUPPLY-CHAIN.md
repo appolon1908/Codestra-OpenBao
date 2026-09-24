@@ -55,6 +55,39 @@ image or source identity changes, or the committed scan no longer matches the
 bytes the VEX was reviewed against. There are no blanket ignores. A future scanner
 result must be reviewed rather than copied under the old VEX decision.
 
+Both the image gate and `scripts/verify_plugin_supply_chain.py` also fail closed
+on these conditions:
+
+- A finding the scanner could not score (`Severity: UNKNOWN`) is gated exactly
+  like HIGH/CRITICAL. An unscored finding is not evidence of low impact.
+- A missing or unrecognised severity, a malformed `Results` structure, or a
+  finding without an identifier or package fails the gate.
+- Freshness comes only from the report's machine-readable `CreatedAt`. The
+  gate never reads it from prose. A scan older than 30 days, or dated in the
+  future, fails. The image gate binds the fresh CI report to the exact image
+  digest. It also requires the VEX `scanEvidence` (`scannedAt`,
+  `scannerVersion`, `highCriticalObservations`, database date) to agree with
+  the committed report, and it requires every statement to be reviewed on or
+  after the scan date.
+
+Open blockers (the gates stay red until each is resolved; neither is waived):
+
+1. `GO-2026-5932` (`golang.org/x/crypto/openpgp` is unmaintained; the scanner
+   reports it as `UNKNOWN`) appears in both the image scan (x/crypto v0.53.0)
+   and the plugin scan (v0.55.0). Before this hardening the gates skipped it
+   without reporting it. OpenBao's first-party source imports only
+   `github.com/ProtonMail/go-crypto/openpgp`, but no reviewed evidence yet
+   shows that no linked dependency pulls in the deprecated package.
+   `govulncheck -mode=binary` on both binaries is the appropriate evidence for
+   a security-owner disposition. Without it, the fix is a rebuild that drops
+   the package.
+2. The review mechanism requires CODEOWNER approval, and `.github/CODEOWNERS`
+   names a single owner (`@kazan555`). That owner's collaborator acceptance
+   is still pending (see the production certification). Independent security
+   review therefore cannot be completed locally. It is a governance blocker
+   that needs an organisational ownership decision, and the VEX `review.status`
+   remains `PENDING_SECURITY_OWNER_APPROVAL`.
+
 Primary upstream evidence:
 
 - <https://github.com/openbao/openbao/releases/tag/v2.6.2>
