@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""Enforce the reviewed promotion path: development -> test -> staging -> production -> main.
+
+Only remediation/* and sync/openbao-upstream-* heads may target development. With
+--require-current, a local head must also contain the given development ref, so a
+stale remediation head is rejected before a pull request is opened.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+PROTECTED = ("development", "test", "staging", "production", "main")
+DEVELOPMENT_HEAD_PREFIXES = ("remediation/", "sync/openbao-upstream-")
+PROMOTIONS = {
+    "test": "development",
+    "staging": "test",
+    "production": "staging",
+    "main": "production",
+}
+
+
+def fail(message: str) -> None:
+    raise SystemExit(f"OPENBAO_BRANCH_PROMOTION=FAIL {message}")
+
+
+def admissible_development_head(head: str) -> bool:
+    return any(
+        head.startswith(prefix) and len(head) > len(prefix) and head not in PROTECTED
+        for prefix in DEVELOPMENT_HEAD_PREFIXES
+    )
+
+
+def promotion_allowed(base: str, head: str) -> bool:
+    if base == "development":
+        return admissible_development_head(head)
+    return base in PROMOTIONS and head == PROMOTIONS[base]
+
+
+def check_event(event: str, base: str, head: str, ref_name: str) -> None:
+    if event == "pull_request":
+        if not promotion_allowed(base, head):
+            fail(f"{head} -> {base}")
+    elif event == "push" and ref_name not in PROTECTED:
+        fail("unexpected push branch")
+
+
+def require_current(head_ref: str, development_ref: str) -> None:
+    status = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", development_ref, head_ref],
+        cwd=ROOT,
+        check=False,
+    ).returncode
+    if status != 0:
+        fail(f"{head_ref} does not contain {development_ref}")
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--event", default=os.environ.get("EVENT_NAME", ""))
+    parser.add_argument("--base", default=os.environ.get("BASE_REF", ""))
+    parser.add_argument("--head", default=os.environ.get("HEAD_REF", ""))
+    parser.add_argument("--ref-name", default=os.environ.get("REF_NAME", ""))
+    parser.add_argument("--require-current", metavar="DEVELOPMENT_REF")
+    args = parser.parse_args(argv)
+    check_event(args.event, args.base, args.head, args.ref_name)
+    if args.require_current:
+        require_current("HEAD", args.require_current)
+    print("OPENBAO_BRANCH_PROMOTION=PASS")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
