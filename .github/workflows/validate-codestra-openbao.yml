@@ -1,0 +1,107 @@
+name: Validate Codestra OpenBao corporate configuration
+
+on:
+  pull_request:
+    paths:
+      - 'codestra/**'
+      - 'scripts/validate_codestra_openbao.py'
+      - 'scripts/validate_codestra_openbao_oidc.py'
+      - 'scripts/validate_codestra_review_boundaries.py'
+      - '.github/workflows/validate-codestra-openbao.yml'
+      - '.github/workflows/upstream-source-sync.yml'
+      - 'CODESTRA_UPSTREAM.json'
+  push:
+    branches: [development, test, staging, production, main]
+    paths:
+      - 'codestra/**'
+      - 'scripts/validate_codestra_openbao.py'
+      - 'scripts/validate_codestra_openbao_oidc.py'
+      - 'scripts/validate_codestra_review_boundaries.py'
+      - '.github/workflows/validate-codestra-openbao.yml'
+      - '.github/workflows/upstream-source-sync.yml'
+      - 'CODESTRA_UPSTREAM.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codestra-openbao-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact head
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install pinned validation dependency
+        run: python -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
+
+      - name: Validate identity, isolation, PKI, policies, rotation and source governance
+        env:
+          PYTHONPYCACHEPREFIX: /tmp/codestra-openbao-pycache
+        run: |
+          python -m py_compile \
+            scripts/validate_codestra_openbao.py \
+            scripts/validate_codestra_openbao_oidc.py \
+            scripts/validate_codestra_review_boundaries.py
+          python scripts/validate_codestra_openbao.py
+
+      - name: Validate Keycloak OIDC, PKCE, private-edge and negative-test contract
+        env:
+          PYTHONPYCACHEPREFIX: /tmp/codestra-openbao-pycache
+        run: |
+          python scripts/validate_codestra_openbao_oidc.py
+          python scripts/validate_codestra_review_boundaries.py
+
+      - name: Prove policy templates are bounded and placeholder-driven
+        run: |
+          required_policies=(
+            auditor.hcl
+            business-admin-template.hcl
+            workload-read-template.hcl
+            beyvra-execution-template.hcl
+            beyvra-observability-deny.hcl
+          )
+          for policy in "${required_policies[@]}"; do
+            test -s "codestra/runtime-v1/policies/${policy}"
+          done
+          policy_count="$(find codestra/runtime-v1/policies -maxdepth 1 -type f -name '*.hcl' | wc -l)"
+          test "${policy_count}" -ge "${#required_policies[@]}"
+          test "$(find codestra/runtime-v1/policies -maxdepth 1 -type f -name '*.hcl' -empty | wc -l)" -eq 0
+          ! grep -R -E 'capabilities[[:space:]]*=[[:space:]]*\[[^]]*"sudo"' codestra/runtime-v1/policies
+          ! grep -R -E 'path[[:space:]]+"\*"' codestra/runtime-v1/policies
+          ! grep -E '^path "sys/leases/(renew|revoke|renew-prefix|revoke-prefix|revoke-force)' codestra/runtime-v1/policies/workload-read-template.hcl
+          grep -q 'kv-__BUSINESS__/data/__APPLICATION__/__ENVIRONMENT__' codestra/runtime-v1/policies/workload-read-template.hcl
+          grep -q 'DO NOT APPLY by default' codestra/runtime-v1/policies/beyvra-execution-template.hcl
+
+      - name: Prove upstream import is review-only
+        run: |
+          grep -q -- '--base development' .github/workflows/upstream-source-sync.yml
+          grep -q 'CODESTRA_UPSTREAM_SANITIZATION.json' .github/workflows/upstream-source-sync.yml
+          ! grep -q 'git push origin HEAD:main' .github/workflows/upstream-source-sync.yml
+          ! grep -q 'git push origin HEAD:staging' .github/workflows/upstream-source-sync.yml
+          ! grep -q 'git push origin HEAD:production' .github/workflows/upstream-source-sync.yml
+
+      - name: Confirm source-only safety state
+        run: |
+          test "$(python -c 'import json; print(json.load(open("codestra/runtime-v1/runtime.v1.json"))["status"])')" = "CONFIG_PREPARED_NOT_DEPLOYED"
+          test "$(python -c 'import json; print(json.load(open("codestra/runtime-v1/secret-control-plane.v1.json"))["status"])')" = "CONTROL_PLANE_PREPARED_NOT_APPLIED"
+          python - <<'PY'
+          import json
+          runtime = json.load(open('codestra/runtime-v1/runtime.v1.json', encoding='utf-8'))
+          control = json.load(open('codestra/runtime-v1/secret-control-plane.v1.json', encoding='utf-8'))
+          oidc = json.load(open('codestra/runtime-v1/oidc-plan.v1.json', encoding='utf-8'))
+          assert runtime['activation'] and all(value is False for value in runtime['activation'].values())
+          assert control['releaseGates'] and all(value is False for value in control['releaseGates'].values())
+          assert oidc['activation'] and all(value is False for value in oidc['activation'].values())
+          assert runtime['identity']['human']['clientId'] == oidc['client']['clientId'] == 'openbao-secrets'
+          assert runtime['beyvraHighSecurityCompartment']['brokerExchangeCustodySigningEnabledByDefault'] is False
+          PY

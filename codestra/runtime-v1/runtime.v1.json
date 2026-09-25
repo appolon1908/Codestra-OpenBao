@@ -1,0 +1,202 @@
+{
+  "schemaVersion": "1.1",
+  "component": "openbao",
+  "role": "codestra-secrets-pki-and-cryptographic-policy-authority",
+  "canonicalHostname": "bao.codestra.media",
+  "exposure": "private-network-and-strongly-authenticated-admin-edge",
+  "status": "CONFIG_PREPARED_NOT_DEPLOYED",
+  "businessScope": [
+    "codestra",
+    "moneybee",
+    "beyvra",
+    "breero",
+    "larim-a",
+    "transportation",
+    "booked4seasons",
+    "social",
+    "klyrow",
+    "telnexa",
+    "kyqra",
+    "restaurant",
+    "provisioning"
+  ],
+  "platformProductScope": [
+    "loki",
+    "prometheus",
+    "grafana",
+    "tempo",
+    "opentelemetry",
+    "alloy",
+    "node-exporter",
+    "cadvisor",
+    "redis-exporter",
+    "blackbox-exporter",
+    "superset",
+    "openbao"
+  ],
+  "environmentScope": [
+    "development",
+    "test",
+    "staging",
+    "production"
+  ],
+  "storage": {
+    "backend": "integrated-raft",
+    "haRequired": true,
+    "minimumVotingNodesProduction": 3,
+    "autopilotRequired": true,
+    "snapshotsEncryptedAndTested": true,
+    "snapshotRestoreValidationRequired": true
+  },
+  "transport": {
+    "tlsRequired": true,
+    "minimumVersion": "TLS13",
+    "plaintextListener": false,
+    "clusterTlsRequired": true,
+    "publicNativePort": false,
+    "adminEdge": "Caddy",
+    "prometheusUnauthenticatedMetrics": false
+  },
+  "identity": {
+    "human": {
+      "method": "keycloak-oidc",
+      "issuer": "https://auth.codestra.co/realms/codestra",
+      "clientId": "openbao-secrets",
+      "authorizationCode": true,
+      "pkce": "S256",
+      "mfaRequiredForPrivilegedRoles": true,
+      "defaultPolicy": "deny",
+      "rootTokenDailyUse": false
+    },
+    "workload": {
+      "preferredMethod": "jwt",
+      "boundIssuer": "https://auth.codestra.co/realms/codestra",
+      "requiredAudience": "openbao",
+      "businessClaim": "codestra_business",
+      "applicationClaim": "application",
+      "environmentClaim": "environment",
+      "staticLongLivedTokens": false,
+      "tokenTtlMinutes": 15,
+      "tokenMaxTtlMinutes": 60
+    },
+    "breakGlass": {
+      "required": true,
+      "offlineCustody": true,
+      "dualControl": true,
+      "timeBound": true,
+      "postUseRotationAndReview": true
+    }
+  },
+  "secretEngines": {
+    "platformKvV2Mount": "kv-platform/",
+    "platformPathPattern": "data/<domain>/<product>/<secret-domain>/...",
+    "businessKvV2MountPerBusiness": true,
+    "businessMountPattern": "kv-<business>/",
+    "applicationPathPattern": "data/<application>/<environment>/<secret-domain>/...",
+    "databaseDynamicCredentials": true,
+    "pkiIntermediateMount": "pki-platform-intermediate/",
+    "pkiIssuingMount": "pki-platform-issuing/",
+    "transitPlatformMount": "transit-platform/",
+    "transitBeyvraMount": "transit-beyvra/",
+    "sshOrSigningEngineEnabledByDefault": false
+  },
+  "businessIsolation": {
+    "mountPerBusiness": true,
+    "environmentPathIsolation": true,
+    "crossBusinessWildcardPolicies": false,
+    "customerControlledPolicyNames": false,
+    "platformProductsMayReadBusinessSecretValues": false,
+    "observabilityMayReadSecretValues": false,
+    "supersetMayReadSecretValues": false,
+    "n8nMayReadUnscopedSecretValues": false
+  },
+  "pki": {
+    "offlineRootPreferred": true,
+    "onlineIntermediateOnly": true,
+    "serviceCertificateTtlHours": 24,
+    "maximumServiceCertificateTtlHours": 168,
+    "privateKeyExportDefault": false,
+    "allowedDnsNamesRequired": true,
+    "automaticRevocationAndCrl": true
+  },
+  "rotation": {
+    "leaseAndRevocationRequired": true,
+    "dynamicCredentialsPreferred": true,
+    "staticSecretOwnerRequired": true,
+    "staticSecretRotationSlaRequired": true,
+    "rotationFailureAlertRequired": true,
+    "secretVersionRollbackAudited": true
+  },
+  "audit": {
+    "minimumDevices": 2,
+    "fileOrSocketDevice": true,
+    "remoteTamperEvidentCopy": true,
+    "sensitiveValuesHashedByOpenBao": true,
+    "rawSecretValuesInLoki": false,
+    "businessAndIdentityAttributionRequired": true,
+    "retentionApprovalRequired": true
+  },
+  "beyvraHighSecurityCompartment": {
+    "mount": "kv-beyvra/",
+    "transitMount": "transit-beyvra/",
+    "allowedWorkloads": [
+      "beyvra-backend",
+      "beyvra-execution-worker"
+    ],
+    "deniedReaders": [
+      "grafana",
+      "superset",
+      "prometheus",
+      "loki",
+      "tempo",
+      "alloy",
+      "opentelemetry",
+      "node-exporter",
+      "cadvisor",
+      "redis-exporter",
+      "blackbox-exporter",
+      "n8n",
+      "other-business-workloads"
+    ],
+    "browserSecretValueAccess": false,
+    "brokerExchangeCustodySigningEnabledByDefault": false,
+    "dualApprovalForSigningActivation": true,
+    "nonExportableKeysRequiredWhenSigningIsApproved": true
+  },
+  "authorityBoundaries": {
+    "storesAndLeasesSecrets": true,
+    "issuesApprovedCertificates": true,
+    "providesApprovedEncryptionOperations": true,
+    "businessMutation": false,
+    "communicationsDelivery": false,
+    "identitySourceOfTruth": false,
+    "observabilityStorage": false,
+    "loanFundingAuthority": false,
+    "tradeOrderAuthority": false
+  },
+  "activation": {
+    "officialUpstreamSnapshotImported": false,
+    "upstreamSanitizationManifestVerified": false,
+    "immutableImageRecorded": false,
+    "raftNodesProvisioned": false,
+    "tlsCertificatesInstalled": false,
+    "sealOrUnsealCustodyApproved": false,
+    "keycloakOidcConfigured": false,
+    "workloadJwtConfigured": false,
+    "platformMountCreated": false,
+    "businessMountsCreated": false,
+    "platformPoliciesApplied": false,
+    "businessPoliciesApplied": false,
+    "crossBusinessDenialTestPassed": false,
+    "auditDevicesEnabled": false,
+    "auditRemoteCopyVerified": false,
+    "pkiIntermediateImported": false,
+    "dynamicDatabaseRolesApproved": false,
+    "rotationAlertsIntegrated": false,
+    "snapshotRestoreValidated": false,
+    "beyvraCompartmentApproved": false,
+    "caddyRouteActivated": false,
+    "productionApproved": false,
+    "deploymentEnabled": false
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "component": "openbao",
+  "codestraRole": "secrets, PKI and cryptographic policy authority",
+  "corporatePurpose": "Centralize runtime secrets, dynamic credentials, leases, PKI and rotation policies for Codestra businesses and platform services.",
+  "businessPortfolio": ["codestra", "moneybee", "beyvra", "breero", "larim-a", "transportation", "booked4seasons", "social", "klyrow", "telnexa", "kyqra", "restaurant", "provisioning"],
+  "standardDimensions": ["codestra_business", "application", "service", "environment", "server", "region", "deployment"],
+  "forbiddenLabels": ["tenant_id", "customer_id", "user_id", "email", "phone", "request_id", "trace_id", "message_id", "financial_transaction_id"],
+  "corporateFeatures": ["workload_identity", "dynamic_database_credentials", "kv_v2_namespaces", "pki_issuing_policy", "lease_rotation", "audit_device_required", "break_glass_policy", "business_secret_compartments"],
+  "dashboardContribution": ["secret_lease_health", "rotation_due_reports", "audit_event_summary", "policy_drift_indicators"],
+  "beyvraBoundary": "Beyvra broker and exchange credentials must live in a dedicated high-sensitivity compartment with separate policy, audit, rotation and break-glass rules.",
+  "activationStatus": "SOURCE_PREPARED_NOT_DEPLOYED"
+}

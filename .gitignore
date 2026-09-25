@@ -1,0 +1,23 @@
+# Never commit OpenBao runtime secret material
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.unseal
+*.token
+*.secret
+secrets/
+credentials/
+runtime-data/
+bao-data/
+raft-data/
+
+# Local tooling
+.tmp/
+.cache/
+.DS_Store

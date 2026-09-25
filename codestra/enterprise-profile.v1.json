@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.0",
+  "component": "openbao",
+  "role": "secrets-pki-and-cryptographic-policy-authority",
+  "canonicalHostname": "bao.codestra.media",
+  "exposure": "private_or_strongly_authenticated_admin",
+  "status": "SOURCE_PREPARED_NOT_DEPLOYED",
+  "identity": {
+    "humanAdmin": "keycloak_oidc",
+    "workloads": ["jwt_oidc", "approle_or_platform_workload_identity"],
+    "rootTokenDailyUse": false,
+    "breakGlassRequired": true
+  },
+  "businessScope": ["codestra", "moneybee", "beyvra", "breero", "larim-a", "transportation", "booked4seasons", "social", "klyrow", "telnexa", "kyqra", "restaurant", "provisioning"],
+  "environmentScope": ["development", "test", "staging", "production"],
+  "secretDomains": ["database", "redis", "oauth", "provider_api", "smtp", "webhook_hmac", "tls_pki", "application", "deployment"],
+  "features": {
+    "kvSecrets": true,
+    "dynamicDatabaseCredentials": true,
+    "pki": true,
+    "transitEncryption": true,
+    "leasesAndRevocation": true,
+    "rotation": true,
+    "auditDevices": true,
+    "perBusinessPolicies": true,
+    "perEnvironmentIsolation": true,
+    "shortLivedCredentials": true,
+    "breakGlassRunbook": true
+  },
+  "audit": {
+    "forwardToLoki": true,
+    "redactSensitiveValues": true,
+    "tamperEvidentRetentionRequired": true
+  },
+  "financialTradingBoundary": {
+    "business": "beyvra",
+    "dedicatedPolicyCompartment": true,
+    "allowedReaders": ["beyvra-backend", "beyvra-execution-worker"],
+    "deniedByDefault": ["grafana", "superset", "prometheus", "loki", "tempo", "n8n", "other_business_workloads"],
+    "rule": "Broker/exchange/custody signing credentials require the narrowest workload identity, short leases/rotation where supported, auditability and no browser exposure."
+  }
+}

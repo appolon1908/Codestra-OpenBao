@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0",
+  "status": "CONTRACT_PREPARED_NOT_DEPLOYED",
+  "domain": "unified-intake",
+  "canonicalFlow": ["website-or-widget", "@codestra/intake-form-or-intake-survey", "@codestra/intake-sdk", "same-origin-intake-bff", "caddy", "kong", "middleware-durable-intake", "odoo-or-analytics-or-approved-workflow"],
+  "events": ["codestra.events.lead_submitted", "codestra.events.survey_response_submitted"],
+  "safeDimensions": ["codestra_business", "application", "service", "environment", "deployment"],
+  "forbiddenLabelsOrPayloads": ["form responses", "survey responses", "survey answers", "contact records", "consent payloads", "messages", "transcripts", "customer financial payloads"],
+  "privacyRules": {"browserSecretAccess": false, "formResponseStorage": false, "surveyResponseStorage": false, "crossBusinessRead": false},
+  "activation": {"runtimeApplied": false, "productionTargetsEnabled": false, "liveBusinessWritesEnabledByThisContract": false},
+  "component": "openbao",
+  "responsibility": "short-lived intake workload secrets, PKI and rotation policy",
+  "features": {
+    "secretPathPattern": "kv-<business>/data/intake/<application>/<environment>/*",
+    "approvedWorkloads": ["intake-bff", "middleware-intake", "odoo-intake-adapter"],
+    "browserSecretAccess": false,
+    "crossBusinessRead": false,
+    "surveyResponseStorage": false,
+    "formResponseStorage": false,
+    "beyvraTradeSigningAuthority": false
+  }
+}

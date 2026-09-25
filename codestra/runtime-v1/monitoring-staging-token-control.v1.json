@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.1",
+  "control_id": "codestra-monitoring-staging-token-control-v1",
+  "status": "SOURCE_PREPARED_NOT_APPLIED",
+  "environment": "staging",
+  "secret_authority": "OpenBao",
+  "identity_authority": "Keycloak",
+  "client": {
+    "client_id": "monitoring-readonly",
+    "audience": "middleware-api",
+    "client_secret_path": "kv-platform/data/observability/middleware/staging/keycloak-client",
+    "client_secret_committed_to_git": false,
+    "keycloak_source_path": "config/clients/monitoring-readonly.json",
+    "scope_claim_mapper": "reviewed-service-scopes",
+    "required_returned_scopes": ["health.read", "metrics.read"]
+  },
+  "runtime_tokens": [
+    {"name": "metrics", "required_scope": "metrics.read", "endpoint": "/metrics", "maximum_ttl_seconds": 300, "file_mode": "0600", "persist_after_evidence": false},
+    {"name": "health", "required_scope": "health.read", "endpoint": "/v1/runtime/safety", "maximum_ttl_seconds": 300, "file_mode": "0600", "persist_after_evidence": false}
+  ],
+  "prometheus_oauth2": {
+    "uses_client_secret_file": true,
+    "requested_scopes": [],
+    "scope_claim_authority": "Keycloak hardcoded reviewed-service-scopes mapper",
+    "required_returned_scope": "metrics.read",
+    "stores_access_token": false,
+    "automatic_short_lived_token_refresh": true
+  },
+  "evidence_rules": {
+    "token_values_in_logs": false,
+    "token_values_in_artifacts": false,
+    "client_secret_in_artifacts": false,
+    "token_hashes_may_be_recorded": true,
+    "runtime_evidence_checksum_is_not_a_secret": true,
+    "returned_scopes_must_be_validated": true
+  },
+  "denied_authorities": [
+    "provider-write credentials",
+    "advertising spend",
+    "customer communication delivery",
+    "social publishing",
+    "Beyvra trade signing",
+    "Odoo write credentials"
+  ],
+  "activation": {
+    "policy_applied": false,
+    "role_created": false,
+    "client_secret_written": false,
+    "tokens_issued": false,
+    "production_approved": false
+  }
+}

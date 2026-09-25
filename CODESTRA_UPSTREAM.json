@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "component": "OpenBao",
   "codestra_role": "principal-secrets-and-encryption-authority",
   "upstream_repository": "openbao/openbao",
@@ -8,5 +8,13 @@
   "import_path": "upstream",
   "deployment_enabled": false,
   "secret_material_allowed_in_git": false,
-  "branch_promotion": ["main", "staging", "production"]
+  "sanitized_fixture_manifest_required": true,
+  "direct_environment_push_allowed": false,
+  "branch_promotion": [
+    "development",
+    "test",
+    "staging",
+    "production",
+    "main"
+  ]
 }

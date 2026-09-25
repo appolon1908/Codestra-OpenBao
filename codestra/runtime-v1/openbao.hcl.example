@@ -1,0 +1,60 @@
+# Codestra OpenBao production configuration template.
+# Deployment renders the __PLACEHOLDER__ values from approved inventory and
+# secret files. No private keys, unseal material, tokens or credentials belong
+# in this repository.
+
+ui = true
+disable_mlock = false
+cluster_name = "codestra-openbao-__ENVIRONMENT__"
+api_addr = "https://__NODE_FQDN__:8200"
+cluster_addr = "https://__NODE_FQDN__:8201"
+default_lease_ttl = "15m"
+max_lease_ttl = "1h"
+log_level = "info"
+log_format = "json"
+raw_storage_endpoint = false
+
+storage "raft" {
+  path = "/openbao/data"
+  node_id = "__NODE_ID__"
+
+  retry_join {
+    leader_api_addr = "https://__RAFT_LEADER_1__:8200"
+    leader_ca_cert_file = "/run/secrets/openbao_cluster_ca"
+    leader_client_cert_file = "/run/secrets/openbao_cluster_client_cert"
+    leader_client_key_file = "/run/secrets/openbao_cluster_client_key"
+  }
+
+  retry_join {
+    leader_api_addr = "https://__RAFT_LEADER_2__:8200"
+    leader_ca_cert_file = "/run/secrets/openbao_cluster_ca"
+    leader_client_cert_file = "/run/secrets/openbao_cluster_client_cert"
+    leader_client_key_file = "/run/secrets/openbao_cluster_client_key"
+  }
+}
+
+listener "tcp" {
+  address = "0.0.0.0:8200"
+  cluster_address = "0.0.0.0:8201"
+  tls_disable = 0
+  tls_min_version = "tls13"
+  tls_cert_file = "/run/secrets/openbao_server_cert"
+  tls_key_file = "/run/secrets/openbao_server_key"
+  tls_client_ca_file = "/run/secrets/openbao_client_ca"
+  tls_require_and_verify_client_cert = true
+  tls_disable_client_certs = false
+
+  telemetry {
+    unauthenticated_metrics_access = false
+  }
+}
+
+telemetry {
+  prometheus_retention_time = "30s"
+  disable_hostname = true
+  usage_gauge_period = "10m"
+}
+
+# Production seal/unseal configuration is deliberately not embedded here.
+# The approved operator must render one reviewed seal stanza or execute the
+# documented Shamir ceremony. Auto-unseal credentials are never stored in Git.

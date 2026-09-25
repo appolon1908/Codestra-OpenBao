@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.1",
+  "status": "SOURCE_PREPARED_NOT_APPLIED",
+  "authority": "Codestra-OpenBao",
+  "initialization": {
+    "automatedInCompose": false,
+    "unsealShares": 5,
+    "unsealThreshold": 3,
+    "rootTokenRetainedAfterBootstrap": false,
+    "recoveryMaterialStoredInGit": false,
+    "productionRequiresDocumentedCeremony": true
+  },
+  "audit": {
+    "requiredDevices": ["file-json", "socket-governed-forwarder"],
+    "requestBodiesLogged": false,
+    "responseBodiesLogged": false,
+    "hmacAccessor": true,
+    "alertOnAuditFailure": true
+  },
+  "authMethods": [
+    {
+      "type": "jwt",
+      "use": "preferred workload identity bound to Keycloak issuer, audience, business, application and environment",
+      "tokenTtl": "15m",
+      "tokenMaxTtl": "1h"
+    },
+    {
+      "type": "oidc",
+      "use": "human operators through Codestra Keycloak with PKCE and privileged-role MFA",
+      "tokenTtl": "15m",
+      "tokenMaxTtl": "1h"
+    },
+    {
+      "type": "approle",
+      "use": "exception-only bare-metal workload fallback after security approval",
+      "secretIdDelivery": "response-wrapped",
+      "tokenTtl": "15m",
+      "tokenMaxTtl": "1h"
+    }
+  ],
+  "secretEngines": [
+    {
+      "path": "kv-platform/",
+      "type": "kv-v2",
+      "purpose": "versioned runtime secrets for the twelve Codestra platform products",
+      "maxVersions": 10,
+      "deleteVersionAfter": "90d"
+    },
+    {
+      "pathPattern": "kv-<business>/",
+      "type": "kv-v2",
+      "purpose": "isolated application and integration secrets for one managed business",
+      "maxVersions": 10,
+      "deleteVersionAfter": "90d"
+    },
+    {
+      "path": "pki-platform-intermediate/",
+      "type": "pki",
+      "purpose": "online intermediate CA beneath an offline root",
+      "maxLeafTtl": "168h"
+    },
+    {
+      "path": "pki-platform-issuing/",
+      "type": "pki",
+      "purpose": "short-lived service and telemetry certificates",
+      "defaultLeafTtl": "24h",
+      "maxLeafTtl": "168h"
+    },
+    {
+      "path": "database/",
+      "type": "database",
+      "purpose": "dynamic PostgreSQL and approved analytics credentials",
+      "defaultTtl": "15m",
+      "maxTtl": "1h"
+    },
+    {
+      "path": "transit-platform/",
+      "type": "transit",
+      "purpose": "approved platform encryption operations",
+      "observabilitySigningAuthority": false
+    },
+    {
+      "path": "transit-beyvra/",
+      "type": "transit",
+      "purpose": "isolated, disabled-by-default Beyvra cryptographic compartment",
+      "keyExportAllowed": false,
+      "signingEnabledByDefault": false
+    }
+  ],
+  "servicePolicies": [
+    "loki-runtime",
+    "tempo-runtime",
+    "grafana-runtime",
+    "superset-runtime",
+    "otel-runtime",
+    "prometheus-openbao-metrics"
+  ],
+  "businesses": [
+    "codestra",
+    "moneybee",
+    "beyvra",
+    "breero",
+    "larim-a",
+    "transportation",
+    "booked4seasons",
+    "social",
+    "klyrow",
+    "telnexa",
+    "kyqra",
+    "restaurant",
+    "provisioning"
+  ],
+  "businessIdentityRules": {
+    "oneJwtRolePerBusinessTelemetryAgent": true,
+    "crossBusinessSecretReadAllowed": false,
+    "customerSpecificPoliciesGenerated": false,
+    "customerIdsUsedAsPolicyNames": false,
+    "businessTelemetryIdentityCanReadBusinessRuntimeSecrets": false,
+    "beyvraObservabilityCanSignTrades": false,
+    "beyvraObservabilityCanDecryptTradePayloads": false
+  },
+  "rotation": {
+    "observabilityClientCertificates": "12h",
+    "observabilityServerCertificates": "24h",
+    "databaseCredentials": "15m-default-1h-maximum",
+    "oauthClientSecrets": "90d-or-provider-minimum",
+    "staticObjectStoreCredentials": "30d-until-dynamic-provider-supported"
+  },
+  "releaseGates": {
+    "policyDiffReviewed": true,
+    "capabilityEscalationTestRequired": true,
+    "crossBusinessDenyTestRequired": true,
+    "auditDeviceFailureTestRequired": true,
+    "backupAndRestoreEvidenceRequired": true,
+    "rootTokenRevocationEvidenceRequired": true,
+    "unsealMaterialInCiAllowed": false,
+    "liveApplyFromPullRequestAllowed": false,
+    "nativeSourceValidationComplete": false,
+    "productionApproved": false
+  }
+}

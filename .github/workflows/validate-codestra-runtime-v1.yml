@@ -1,0 +1,211 @@
+name: Validate Codestra OpenBao runtime v1
+
+on:
+  pull_request:
+    paths:
+      - "codestra/runtime-v1/**"
+      - "CODESTRA_UPSTREAM.json"
+      - "CODESTRA_UPSTREAM_LOCK.json"
+      - "CODESTRA_UPSTREAM_SANITIZATION.json"
+      - ".github/workflows/validate-codestra-runtime-v1.yml"
+  push:
+    branches:
+      - development
+      - test
+      - staging
+      - production
+      - main
+    paths:
+      - "codestra/runtime-v1/**"
+      - "CODESTRA_UPSTREAM.json"
+      - "CODESTRA_UPSTREAM_LOCK.json"
+      - "CODESTRA_UPSTREAM_SANITIZATION.json"
+      - ".github/workflows/validate-codestra-runtime-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine locked native-source availability
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f upstream/go.mod && -f upstream/go.sum && -f CODESTRA_UPSTREAM_LOCK.json && -f CODESTRA_UPSTREAM_SANITIZATION.json ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-go@v5
+        if: steps.source.outputs.available == 'true'
+        with:
+          go-version-file: upstream/go.mod
+          cache-dependency-path: upstream/go.sum
+
+      - name: Build the exact vendored OpenBao source
+        if: steps.source.outputs.available == 'true'
+        working-directory: upstream
+        run: go build -trimpath -o ../.tmp-openbao .
+
+      - name: Validate static policy HCL with locked OpenBao source
+        if: steps.source.outputs.available == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for policy in codestra/runtime-v1/policies/*.hcl; do
+            ./.tmp-openbao policy fmt "$policy" >/dev/null
+          done
+
+      - name: Generate every business telemetry policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$(mktemp -d)"
+          python codestra/runtime-v1/generate_business_policies.py --output-dir "$out"
+          test "$(find "$out" -maxdepth 1 -name '*.hcl' | wc -l)" -eq 13
+          grep -q 'capabilities = \["deny"\]' "$out/telemetry-beyvra.hcl"
+          grep -q 'transit-beyvra/sign/' "$out/telemetry-beyvra.hcl"
+          grep -q 'transit-beyvra/export/' "$out/telemetry-beyvra.hcl"
+          grep -q 'kv-platform/data/observability/clients/codestra/alloy' "$out/telemetry-codestra.hcl"
+          ! grep -R 'secret/data/' "$out"
+          ! grep -R 'pki_observability/' "$out"
+          ! grep -R 'path "kv-[^p]' "$out"
+          if [[ "${{ steps.source.outputs.available }}" == "true" ]]; then
+            for policy in "$out"/*.hcl; do
+              ./.tmp-openbao policy fmt "$policy" >/dev/null
+            done
+          fi
+
+      - name: Verify OpenBao server configuration with temporary CI certificates
+        if: steps.source.outputs.available == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout "$work/server-key.pem" \
+            -out "$work/server-cert.pem" \
+            -days 1 -subj '/CN=codestra-openbao' >/dev/null 2>&1
+          sudo mkdir -p /run/secrets /openbao/data
+          sudo cp "$work/server-key.pem" /run/secrets/openbao_server_key.pem
+          sudo cp "$work/server-cert.pem" /run/secrets/openbao_server_cert.pem
+          sudo cp "$work/server-cert.pem" /run/secrets/codestra_workload_ca.pem
+          sudo chmod 0600 /run/secrets/openbao_server_key.pem
+          sudo ./.tmp-openbao server \
+            -config=codestra/runtime-v1/openbao.hcl \
+            -verify-only
+
+      - name: Install pinned YAML parser
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+
+      - name: Validate Codestra desired state and runtime boundary
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+          import yaml
+
+          root = Path("codestra/runtime-v1")
+          config = (root / "openbao.hcl").read_text()
+          desired = json.loads((root / "desired-state.json").read_text())
+          runtime = json.loads((root / "runtime.v1.json").read_text())
+          control = json.loads((root / "secret-control-plane.v1.json").read_text())
+          compose_text = (root / "compose.yaml").read_text()
+          compose = yaml.safe_load(compose_text)
+          service = compose["services"]["openbao"]
+          policies = "\n".join(path.read_text() for path in (root / "policies").glob("*.hcl"))
+
+          required = {
+              "codestra", "moneybee", "beyvra", "breero", "larim-a",
+              "transportation", "booked4seasons", "social", "klyrow",
+              "telnexa", "kyqra", "restaurant", "provisioning",
+          }
+          products = {
+              "loki", "prometheus", "grafana", "tempo", "opentelemetry",
+              "alloy", "node-exporter", "cadvisor", "redis-exporter",
+              "blackbox-exporter", "superset", "openbao",
+          }
+          assert desired["schemaVersion"] == "1.1"
+          assert desired["status"] == "SOURCE_PREPARED_NOT_APPLIED"
+          assert set(desired["businesses"]) == required
+          assert runtime["status"] == "CONFIG_PREPARED_NOT_DEPLOYED"
+          assert set(runtime["platformProductScope"]) == products
+          assert control["status"] == "CONTROL_PLANE_PREPARED_NOT_APPLIED"
+          assert set(control["platformProducts"]) == products
+          assert desired["initialization"]["automatedInCompose"] is False
+          assert desired["initialization"]["rootTokenRetainedAfterBootstrap"] is False
+          assert desired["businessIdentityRules"]["crossBusinessSecretReadAllowed"] is False
+          assert desired["businessIdentityRules"]["beyvraObservabilityCanSignTrades"] is False
+          assert desired["releaseGates"]["liveApplyFromPullRequestAllowed"] is False
+          assert desired["releaseGates"]["nativeSourceValidationComplete"] is False
+          assert 'tls_require_and_verify_client_cert = true' in config
+          assert 'tls_min_version = "tls13"' in config
+          assert 'default_lease_ttl = "15m"' in config
+          assert 'max_lease_ttl = "1h"' in config
+          assert 'unauthenticated_metrics_access = false' in config
+          assert 'disable_mlock = false' in config
+          assert 'raw_storage_endpoint = false' in config
+          assert 'path "secret/' not in policies
+          assert 'path "pki_observability/' not in policies
+          assert 'capabilities = ["deny"]' in policies
+          assert 'capabilities = ["sudo"]' not in policies
+          assert 'path "*"' not in policies
+          assert "ports" not in service
+          assert service["read_only"] is True
+          assert "IPC_LOCK" in service["cap_add"]
+          assert "init" not in " ".join(service["command"]).lower()
+          assert "latest" not in compose_text.lower()
+          assert runtime["activation"] and all(value is False for value in runtime["activation"].values())
+          assert control["releaseGates"] and all(value is False for value in control["releaseGates"].values())
+          print("Codestra OpenBao configuration-layer validation PASS")
+
+      - name: Render Compose with non-secret CI files
+        env:
+          OPENBAO_IMAGE: openbao/openbao:ci@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          CODESTRA_ENVIRONMENT: test
+          CODESTRA_DEPLOYMENT: exact-head-ci
+          OPENBAO_SERVER_CERT_FILE: /tmp/openbao-server-cert.pem
+          OPENBAO_SERVER_KEY_FILE: /tmp/openbao-server-key.pem
+          CODESTRA_WORKLOAD_CA_FILE: /tmp/codestra-workload-ca.pem
+          OPENBAO_OPERATOR_CERT_FILE: /tmp/openbao-operator-cert.pem
+          OPENBAO_OPERATOR_KEY_FILE: /tmp/openbao-operator-key.pem
+        run: |
+          for file in \
+            "$OPENBAO_SERVER_CERT_FILE" \
+            "$OPENBAO_SERVER_KEY_FILE" \
+            "$CODESTRA_WORKLOAD_CA_FILE" \
+            "$OPENBAO_OPERATOR_CERT_FILE" \
+            "$OPENBAO_OPERATOR_KEY_FILE"; do
+            printf 'non-secret-ci-placeholder\n' > "$file"
+          done
+          docker compose -f codestra/runtime-v1/compose.yaml config >/tmp/codestra-openbao-runtime.yaml
+          test -s /tmp/codestra-openbao-runtime.yaml
+          ! grep -Eq ':latest([[:space:]]|$)|published:|host_ip:|privileged: true|network_mode: host|pid: host' /tmp/codestra-openbao-runtime.yaml
+
+      - name: Enforce honest native-source release gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ steps.source.outputs.available }}" == "true" ]]; then
+            python - <<'PY'
+          import json
+          lock = json.load(open('CODESTRA_UPSTREAM_LOCK.json', encoding='utf-8'))
+          sanitization = json.load(open('CODESTRA_UPSTREAM_SANITIZATION.json', encoding='utf-8'))
+          assert lock['deployment_enabled'] is False
+          assert lock['sanitization_manifest'] == 'CODESTRA_UPSTREAM_SANITIZATION.json'
+          assert lock['upstream_commit'] == sanitization['upstream_commit']
+          PY
+            echo "LOCKED_NATIVE_SOURCE_VALIDATION_PASS"
+          else
+            test ! -f CODESTRA_UPSTREAM_LOCK.json
+            test ! -f CODESTRA_UPSTREAM_SANITIZATION.json
+            test "$(python -c 'import json; print(json.load(open("codestra/runtime-v1/runtime.v1.json"))["activation"]["officialUpstreamSnapshotImported"])')" = "False"
+            test "$(python -c 'import json; print(json.load(open("codestra/runtime-v1/desired-state.json"))["releaseGates"]["nativeSourceValidationComplete"])')" = "False"
+            echo "NATIVE_SOURCE_VALIDATION_BLOCKED_EXPECTED"
+          fi

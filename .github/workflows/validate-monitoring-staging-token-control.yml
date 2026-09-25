@@ -1,0 +1,38 @@
+name: Validate Stage 6 monitoring token control
+
+on:
+  pull_request:
+    paths:
+      - "codestra/runtime-v1/monitoring-staging-token-control.v1.json"
+      - "codestra/runtime-v1/staging-policies/monitoring-staging-evidence.hcl"
+      - "codestra/runtime-v1/validate_monitoring_staging_token_control.py"
+      - ".github/workflows/validate-monitoring-staging-token-control.yml"
+  push:
+    branches: [development]
+    paths:
+      - "codestra/runtime-v1/monitoring-staging-token-control.v1.json"
+      - "codestra/runtime-v1/staging-policies/monitoring-staging-evidence.hcl"
+      - "codestra/runtime-v1/validate_monitoring_staging_token_control.py"
+      - ".github/workflows/validate-monitoring-staging-token-control.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        with:
+          python-version: "3.13"
+      - run: python -m py_compile codestra/runtime-v1/validate_monitoring_staging_token_control.py
+      - run: python codestra/runtime-v1/validate_monitoring_staging_token_control.py
+      - name: Preserve source-only boundary
+        run: |
+          echo 'OPENBAO_POLICY_APPLIED=NO'
+          echo 'TOKENS_ISSUED=NO'
+          echo 'PRODUCTION_AUTHORIZED=NO'

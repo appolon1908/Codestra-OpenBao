@@ -1,0 +1,76 @@
+name: codestra-openbao
+
+services:
+  openbao:
+    image: ${OPENBAO_IMAGE:?OPENBAO_IMAGE must be an immutable image digest}
+    hostname: codestra-openbao
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - IPC_LOCK
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - server
+      - -config=/openbao/config/openbao.hcl
+    environment:
+      BAO_ADDR: https://127.0.0.1:8200
+      BAO_CACERT: /run/secrets/codestra_workload_ca.pem
+      BAO_CLIENT_CERT: /run/secrets/openbao_operator_cert.pem
+      BAO_CLIENT_KEY: /run/secrets/openbao_operator_key.pem
+    volumes:
+      - ./openbao.hcl:/openbao/config/openbao.hcl:ro
+      - openbao_data:/openbao/data
+    secrets:
+      - openbao_server_cert.pem
+      - openbao_server_key.pem
+      - codestra_workload_ca.pem
+      - openbao_operator_cert.pem
+      - openbao_operator_key.pem
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /openbao/logs:size=64m,mode=0750
+    networks:
+      - codestra_security
+      - codestra_observability
+    stop_grace_period: 90s
+    labels:
+      com.codestra.business: codestra
+      com.codestra.application: security-platform
+      com.codestra.service: openbao
+      com.codestra.environment: ${CODESTRA_ENVIRONMENT:?set environment}
+      com.codestra.deployment: ${CODESTRA_DEPLOYMENT:?set immutable deployment identifier}
+      com.codestra.owner: platform-security
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4G
+        reservations:
+          cpus: "0.50"
+          memory: 1G
+
+secrets:
+  openbao_server_cert.pem:
+    file: ${OPENBAO_SERVER_CERT_FILE:?mount the OpenBao server certificate}
+  openbao_server_key.pem:
+    file: ${OPENBAO_SERVER_KEY_FILE:?mount the OpenBao server private key}
+  codestra_workload_ca.pem:
+    file: ${CODESTRA_WORKLOAD_CA_FILE:?mount the workload CA certificate}
+  openbao_operator_cert.pem:
+    file: ${OPENBAO_OPERATOR_CERT_FILE:?mount an operator client certificate}
+  openbao_operator_key.pem:
+    file: ${OPENBAO_OPERATOR_KEY_FILE:?mount the operator client private key}
+
+volumes:
+  openbao_data:
+
+networks:
+  codestra_security:
+    external: true
+    name: codestra-security
+  codestra_observability:
+    external: true
+    name: codestra-observability

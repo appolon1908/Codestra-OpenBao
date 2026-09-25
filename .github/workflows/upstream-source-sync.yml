@@ -1,0 +1,232 @@
+name: Codestra OpenBao Upstream Source Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - CODESTRA_UPSTREAM.json
+      - .github/workflows/upstream-source-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: codestra-openbao-upstream-source-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Check out Codestra authority
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Import and deterministically sanitize official upstream source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          mapfile -t values < <(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('CODESTRA_UPSTREAM.json').read_text(encoding='utf-8'))
+          print(data['upstream_clone_url'])
+          print(data['upstream_ref'])
+          print(data['import_path'])
+          PY
+          )
+
+          UPSTREAM_URL="${values[0]}"
+          UPSTREAM_REF="${values[1]}"
+          IMPORT_PATH="${values[2]}"
+
+          [[ "$UPSTREAM_URL" == "https://github.com/openbao/openbao.git" ]] || exit 2
+          [[ "$UPSTREAM_REF" == "main" ]] || exit 2
+          [[ "$IMPORT_PATH" == "upstream" ]] || exit 2
+
+          rm -rf .codestra-upstream-src "$IMPORT_PATH"
+          GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --branch "$UPSTREAM_REF" "$UPSTREAM_URL" .codestra-upstream-src
+          UPSTREAM_SHA="$(git -C .codestra-upstream-src rev-parse HEAD)"
+          rm -rf .codestra-upstream-src/.git
+          mv .codestra-upstream-src "$IMPORT_PATH"
+
+          export UPSTREAM_URL UPSTREAM_REF UPSTREAM_SHA
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path('upstream')
+          sanitizations = []
+
+          def record(path: Path, rule: str, replacements: int, hashes: list[str] | None = None) -> None:
+              item = {
+                  'path': path.as_posix(),
+                  'rule': rule,
+                  'replacements': replacements,
+              }
+              if hashes:
+                  item['original_block_sha256'] = hashes
+              sanitizations.append(item)
+
+          def sanitize_text(path: Path, replacements: list[tuple[str, str]], rule: str) -> None:
+              if not path.exists() or not path.is_file():
+                  return
+              text = path.read_text(encoding='utf-8', errors='surrogateescape')
+              original = text
+              count = 0
+              for pattern, replacement in replacements:
+                  text, changed = re.subn(pattern, replacement, text)
+                  count += changed
+              if text != original:
+                  path.write_text(text, encoding='utf-8', errors='surrogateescape')
+                  record(path, rule, count)
+
+          sanitize_text(
+              root / 'ui/tests/unit/lib/console-helpers-test.js',
+              [
+                  (r'AKIA[0-9A-Z]{16}', 'AWS_ACCESS_KEY_ID_TEST_INVALID'),
+                  (
+                      r'(?i)(aws_secret_access_key[\"\']?\s*[:=]\s*[\"\']?)[A-Za-z0-9/+=]{20,}',
+                      r'\1AWS_SECRET_ACCESS_KEY_TEST_INVALID',
+                  ),
+              ],
+              'replace AWS credential-shaped upstream UI test fixtures with explicit invalid placeholders',
+          )
+
+          token_patterns = [
+              (
+                  r'(?<![A-Za-z0-9])(?:hvs|hvr|hvb|hvp)\.[A-Za-z0-9_-]{12,}',
+                  'OPENBAO_SERVICE_TOKEN_TEST_INVALID',
+              ),
+              (
+                  r'(?<![A-Za-z0-9])s\.[A-Za-z0-9_-]{16,}',
+                  'OPENBAO_SERVICE_TOKEN_TEST_INVALID',
+              ),
+          ]
+          for relative in (
+              'website/content/docs/api/system/mfa-validate.mdx',
+              'website/content/docs/agent-and-proxy/agent/caching/index.mdx',
+              'website/content/docs/agent-and-proxy/proxy/caching/index.mdx',
+              'website/content/docs/api/auth/userpass.mdx',
+          ):
+              sanitize_text(
+                  root / relative,
+                  token_patterns,
+                  'replace token-shaped upstream documentation examples with explicit invalid placeholders',
+              )
+
+          private_key_pattern = re.compile(
+              r'-----BEGIN (?P<label>(?:OPENSSH |RSA |EC |DSA |ENCRYPTED )?PRIVATE KEY)-----'
+              r'.*?'
+              r'-----END (?P=label)-----',
+              flags=re.DOTALL,
+          )
+          for path in sorted(root.rglob('*')):
+              if not path.is_file() or path.stat().st_size > 10 * 1024 * 1024:
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8', errors='surrogateescape')
+              except OSError:
+                  continue
+              hashes = []
+
+              def replace_private_key(match: re.Match[str]) -> str:
+                  block = match.group(0).encode('utf-8', errors='surrogateescape')
+                  digest = hashlib.sha256(block).hexdigest()
+                  hashes.append(digest)
+                  return (
+                      'OPENBAO_PRIVATE_KEY_TEST_FIXTURE_REMOVED_FOR_GITHUB_PUSH_PROTECTION'
+                      f'_SHA256_{digest}'
+                  )
+
+              sanitized, count = private_key_pattern.subn(replace_private_key, text)
+              if count:
+                  path.write_text(
+                      sanitized,
+                      encoding='utf-8',
+                      errors='surrogateescape',
+                  )
+                  record(
+                      path,
+                      'replace upstream private-key test fixture blocks with deterministic invalid placeholders',
+                      count,
+                      hashes,
+                  )
+
+          remaining = []
+          for path in root.rglob('*'):
+              if not path.is_file() or path.stat().st_size > 10 * 1024 * 1024:
+                  continue
+              text = path.read_text(encoding='utf-8', errors='surrogateescape')
+              if private_key_pattern.search(text):
+                  remaining.append(path.as_posix())
+          if remaining:
+              raise SystemExit(f'private-key fixture sanitization incomplete: {remaining[:20]}')
+
+          manifest = {
+              'schema_version': '1.0',
+              'upstream_clone_url': os.environ['UPSTREAM_URL'],
+              'upstream_ref': os.environ['UPSTREAM_REF'],
+              'upstream_commit': os.environ['UPSTREAM_SHA'],
+              'purpose': 'GitHub push-protection-safe upstream source snapshot',
+              'source_behavior_changed': 'test_and_documentation_fixtures_only',
+              'sanitizations': sanitizations,
+          }
+          Path('CODESTRA_UPSTREAM_SANITIZATION.json').write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+
+          lock = {
+              'schema_version': '1.0',
+              'upstream_clone_url': os.environ['UPSTREAM_URL'],
+              'upstream_ref': os.environ['UPSTREAM_REF'],
+              'upstream_commit': os.environ['UPSTREAM_SHA'],
+              'import_path': 'upstream',
+              'synchronized_at': datetime.now(timezone.utc).isoformat(),
+              'deployment_enabled': False,
+              'secret_material_allowed_in_git': False,
+              'sanitization_manifest': 'CODESTRA_UPSTREAM_SANITIZATION.json',
+              'sanitization_count': len(sanitizations),
+          }
+          Path('CODESTRA_UPSTREAM_LOCK.json').write_text(
+              json.dumps(lock, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          PY
+
+          git config user.name 'codestra-upstream-sync'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          SYNC_BRANCH="automation/openbao-upstream-${UPSTREAM_SHA:0:12}"
+          git switch -C "$SYNC_BRANCH"
+          git add -A upstream CODESTRA_UPSTREAM_LOCK.json CODESTRA_UPSTREAM_SANITIZATION.json
+          git diff --cached --quiet && exit 0
+          git commit -m "vendor: sync sanitized official OpenBao upstream ${UPSTREAM_SHA}"
+          git push --force origin "HEAD:${SYNC_BRANCH}"
+          echo "SYNC_BRANCH=${SYNC_BRANCH}" >> "$GITHUB_ENV"
+          echo "UPSTREAM_SHA=${UPSTREAM_SHA}" >> "$GITHUB_ENV"
+
+      - name: Open reviewable upstream-source pull request
+        if: env.SYNC_BRANCH != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if gh pr list --base development --head "$SYNC_BRANCH" --state open --json number --jq 'length' | grep -qx '0'; then
+            gh pr create \
+              --base development \
+              --head "$SYNC_BRANCH" \
+              --title "vendor(openbao): sync sanitized upstream ${UPSTREAM_SHA:0:12}" \
+              --body "Official OpenBao source snapshot locked to \`${UPSTREAM_SHA}\`. Push-protection-sensitive upstream test/documentation fixtures were replaced by deterministic invalid placeholders; paths and original block hashes are recorded in \`CODESTRA_UPSTREAM_SANITIZATION.json\`. This PR does not deploy or activate OpenBao."
+          fi
