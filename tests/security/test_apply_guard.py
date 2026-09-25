@@ -10,7 +10,7 @@ class ApplyGuardTests(unittest.TestCase):
     def test_apply_requires_exact_plan_approval_and_all_runtime_gates(self) -> None:
         source = (ROOT / "scripts/apply.sh").read_text(encoding="utf-8")
         for required in (
-            "sha256sum -c", ".planSourceSha", ".counts.destroy", ".runtimeApplyAuthorized",
+            "verify_artifact_checksum.sh", ".planSourceSha", ".counts.destroy", ".runtimeApplyAuthorized",
             "jtiReplayCacheImplemented", "verify_environment_approval.sh",
             "APPLY_EXACT_OPENBAO_PLAN_", "verify_applied_plan.py",
             "OPENBAO_PLUGIN_BINARY", "bao plugin register", "-plugin-name=",

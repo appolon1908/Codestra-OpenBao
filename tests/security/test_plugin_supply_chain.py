@@ -74,6 +74,31 @@ class PluginSupplyChainTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "plugin_report_results_missing"):
             self.validate_report(report)
 
+    def test_report_must_inventory_the_plugin_binary(self) -> None:
+        cases = {
+            "empty": lambda report: report.update(Results=[]),
+            "other_binary": lambda report: report["Results"][0].update(Target="usr/bin/other"),
+            "not_gobinary": lambda report: report["Results"][0].update(Type="gomod"),
+        }
+        for name, mutate in cases.items():
+            report = committed_report()
+            mutate(report)
+            with self.subTest(case=name):
+                with self.assertRaisesRegex(ValueError, "plugin_report_binary_not_scanned"):
+                    self.validate_report(report)
+
+    def test_rootfs_target_path_is_accepted(self) -> None:
+        report = committed_report()
+        report["Results"][0]["Target"] = "tmp/plugin-vulnerability/codestra-jwt-replay"
+        with self.assertRaisesRegex(ValueError, "GO-2026-5932"):
+            self.validate_report(report)
+
+    def test_report_schema_is_pinned(self) -> None:
+        report = committed_report()
+        report["SchemaVersion"] = 3
+        with self.assertRaisesRegex(ValueError, "plugin_report_schema_drift"):
+            self.validate_report(report)
+
     def test_scan_freshness_comes_from_created_at(self) -> None:
         report = committed_report()
         created = dt.datetime.fromisoformat(report["CreatedAt"])

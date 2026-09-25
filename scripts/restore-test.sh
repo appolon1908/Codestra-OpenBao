@@ -10,10 +10,15 @@ evidence="${OPENBAO_RESTORE_EVIDENCE:?set evidence JSON output path}"
 operator_token_file="${OPENBAO_OPERATOR_TOKEN_FILE:?set pre-restore operator token file}"
 restored_probe_token_file="${OPENBAO_RESTORED_PROBE_TOKEN_FILE:?set protected token file for a token contained in the snapshot}"
 restored_probe_policy="${OPENBAO_RESTORED_PROBE_EXPECTED_POLICY:?set the exact read-only restored probe policy}"
+started_epoch="${OPENBAO_RESTORE_STARTED_EPOCH:?record restore test start epoch}"
+recovery_policy="$(dirname "$0")/../config/recovery/backup.v1.json"
 
 [[ "$environment" != production ]]
 [[ "${OPENBAO_ISOLATED_RESTORE_ACKNOWLEDGED:-false}" == true ]]
 [[ "$restored_probe_policy" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$ ]]
+[[ "$started_epoch" =~ ^[0-9]{1,12}$ ]]
+(( started_epoch <= $(date +%s) ))
+rto_seconds="$(jq -er '.rtoTargetHours | select(type == "number" and . > 0) * 3600 | floor' "$recovery_policy")"
 case "${restored_probe_policy,,}" in
   default|root)
     echo 'Reserved default/root policies cannot certify a restore probe.' >&2
@@ -35,7 +40,7 @@ fi
 probe_token_mode="$(stat -c '%a' "$restored_probe_token_real")"
 (( (8#$probe_token_mode & 077) == 0 ))
 
-(cd "$(dirname "$artifact")" && sha256sum -c "$(basename "$checksum")") >/dev/null
+source_sha="$("$(dirname "$0")/verify_artifact_checksum.sh" "$artifact" "$checksum")"
 
 pre_restore_token="${BAO_TOKEN:?set the pre-restore target operator token}"
 pre_restore_token_sha="$(printf '%s' "$pre_restore_token" | sha256sum | awk '{print $1}')"
@@ -48,7 +53,9 @@ set -e
 [[ "$before_status" == 0 || "$before_status" == 2 ]]
 target_cluster_id="$(jq -r '.cluster_id // ""' <<<"$before")"
 [[ -n "$target_cluster_id" && "$target_cluster_id" != "$production_cluster_id" ]]
-[[ "$BAO_ADDR" == *127.0.0.1* || "$BAO_ADDR" == *localhost* || "$BAO_ADDR" == *restore* ]]
+# Match the parsed host only; a path or query containing "restore" is not a target.
+restore_host="$(python3 -c 'import os, urllib.parse; print(urllib.parse.urlsplit(os.environ["BAO_ADDR"]).hostname or "")')"
+[[ "$restore_host" == 127.0.0.1 || "$restore_host" == localhost || "$restore_host" == ::1 || "$restore_host" == *restore* ]]
 
 umask 077
 plain="$(mktemp)"
@@ -108,17 +115,21 @@ set -e
 probe_token_loaded=false
 unset BAO_TOKEN
 
-started_epoch="${OPENBAO_RESTORE_STARTED_EPOCH:?record restore test start epoch}"
 completed_epoch="$(date +%s)"
 duration="$((completed_epoch - started_epoch))"
+if (( duration > rto_seconds )); then
+  echo "OPENBAO_RESTORE=FAIL ERROR=rto_exceeded duration=${duration} rto=${rto_seconds}" >&2
+  exit 1
+fi
 jq -n \
   --arg environment "$environment" \
   --arg sourceArtifact "$(basename "$artifact")" \
-  --arg sourceSha256 "$(awk '{print $1}' "$checksum")" \
+  --arg sourceSha256 "$source_sha" \
   --arg restoredClusterIdHash "$(printf '%s' "$restored_cluster_id" | sha256sum | awk '{print $1}')" \
   --arg restoredProbePolicyHash "$(printf '%s' "$restored_probe_policy" | sha256sum | awk '{print $1}')" \
   --argjson durationSeconds "$duration" \
-  '{schemaVersion:2,environment:$environment,isolated:true,sourceArtifact:$sourceArtifact,sourceSha256:$sourceSha256,restoredClusterIdHash:$restoredClusterIdHash,durationSeconds:$durationSeconds,initialized:true,sealed:false,restoredProbeCredentialDistinct:true,restoredProbePolicyHash:$restoredProbePolicyHash,restoredProbeTokenRevoked:true,representativeSecretHashVerified:true,restore:"PASS"}' \
+  --argjson rtoTargetSeconds "$rto_seconds" \
+  '{schemaVersion:2,environment:$environment,isolated:true,sourceArtifact:$sourceArtifact,sourceSha256:$sourceSha256,restoredClusterIdHash:$restoredClusterIdHash,durationSeconds:$durationSeconds,rtoTargetSeconds:$rtoTargetSeconds,rtoMet:true,initialized:true,sealed:false,restoredProbeCredentialDistinct:true,restoredProbePolicyHash:$restoredProbePolicyHash,restoredProbeTokenRevoked:true,representativeSecretHashVerified:true,restore:"PASS"}' \
   > "$evidence"
 chmod 400 "$evidence"
 echo 'OPENBAO_RESTORE=PASS'

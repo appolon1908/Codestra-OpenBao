@@ -7,14 +7,27 @@ import json
 import os
 import ssl
 import sys
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
 
+LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost"}
+
+
 def context() -> ssl.SSLContext | None:
     address = os.environ.get("BAO_ADDR", "")
-    if address.startswith("http://"):
+    parsed = urllib.parse.urlsplit(address)
+    if parsed.scheme == "http":
+        # Unseal shares may cross the wire in cleartext only to a local listener
+        # outside production (the ephemeral isolated-restore/integration target).
+        if parsed.hostname not in LOOPBACK_HOSTS:
+            raise ValueError("cleartext unseal is only permitted to a loopback address")
+        if os.environ.get("CODESTRA_ENVIRONMENT") == "production":
+            raise ValueError("cleartext unseal is prohibited in production")
         return None
+    if parsed.scheme != "https":
+        raise ValueError("BAO_ADDR must use https")
     ca = os.environ.get("BAO_CACERT")
     if not ca:
         raise ValueError("BAO_CACERT is required for HTTPS")

@@ -90,10 +90,21 @@ def validate(sbom_path: Path, report_path: Path, now: dt.datetime | None = None)
         if module in inventory and inventory[module] != version:
             raise ValueError(f"plugin_module_drift:{module}")
 
+    if report.get("SchemaVersion") != 2:
+        raise ValueError("plugin_report_schema_drift")
     require_current_scan(report, now)
     results = report.get("Results")
     if not isinstance(results, list):
         raise ValueError("plugin_report_results_missing")
+    # A scan of the wrong or an empty directory has zero findings; the report must
+    # prove it actually inventoried the plugin binary.
+    if not any(
+        isinstance(result, dict)
+        and result.get("Type") == "gobinary"
+        and Path(str(result.get("Target", ""))).name == manifest["command"]
+        for result in results
+    ):
+        raise ValueError("plugin_report_binary_not_scanned")
     unresolved: list[str] = []
     for result in results:
         if not isinstance(result, dict):

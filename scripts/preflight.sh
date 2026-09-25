@@ -35,6 +35,8 @@ jq -e --arg expected "ghcr.io/openbao/openbao@${expected_digest}" \
 [[ "$(jq -r '.[0].Config.Labels["com.codestra.source-sha"] // ""' <<<"$container_json")" == "$expected_source" ]]
 [[ "$(jq -r '.[0].HostConfig.ReadonlyRootfs' <<<"$container_json")" == true ]]
 [[ "$(jq '.[0].HostConfig.PortBindings // {} | length' <<<"$container_json")" == 0 ]]
+[[ "$(jq -r '.[0].HostConfig.PublishAllPorts // false' <<<"$container_json")" == false ]]
+[[ "$(jq '[.[0].NetworkSettings.Ports // {} | .[] | select(. != null and . != [])] | length' <<<"$container_json")" == 0 ]]
 plugin_mount_source="$(jq -r '.[0].Mounts[] | select(.Destination == "/openbao/plugins" and .RW == false) | .Source' <<<"$container_json")"
 [[ -n "$plugin_mount_source" ]]
 [[ "$(realpath "$plugin_mount_source")" == "$(realpath "$(dirname "$plugin_binary")")" ]]
