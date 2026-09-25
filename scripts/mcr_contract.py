@@ -32,8 +32,8 @@ CLASSES = {
         "klyrow-domain-signer", "klyrow", True, ("brand", "domain"),
         "klyrow/signing/tenants/{tenant}/brands/{brand}/domains/{domain}/signing"),
     "provider-adapter": (
-        "middleware-worker", "middleware-platform", False, ("provider",),
-        "middleware/worker/email/klyrow/tenants/{tenant}/providers/{provider}/adapter"),
+        None, "middleware-platform", True, ("channel", "provider"),
+        "{service}/channels/{channel}/tenants/{tenant}/providers/{provider}/adapter"),
     "service-auth": (
         "n8n-automation", "automation-platform", False, ("client", "target"),
         "n8n/middleware-client/tenants/{tenant}/clients/{client}/targets/{target}/auth"),
@@ -114,12 +114,16 @@ REQUIREMENTS = {
         "audit_alerts_and_denials_verified": True,
     },
     "readiness": {
-        "existing_storage_inventory": True, "custody_ceremony_required": True,
-        "reinitialize_existing_storage": False, "bootstrap_root_revocation_evidence": True,
-        "approved_unseal_custody": True, "protected_tls_network_storage": True,
-        "sealed_state_blocks_access": True, "exact_supply_chain_evidence": True,
-        "current_runtime_vulnerability_gate": True, "fresh_evidence_required": True,
-        "separate_production_approval": True,
+        "requirements": {
+            "custody_ceremony_required": True, "reinitialize_existing_storage": False,
+            "fresh_evidence_required": True, "separate_production_approval": True,
+        },
+        "evidence": {
+            "existing_storage_inventory": False, "bootstrap_root_revocation_evidence": False,
+            "approved_unseal_custody": False, "protected_tls_network_storage": False,
+            "sealed_state_blocks_access": False, "exact_supply_chain_evidence": False,
+            "current_runtime_vulnerability_gate": False,
+        },
     },
     "gates": {
         "runtime_apply": False, "provider_effects": False, "initialization": False,
@@ -156,7 +160,18 @@ def closed(value, fields):
 
 
 def exact(value, expected):
-    require(type(value) is type(expected) and value == expected)
+    require(type(value) is type(expected))
+    if isinstance(expected, dict):
+        require(value.keys() == expected.keys())
+        for key in expected:
+            exact(value[key], expected[key])
+        return
+    if isinstance(expected, list):
+        require(len(value) == len(expected))
+        for actual, wanted in zip(value, expected):
+            exact(actual, wanted)
+        return
+    require(value == expected)
 
 
 def integer(value, low, high):
@@ -222,7 +237,8 @@ def validate(contract):
         require(binding["environment"] in ("development", "test", "staging", "production"))
         require(binding["credential_class"] in CLASSES)
         service, owner, pending, scopes, template = CLASSES[binding["credential_class"]]
-        exact(binding["service"], service)
+        if service is not None:
+            exact(binding["service"], service)
         exact(binding["owner"], owner)
         exact(binding["registration_required"], pending)
         exact(binding["audit_required"], True)
@@ -234,7 +250,7 @@ def validate(contract):
             exact(binding["scope"]["target"], "middleware")
         integer(binding["version"], 1, 2**63 - 1)
         path = "codestra/" + binding["environment"] + "/" + template.format(
-            tenant=binding["tenant"], **binding["scope"])
+            tenant=binding["tenant"], service=binding["service"], **binding["scope"])
         exact(binding["logical_path"], path)
         # Canonical equality is a full match, including version and field;
         # it admits neither alternate mounts nor URL query/encoding tricks.
@@ -251,7 +267,7 @@ def validate(contract):
         ids.add(binding["id"])
         paths.add(path)
         refs.append(SecretReference(
-            binding["id"], binding["environment"], binding["tenant"], service,
+            binding["id"], binding["environment"], binding["tenant"], binding["service"],
             binding["credential_class"], owner, tuple(sorted(binding["scope"].items())),
             path, binding["field"], binding["version"], pending))
     return refs

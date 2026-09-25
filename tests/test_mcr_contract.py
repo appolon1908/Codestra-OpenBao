@@ -81,6 +81,47 @@ class ContractTests(unittest.TestCase):
                 changed["bindings"][0][key] += suffix
                 self.reject(changed)
 
+    def test_readiness_requirements_are_separate_from_evidence(self):
+        readiness = self.contract["readiness"]
+        self.assertEqual(readiness["requirements"], {
+            "custody_ceremony_required": True,
+            "reinitialize_existing_storage": False,
+            "fresh_evidence_required": True,
+            "separate_production_approval": True,
+        })
+        self.assertTrue(readiness["evidence"])
+        self.assertTrue(all(value is False for value in readiness["evidence"].values()))
+
+    def test_provider_adapter_preserves_reviewed_service_and_channel_subtree(self):
+        source = next(
+            b for b in self.contract["bindings"]
+            if b["credential_class"] == "provider-adapter"
+        )
+        for channel, service in (
+            ("email", "klyrow-email-adapter"),
+            ("sms", "telnexa-sms-adapter"),
+            ("whatsapp", "evolution-whatsapp-adapter"),
+            ("voice", "vicidial-voice-adapter"),
+        ):
+            changed = copy.deepcopy(self.contract)
+            binding = next(
+                b for b in changed["bindings"]
+                if b["credential_class"] == "provider-adapter"
+            )
+            binding["service"] = service
+            binding["scope"] = {"channel": channel, "provider": f"{channel}-provider"}
+            path = (
+                f"codestra/{binding['environment']}/{service}/channels/{channel}/"
+                f"tenants/{binding['tenant']}/providers/{channel}-provider/adapter"
+            )
+            binding["logical_path"] = path
+            binding["reference"] = f"openbao://{path}#credential@1"
+            refs = mcr.validate(changed)
+            ref = next(r for r in refs if r.credential_class == "provider-adapter")
+            self.assertEqual(ref.service, service)
+            self.assertTrue(ref.registration_required)
+            self.assertEqual(ref.logical_path, path)
+
     def test_scope_and_path_binding_every_class(self):
         for index, binding in enumerate(self.contract["bindings"]):
             for key in ["tenant", "environment", "service", "owner", *binding["scope"]]:
@@ -121,7 +162,7 @@ class ContractTests(unittest.TestCase):
                 mcr.authorize(ref, mcr.WorkloadIdentity(ref.environment, ref.tenant, ref.service), [])
 
     def test_policy_composition_is_exact(self):
-        ref = mcr.validate(self.contract)[0]
+        ref = next(r for r in mcr.validate(self.contract) if not r.registration_required)
         expected = mcr.policy_grants(ref)
         mcr.validate_policy_composition(ref, [expected])
         for path, capabilities in [("sys/*", ["read"]), ("auth/token/create", ["update"]),
