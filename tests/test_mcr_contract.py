@@ -122,6 +122,27 @@ class ContractTests(unittest.TestCase):
             self.assertTrue(ref.registration_required)
             self.assertEqual(ref.logical_path, path)
 
+        for channel, wrong_service in (
+            ("email", "telnexa-sms-adapter"),
+            ("sms", "klyrow-email-adapter"),
+            ("whatsapp", "vicidial-voice-adapter"),
+            ("voice", "arbitrary-adapter"),
+        ):
+            changed = copy.deepcopy(self.contract)
+            binding = next(
+                b for b in changed["bindings"]
+                if b["credential_class"] == "provider-adapter"
+            )
+            binding["service"] = wrong_service
+            binding["scope"] = {"channel": channel, "provider": "example-provider"}
+            path = (
+                f"codestra/{binding['environment']}/{wrong_service}/channels/{channel}/"
+                f"tenants/{binding['tenant']}/providers/example-provider/adapter"
+            )
+            binding["logical_path"] = path
+            binding["reference"] = f"openbao://{path}#credential@1"
+            self.reject(changed)
+
     def test_scope_and_path_binding_every_class(self):
         for index, binding in enumerate(self.contract["bindings"]):
             for key in ["tenant", "environment", "service", "owner", *binding["scope"]]:

@@ -21,6 +21,13 @@ SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,63}")
 
 # Class-specific consumer, accountable owner, pending registration, and path.
 # New execution/signing identities are deliberately not policy-generatable.
+PROVIDER_ADAPTER_SERVICES = {
+    "email": "klyrow-email-adapter",
+    "sms": "telnexa-sms-adapter",
+    "whatsapp": "evolution-whatsapp-adapter",
+    "voice": "vicidial-voice-adapter",
+}
+
 CLASSES = {
     "sender-smtp": (
         "klyrow-email-executor", "klyrow", True, ("sender",),
@@ -239,6 +246,10 @@ def validate(contract):
         service, owner, pending, scopes, template = CLASSES[binding["credential_class"]]
         if service is not None:
             exact(binding["service"], service)
+        elif binding["credential_class"] == "provider-adapter":
+            channel = binding["scope"].get("channel")
+            require(type(channel) is str and channel in PROVIDER_ADAPTER_SERVICES)
+            exact(binding["service"], PROVIDER_ADAPTER_SERVICES[channel])
         exact(binding["owner"], owner)
         exact(binding["registration_required"], pending)
         exact(binding["audit_required"], True)
