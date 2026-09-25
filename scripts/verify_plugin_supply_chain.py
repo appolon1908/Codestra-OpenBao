@@ -107,7 +107,13 @@ def validate(sbom_path: Path, report_path: Path, now: dt.datetime | None = None)
             if not isinstance(finding, dict):
                 raise ValueError("plugin_report_finding_invalid")
             severity = finding.get("Severity")
-            identity = f"{finding.get('VulnerabilityID')}:{finding.get('PkgName')}"
+            vulnerability_id = finding.get("VulnerabilityID")
+            package_name = finding.get("PkgName")
+            if not isinstance(vulnerability_id, str) or not vulnerability_id.strip():
+                raise ValueError("plugin_finding_vulnerability_id_missing")
+            if not isinstance(package_name, str) or not package_name.strip():
+                raise ValueError(f"plugin_finding_package_missing:{vulnerability_id}")
+            identity = f"{vulnerability_id}:{package_name}"
             if severity not in KNOWN_SEVERITIES:
                 raise ValueError(f"plugin_unrecognized_severity:{identity}:{severity!r}")
             if severity in GATED_SEVERITIES:
