@@ -32,7 +32,7 @@ class JtiPluginSourceTests(unittest.TestCase):
         self.assertEqual(manifest["upstreamSha"], "dd9c19c37a878cf4a81b18efb8d6f0599c7da923")
         self.assertEqual(
             manifest["binarySha256"],
-            "332562de9c3f179b4598104cceb83c4cddf0896428df192697e7d91dc6651508",
+            "4d1dd974c4128cc87805c4031fbeed044e82f9731332b798f3b93f99119faefa",
         )
         self.assertEqual(manifest["goVersion"], "1.25.13")
         overrides = {
@@ -43,7 +43,7 @@ class JtiPluginSourceTests(unittest.TestCase):
             overrides,
             {
                 "golang.org/x/crypto": "v0.55.0",
-                "google.golang.org/grpc": "v1.83.1",
+                "google.golang.org/grpc": "v1.83.2",
             },
         )
         self.assertGreaterEqual(manifest["reproducibleBuildsVerified"], 2)
