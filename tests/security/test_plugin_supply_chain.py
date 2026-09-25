@@ -68,6 +68,20 @@ class PluginSupplyChainTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "plugin_unrecognized_severity:CVE-TEST:test"):
                     self.validate_report(report)
 
+    def test_missing_finding_identity_fields_fail_closed(self) -> None:
+        cases = (
+            ({"PkgName": "test", "Severity": "LOW"}, "plugin_finding_vulnerability_id_missing"),
+            ({"VulnerabilityID": "CVE-TEST", "Severity": "MEDIUM"}, "plugin_finding_package_missing:CVE-TEST"),
+            ({"VulnerabilityID": "", "PkgName": "test", "Severity": "LOW"}, "plugin_finding_vulnerability_id_missing"),
+            ({"VulnerabilityID": "CVE-TEST", "PkgName": "", "Severity": "LOW"}, "plugin_finding_package_missing:CVE-TEST"),
+        )
+        for finding, expected in cases:
+            report = committed_report()
+            report["Results"][0].setdefault("Vulnerabilities", []).insert(0, finding)
+            with self.subTest(finding=finding):
+                with self.assertRaisesRegex(ValueError, expected):
+                    self.validate_report(report)
+
     def test_malformed_report_fails_closed(self) -> None:
         report = committed_report()
         report["Results"] = None
