@@ -69,21 +69,45 @@ jobs:
           ref: ${{ inputs.current_source_sha }}
           persist-credentials: false
           fetch-depth: 0
-      - name: Verify current protected branch and take fresh backup
+      - name: Bind reviewed rollback authorization and take fresh backup
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           export OPENBAO_ROLLBACK_EVIDENCE="$RUNNER_TEMP/openbao-rollback-evidence/rollback.json"
           export OPENBAO_PRECHANGE_BACKUP_EVIDENCE="$RUNNER_TEMP/openbao-rollback-evidence/prechange-backup.json"
+          export OPENBAO_ROLLBACK_AUTHORIZATION_EVIDENCE="$RUNNER_TEMP/openbao-rollback-evidence/rollback-authorization.json"
           printf 'OPENBAO_ROLLBACK_EVIDENCE=%s\n' "$OPENBAO_ROLLBACK_EVIDENCE" >> "$GITHUB_ENV"
+          printf 'OPENBAO_PRECHANGE_BACKUP_EVIDENCE=%s\n' "$OPENBAO_PRECHANGE_BACKUP_EVIDENCE" >> "$GITHUB_ENV"
+          printf 'OPENBAO_ROLLBACK_AUTHORIZATION_EVIDENCE=%s\n' "$OPENBAO_ROLLBACK_AUTHORIZATION_EVIDENCE" >> "$GITHUB_ENV"
           [[ "$(git rev-parse HEAD)" == "$CODESTRA_SOURCE_SHA" ]]
           [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)" == "$CODESTRA_SOURCE_SHA" ]]
+          scripts/verify_environment_approval.sh
           umask 077
           mkdir -p "$(dirname "$OPENBAO_ROLLBACK_EVIDENCE")"
           export BAO_TOKEN="$(< "$OPENBAO_OPERATOR_TOKEN_FILE")"
           export OPENBAO_BACKUP_EVIDENCE="$OPENBAO_PRECHANGE_BACKUP_EVIDENCE"
           scripts/backup.sh
           unset BAO_TOKEN
+          backup_evidence_sha="$(sha256sum "$OPENBAO_PRECHANGE_BACKUP_EVIDENCE" | awk '{print $1}')"
+          backup_artifact_sha="$(jq -r '.sha256' "$OPENBAO_PRECHANGE_BACKUP_EVIDENCE")"
+          jq -n \
+            --arg repository "$GITHUB_REPOSITORY" --arg workflow "$GITHUB_WORKFLOW" \
+            --arg runId "$GITHUB_RUN_ID" --arg environment "$CODESTRA_ENVIRONMENT" \
+            --arg approvalEnvironment "$OPENBAO_APPROVAL_ENVIRONMENT" \
+            --arg approvedBy "${OPENBAO_REQUIRED_REVIEWER:-kazan555}" \
+            --arg currentSourceSha "$CODESTRA_SOURCE_SHA" \
+            --arg rollbackSourceSha "$OPENBAO_ROLLBACK_SOURCE_SHA" \
+            --arg rollbackImageDigest "$OPENBAO_ROLLBACK_IMAGE_DIGEST" \
+            --arg rollbackContainer "$OPENBAO_ROLLBACK_CONTAINER" \
+            --arg confirmation "$OPENBAO_ROLLBACK_CONFIRMATION" \
+            --arg backupEvidenceSha256 "$backup_evidence_sha" \
+            --arg backupArtifactSha256 "$backup_artifact_sha" \
+            --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{schemaVersion:1,repository:$repository,workflow:$workflow,runId:$runId,environment:$environment,approvalEnvironment:$approvalEnvironment,approvedBy:$approvedBy,currentSourceSha:$currentSourceSha,rollbackSourceSha:$rollbackSourceSha,rollbackImageDigest:$rollbackImageDigest,rollbackContainer:$rollbackContainer,confirmation:$confirmation,backupEvidenceSha256:$backupEvidenceSha256,backupArtifactSha256:$backupArtifactSha256,createdAt:$createdAt,authorization:"PASS",secretValuesIncluded:false}' \
+            > "$OPENBAO_ROLLBACK_AUTHORIZATION_EVIDENCE"
+          chmod 0400 "$OPENBAO_ROLLBACK_AUTHORIZATION_EVIDENCE"
+          python3 scripts/verify_rollback_preconditions.py \
+            "$OPENBAO_ROLLBACK_AUTHORIZATION_EVIDENCE" "$OPENBAO_PRECHANGE_BACKUP_EVIDENCE"
       - name: Roll back to retained exact container without changing Raft data
         env:
           GH_TOKEN: ${{ github.token }}
