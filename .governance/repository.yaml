@@ -1,0 +1,12 @@
+version: 1
+repository: Codestra-OpenBao
+repository_url: https://github.com/ingtrader21-spec/Codestra-OpenBao.git
+canonical_path: /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao
+active_worktree: /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao
+active_branch: governance/single-active-lane-20260926
+base_branch: main
+base_sha: 42fb1fa2fe61db08deeb95483121d6935876a8fb
+upstream_ref: origin/main
+publication_branch: governance/single-active-lane-20260926
+production_effects_allowed: false
+certification_mode: isolated_exact_sha
