@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-13T22:15:50+02:00",
+  "repository": "appolon1908-hue/Codestra-OpenBao",
+  "baselineBranch": "development",
+  "baselineSha": "15d8ded836f4b08746c791249d7cfd9f170168bf",
+  "requiredMergedCommitPresent": true,
+  "requiredMergedCommit": "15d8ded836f4b08746c791249d7cfd9f170168bf",
+  "missionBranch": "remediation/complete-openbao-activation-20260913",
+  "cleanBaseline": true,
+  "baselineValidation": {
+    "scripts/validate.sh": "PASS",
+    "scripts/security.sh": "PASS",
+    "scripts/integration_test.sh": "PASS",
+    "scripts/integration_test_jti_plugin.sh": "PASS",
+    "configuration": "PASS",
+    "policies": "PASS",
+    "workingTreeSecretScan": "PASS",
+    "fullHistorySecretScan": "PASS",
+    "jwtSequentialReplay": "DENIED",
+    "jwtConcurrentSuccessCount": 1,
+    "jwtConcurrentDenyCount": 15,
+    "crossServiceAccess": "DENIED",
+    "crossEnvironmentAccess": "DENIED"
+  },
+  "toolchain": {
+    "go": "1.25.13",
+    "goArchiveSha256VerifiedAgainstRepository": true
+  },
+  "runtimeApplyAuthorized": false,
+  "providerBusinessEffectsEnabled": false,
+  "secretValuesIncluded": false
+}
