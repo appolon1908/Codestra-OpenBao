@@ -106,7 +106,7 @@ jobs:
             "$RUNNER_TEMP/release/${RELEASE_ID}.tar.gz"
           cosign verify-blob \
             --bundle "$RUNNER_TEMP/release/${RELEASE_ID}.sigstore.json" \
-            --certificate-identity "https://github.com/appolon1908-hue/Codestra-OpenBao/.github/workflows/release.yml@refs/heads/production" \
+            --certificate-identity "https://github.com/ingtrader21-spec/Codestra-OpenBao/.github/workflows/release.yml@refs/heads/production" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             "$RUNNER_TEMP/release/${RELEASE_ID}.tar.gz" >/dev/null
       - name: Attest exact release provenance

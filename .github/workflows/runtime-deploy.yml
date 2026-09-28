@@ -133,7 +133,7 @@ jobs:
           (cd "$release_dir" && sha256sum -c "${RELEASE_ID}.tar.gz.sha256")
           cosign verify-blob \
             --bundle "$release_dir/${RELEASE_ID}.sigstore.json" \
-            --certificate-identity "https://github.com/appolon1908-hue/Codestra-OpenBao/.github/workflows/release.yml@refs/heads/production" \
+            --certificate-identity "https://github.com/ingtrader21-spec/Codestra-OpenBao/.github/workflows/release.yml@refs/heads/production" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             "$release_dir/${RELEASE_ID}.tar.gz" >/dev/null
           tar --extract --gzip --file "$release_dir/${RELEASE_ID}.tar.gz" \

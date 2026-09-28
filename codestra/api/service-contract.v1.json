@@ -17,7 +17,7 @@
   ],
   "managementReadback": {
     "allowsMutation": false,
-    "controlApiOwner": "appolon1908-hue/Codestra-Telemetry",
+    "controlApiOwner": "ingtrader21-spec/Codestra-Telemetry",
     "exposesSecretValues": false,
     "healthOperationId": "health",
     "readinessOperationId": "readiness",
@@ -39,6 +39,12 @@
       {"acceptedStatuses": [200], "access": "read_only", "category": "query", "controlPlaneProxyAllowed": false, "id": "seal-status", "method": "GET", "path": "/v1/sys/seal-status", "responseBodyPolicy": "native", "timeoutMs": 3000},
       {"acceptedStatuses": [200], "access": "read_only", "category": "query", "controlPlaneProxyAllowed": false, "id": "leader", "method": "GET", "path": "/v1/sys/leader", "responseBodyPolicy": "native", "timeoutMs": 3000},
       {"acceptedStatuses": [200], "access": "read_only", "category": "metrics", "controlPlaneProxyAllowed": false, "id": "metrics", "method": "GET", "path": "/v1/sys/metrics", "responseBodyPolicy": "discard", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "credential_issue", "controlPlaneProxyAllowed": false, "id": "workload-login", "method": "POST", "path": "/v1/auth/jwt-codestra/login", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "query", "category": "secret", "controlPlaneProxyAllowed": false, "id": "secret-read", "method": "GET", "path": "/v1/codestra/data/{environment}/{namespace}/{secret-name}", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "query", "category": "secret_metadata", "controlPlaneProxyAllowed": false, "id": "secret-metadata", "method": "GET", "path": "/v1/codestra/metadata/{environment}/{namespace}/{secret-name}", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "secret", "controlPlaneProxyAllowed": false, "id": "secret-write", "method": "POST", "path": "/v1/codestra/data/{environment}/{namespace}/{secret-name}", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [200], "access": "mutation", "category": "token", "controlPlaneProxyAllowed": false, "id": "token-renew-self", "method": "POST", "path": "/v1/auth/token/renew-self", "responseBodyPolicy": "native", "timeoutMs": 3000},
+      {"acceptedStatuses": [204], "access": "mutation", "category": "token", "controlPlaneProxyAllowed": false, "id": "token-revoke-self", "method": "POST", "path": "/v1/auth/token/revoke-self", "responseBodyPolicy": "discard", "timeoutMs": 3000},
       {"acceptedStatuses": [200], "access": "mutation", "category": "credential_issue", "controlPlaneProxyAllowed": false, "id": "pki-issue", "method": "POST", "path": "/v1/{mount}/issue/{role}", "responseBodyPolicy": "native", "timeoutMs": 3000}
     ]
   },
@@ -48,7 +54,7 @@
     "immutableImageRequired": true,
     "sourceRevisionEnvironment": "CODESTRA_OPENBAO_SOURCE_REVISION"
   },
-  "repository": "appolon1908-hue/Codestra-OpenBao",
+  "repository": "ingtrader21-spec/Codestra-OpenBao",
   "safety": {
     "anonymousManagementAccessAllowed": false,
     "callerControlledBusinessAllowed": false,
@@ -61,8 +67,8 @@
   },
   "schemaAuthority": {
     "path": "codestra/api/service-contract.schema.json",
-    "repository": "appolon1908-hue/Codestra-Telemetry",
-    "sourceRevision": "c35d880a730ca5206d445e8a9a688cb465ae2ad4",
+    "repository": "ingtrader21-spec/Codestra-Telemetry",
+    "sourceRevision": "3517fb3b9bb1077d92419a5c13c07d703ffbebf6",
     "version": "1.0.0"
   },
   "schemaVersion": "1.0.0",

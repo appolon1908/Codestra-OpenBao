@@ -8,7 +8,7 @@ This repository does **not** fork or patch the upstream OpenBao UI for cosmetic 
 
 ## Visual contract
 
-The identity surface is owned by `appolon1908-hue/Keycloak` and inherits the visual tokens established by `appolon1908-hue/social.codestra.co`:
+The identity surface is owned by `ingtrader21-spec/Keycloak` and inherits the visual tokens established by `ingtrader21-spec/social.codestra.co`:
 
 - page background: `#0b0b0b`;
 - auth panel: `#171717`;

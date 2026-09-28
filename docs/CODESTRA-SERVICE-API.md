@@ -4,7 +4,7 @@ This repository owns the **secrets-pki-workload-identity-authority** for the Cod
 
 ## Communication rule
 
-OpenBao keeps its native API and protocol. The shared Codestra control plane in `appolon1908-hue/Codestra-Telemetry` performs only sanitized health, readiness, contract, topology, and immutable-release read-back. It never proxies seal, leader, secret, identity, PKI, token, policy, transit, audit, initialization, unseal, or credential-issuance APIs.
+OpenBao keeps its native API and protocol. The shared Codestra control plane in `ingtrader21-spec/Codestra-Telemetry` performs only sanitized health, readiness, contract, topology, and immutable-release read-back. It never proxies seal, leader, secret, identity, PKI, token, policy, transit, audit, initialization, unseal, or credential-issuance APIs.
 
 Canonical hostname: `bao.codestra.media`
 Native exposure: `private_strong_auth`
@@ -20,7 +20,15 @@ Contract: `codestra/api/service-contract.v1.json`
 | `GET` | `/v1/sys/seal-status` | query | read_only | never proxied by the Codestra control API |
 | `GET` | `/v1/sys/leader` | query | read_only | never proxied by the Codestra control API |
 | `GET` | `/v1/sys/metrics` | metrics | read_only | never proxied by the Codestra control API |
+| `POST` | `/v1/auth/jwt-codestra/login` | credential_issue | mutation | workload JWT exchange only; never proxied |
+| `GET` | `/v1/codestra/data/{environment}/{namespace}/{secret-name}` | secret | query | scoped native client only; never proxied |
+| `GET` | `/v1/codestra/metadata/{environment}/{namespace}/{secret-name}` | secret_metadata | query | scoped native client only; never proxied |
+| `POST` | `/v1/codestra/data/{environment}/{namespace}/{secret-name}` | secret | mutation | CAS-authorized native operator only; never proxied |
+| `POST` | `/v1/auth/token/renew-self` | token | mutation | calling token only; never proxied |
+| `POST` | `/v1/auth/token/revoke-self` | token | mutation | calling token only; body discarded; never proxied |
 | `POST` | `/v1/{mount}/issue/{role}` | credential_issue | mutation | native policy-scoped workflow only; never proxied |
+
+Sensitive native response bodies (workload tokens, secret payloads, secret metadata, PKI material, and token-renewal data) are returned only to the directly authorized native OpenBao caller. They are **never** read, mirrored, logged, or proxied by the Codestra Telemetry/Mission Control read-back plane.
 
 Health statuses `200`, `429`, `472`, and `473` indicate a reachable OpenBao node in documented active, standby, disaster-recovery, or performance-standby states. The control API reports only bounded state and status metadata and discards the native body.
 
@@ -46,8 +54,8 @@ The control plane reads source revision and image digest only from deployment en
 
 ## Contract authority handoff
 
-- Canonical schema repository: `appolon1908-hue/Codestra-Telemetry`
-- Canonical merged Telemetry SHA: `c35d880a730ca5206d445e8a9a688cb465ae2ad4`
+- Canonical schema repository: `ingtrader21-spec/Codestra-Telemetry`
+- Canonical Telemetry schema/reusable authority SHA: `3517fb3b9bb1077d92419a5c13c07d703ffbebf6` (PR #62; merge pending)
 - Contract version: `1.0.0`
 - Downstream exact head: this PR branch commit; the authoritative literal SHA is the GitHub PR `headRefOid` recorded after this handoff commit.
 - Deployment authorization: unauthorized until staging certification and protected production promotion are complete.

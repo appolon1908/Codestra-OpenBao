@@ -1,0 +1,5 @@
+# Supply-chain evidence is byte-addressed by VEX and SHA256SUMS.
+# Do not let platform-specific EOL conversion change the reviewed evidence bytes.
+artifacts/supply-chain/*.json -text
+artifacts/supply-chain/historical/*.json -text
+artifacts/supply-chain/SHA256SUMS -text

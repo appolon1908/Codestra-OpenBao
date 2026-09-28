@@ -22,12 +22,12 @@ concurrency:
 
 jobs:
   canonical-contract-authority:
-    uses: appolon1908-hue/Codestra-Telemetry/.github/workflows/reusable-validate-service-contract.yml@c35d880a730ca5206d445e8a9a688cb465ae2ad4
+    uses: ingtrader21-spec/Codestra-Telemetry/.github/workflows/reusable-validate-service-contract.yml@3517fb3b9bb1077d92419a5c13c07d703ffbebf6
     with:
-      expected_repository: 'appolon1908-hue/Codestra-OpenBao'
+      expected_repository: 'ingtrader21-spec/Codestra-OpenBao'
       expected_component: 'openbao'
       expected_contract_id: 'codestra.observability.openbao.v1'
-      schema_authority_revision: 'c35d880a730ca5206d445e8a9a688cb465ae2ad4'
+      schema_authority_revision: '3517fb3b9bb1077d92419a5c13c07d703ffbebf6'
 
   validate-service-contract:
     runs-on: ubuntu-24.04
@@ -58,14 +58,14 @@ jobs:
           assert contract['schemaVersion'] == '1.0.0'
           assert contract['component'] == 'openbao'
           assert contract['contractId'] == 'codestra.observability.openbao.v1'
-          assert contract['repository'] == 'appolon1908-hue/Codestra-OpenBao'
+          assert contract['repository'] == 'ingtrader21-spec/Codestra-OpenBao'
           assert contract['authorityRole'] == 'secrets-pki-workload-identity-authority'
           assert contract['canonicalHostname'] == 'bao.codestra.media'
           assert contract['nativeExposure'] == 'private_strong_auth'
           assert contract['schemaAuthority'] == {
-              'repository': 'appolon1908-hue/Codestra-Telemetry',
+              'repository': 'ingtrader21-spec/Codestra-Telemetry',
               'path': 'codestra/api/service-contract.schema.json',
-              'sourceRevision': 'c35d880a730ca5206d445e8a9a688cb465ae2ad4',
+              'sourceRevision': '3517fb3b9bb1077d92419a5c13c07d703ffbebf6',
               'version': '1.0.0',
           }
 
@@ -91,7 +91,7 @@ jobs:
               assert operation['acceptedStatuses']
 
           management = contract['managementReadback']
-          assert management['controlApiOwner'] == 'appolon1908-hue/Codestra-Telemetry'
+          assert management['controlApiOwner'] == 'ingtrader21-spec/Codestra-Telemetry'
           assert management['registryServiceId'] == 'openbao'
           assert management['responseBodyPolicy'] == 'discard'
           assert management['exposesSecretValues'] is False
@@ -108,8 +108,22 @@ jobs:
           assert readiness['path'] == '/v1/sys/health'
           assert health['acceptedStatuses'] == [200, 429, 472, 473]
           assert readiness['acceptedStatuses'] == [200, 429, 472, 473]
-          assert operations['pki-issue']['access'] == 'mutation'
-          assert operations['pki-issue']['controlPlaneProxyAllowed'] is False
+          required_native = {
+              'workload-login': ('POST', '/v1/auth/jwt-codestra/login', 'mutation'),
+              'secret-read': ('GET', '/v1/codestra/data/{environment}/{namespace}/{secret-name}', 'query'),
+              'secret-metadata': ('GET', '/v1/codestra/metadata/{environment}/{namespace}/{secret-name}', 'query'),
+              'secret-write': ('POST', '/v1/codestra/data/{environment}/{namespace}/{secret-name}', 'mutation'),
+              'token-renew-self': ('POST', '/v1/auth/token/renew-self', 'mutation'),
+              'token-revoke-self': ('POST', '/v1/auth/token/revoke-self', 'mutation'),
+              'pki-issue': ('POST', '/v1/{mount}/issue/{role}', 'mutation'),
+          }
+          for operation_id, (method, path, access) in required_native.items():
+              operation = operations[operation_id]
+              assert operation['method'] == method
+              assert operation['path'] == path
+              assert operation['access'] == access
+              assert operation['controlPlaneProxyAllowed'] is False
+          assert operations['token-revoke-self']['responseBodyPolicy'] == 'discard'
 
           assert all(item['mutating'] is False for item in contract['integrations'])
           assert contract['release']['immutableImageRequired'] is True

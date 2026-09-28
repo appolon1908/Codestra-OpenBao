@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1",
-  "authority": "appolon1908-hue/Codestra-OpenBao",
+  "authority": "ingtrader21-spec/Codestra-OpenBao",
   "environment": "production",
   "canonical_endpoint": "https://bao.codestra.media",
   "canonical_framework": {
@@ -23,7 +23,7 @@
   },
   "consumers": [
     {
-      "repo": "appolon1908-hue/Middleware-",
+      "repo": "ingtrader21-spec/Middleware-",
       "access": [
         {
           "identity": "middleware-api",
@@ -46,7 +46,7 @@
       ]
     },
     {
-      "repo": "appolon1908-hue/Odoo",
+      "repo": "ingtrader21-spec/Odoo",
       "access": [
         {
           "identity": "odoo-integration",
@@ -58,7 +58,7 @@
       "constraint": "credentials only; no business data"
     },
     {
-      "repo": "appolon1908-hue/klyrow.com",
+      "repo": "ingtrader21-spec/klyrow.com",
       "access": [
         {
           "identity": "klyrow-email-adapter",
@@ -70,7 +70,7 @@
       "constraint": "live email delivery remains separately gated"
     },
     {
-      "repo": "appolon1908-hue/telnexa",
+      "repo": "ingtrader21-spec/telnexa",
       "access": [
         {
           "identity": "telnexa-sms-adapter",
@@ -82,7 +82,7 @@
       "constraint": "live SMS remains separately gated"
     },
     {
-      "repo": "appolon1908-hue/Vicidialer-Codestra",
+      "repo": "ingtrader21-spec/Vicidialer-Codestra",
       "access": [
         {
           "identity": "vicidial-adapter",
@@ -94,7 +94,7 @@
       "constraint": "production dialing remains separately gated"
     },
     {
-      "repo": "appolon1908-hue/Codestra-Prometheus",
+      "repo": "ingtrader21-spec/Codestra-Prometheus",
       "access": [
         {
           "identity": "prometheus-openbao",
@@ -108,19 +108,19 @@
   ],
   "integrations_without_openbao_workload_identity": [
     {
-      "repo": "appolon1908-hue/Keycloak",
+      "repo": "ingtrader21-spec/Keycloak",
       "role": "JWT issuer and confidential-client authority; not an admitted OpenBao secret-reading workload"
     },
     {
-      "repo": "appolon1908-hue/Codestra-Grafana-",
+      "repo": "ingtrader21-spec/Codestra-Grafana-",
       "role": "read-only dashboard consumer; no production OpenBao role admitted"
     },
     {
-      "repo": "appolon1908-hue/Superset",
+      "repo": "ingtrader21-spec/Superset",
       "role": "read-only analytics consumer; no production OpenBao role admitted"
     },
     {
-      "repo": "appolon1908-hue/Codestra-Alertmanager",
+      "repo": "ingtrader21-spec/Codestra-Alertmanager",
       "role": "routes authenticated events through Middleware; no production OpenBao role admitted"
     }
   ],
