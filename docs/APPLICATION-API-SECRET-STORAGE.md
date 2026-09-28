@@ -127,10 +127,10 @@ initialize the cluster or enable trading, payments, email or SMS effects.
 
 ## Consumer pull requests
 
-- [Moneybee-Backend #78](https://github.com/appolon1908-hue/Moneybee-Backend/pull/78)
-- [LARIM-A-Backend #8](https://github.com/appolon1908-hue/LARIM-A-Backend/pull/8)
-- [Breero.com #127](https://github.com/appolon1908-hue/Breero.com/pull/127)
-- [beyvra-backend #108](https://github.com/appolon1908-hue/beyvra-backend/pull/108)
+- [Moneybee-Backend #78](https://github.com/ingtrader21-spec/Moneybee-Backend/pull/78)
+- [LARIM-A-Backend #8](https://github.com/ingtrader21-spec/LARIM-A-Backend/pull/8)
+- [Breero.com #127](https://github.com/ingtrader21-spec/Breero.com/pull/127)
+- [beyvra-backend #108](https://github.com/ingtrader21-spec/beyvra-backend/pull/108)
 
 The expanded shared API and record ownership requirements are in
 [Product API integration](PRODUCT-API-INTEGRATION.md). The cross-product SaaS

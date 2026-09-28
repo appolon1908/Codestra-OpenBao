@@ -37,7 +37,7 @@ SECRET_REF = re.compile(
 )
 SERVICE_ID = re.compile(r"^[a-z][a-z0-9-]{1,62}$")
 IDENTITY = re.compile(r"^[a-z][a-z0-9-]+$")
-REPOSITORY = re.compile(r"^appolon1908-hue/[A-Za-z0-9._-]+$")
+REPOSITORY = re.compile(r"^ingtrader21-spec/[A-Za-z0-9._-]+$")
 URI = "openbao://"
 
 

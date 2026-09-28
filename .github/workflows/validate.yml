@@ -119,23 +119,4 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
-        run: |
-          python3 - <<'PY'
-          import os
-          event = os.environ['EVENT_NAME']
-          if event == 'pull_request':
-              base = os.environ['BASE_REF']
-              head = os.environ['HEAD_REF']
-              allowed = (
-                  (base == 'development' and (head.startswith('remediation/') or head.startswith('sync/openbao-upstream-'))) or
-                  (base == 'test' and head == 'development') or
-                  (base == 'staging' and head == 'test') or
-                  (base == 'production' and head == 'staging') or
-                  (base == 'main' and head == 'production')
-              )
-              if not allowed:
-                  raise SystemExit(f'OPENBAO_BRANCH_PROMOTION=FAIL {head} -> {base}')
-          elif event == 'push' and os.environ['REF_NAME'] not in {'development', 'test', 'staging', 'production', 'main'}:
-              raise SystemExit('OPENBAO_BRANCH_PROMOTION=FAIL unexpected push branch')
-          print('OPENBAO_BRANCH_PROMOTION=PASS')
-          PY
+        run: python3 scripts/verify_branch_promotion.py

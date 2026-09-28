@@ -2,7 +2,7 @@
 
 Inventory timestamp: 2026-09-01 (Europe/Berlin)
 
-Repository: `appolon1908-hue/Codestra-OpenBao`
+Repository: `ingtrader21-spec/Codestra-OpenBao`
 
 Integration base: `development` at `2c199ee38ce372af4e0355c83e018f417e3afc8f`
 

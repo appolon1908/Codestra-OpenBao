@@ -73,7 +73,7 @@ TTL and a 300 s maximum TTL, and is renewable within that bound. Foreign issuer,
 wrong audience, wrong client, cross-environment claims, missing identity,
 expiry and tampering all evaluate to `false` and are audited.
 
-The Keycloak side (`appolon1908-hue/Keycloak`) must issue the `openbao`
+The Keycloak side (`ingtrader21-spec/Keycloak`) must issue the `openbao`
 audience and the `codestra_environment` claim to exactly these confidential
 clients through the `openbao.workload` optional client scope; the Keycloak
 repository validates that mapping against this authority.

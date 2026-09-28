@@ -4,7 +4,7 @@
 
 | Property | Authority |
 | --- | --- |
-| Repository | `appolon1908-hue/Codestra-OpenBao` |
+| Repository | `ingtrader21-spec/Codestra-OpenBao` |
 | System | Codestra principal secrets, encryption, policy, lease and workload-identity authority |
 | Orbit classification | `vendor-operator-ui` |
 | Orbit adoption mode | `operator-theme-sso` |

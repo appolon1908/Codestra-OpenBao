@@ -40,6 +40,6 @@
     "staging": "https://auth-staging.codestra.co/realms/codestra",
     "production": "https://auth.codestra.co/realms/codestra"
   },
-  "issuerSource": "appolon1908-hue/Keycloak config/endpoints/codestra.json and config/endpoints/codestra-staging.json",
+  "issuerSource": "ingtrader21-spec/Keycloak config/endpoints/codestra.json and config/endpoints/codestra-staging.json",
   "foreignIssuerAccepted": false
 }
