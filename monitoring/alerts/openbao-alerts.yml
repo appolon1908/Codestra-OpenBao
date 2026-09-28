@@ -152,3 +152,44 @@ groups:
           severity: critical
         annotations:
           summary: Sanitized OpenBao runtime state differs from protected Git
+
+      - alert: OpenBaoHealthProbeFailure
+        expr: probe_success{job="blackbox",service="openbao",probe_module="https_openbao_health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: GET /v1/sys/health reports OpenBao unavailable, sealed, uninitialised or in an unexpected state
+          runbook: Sealed or uninitialised state is confirmed by an operator; the probe never unseals or initialises
+
+      - alert: OpenBaoHealthProbeLatencyHigh
+        expr: probe_duration_seconds{job="blackbox",service="openbao",probe_module="https_openbao_health"} > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: OpenBao health endpoint latency exceeds two seconds
+
+      - alert: OpenBaoStandbyOnly
+        expr: probe_http_status_code{job="blackbox",service="openbao",probe_module="https_openbao_health"} == 429 and on(environment) (count by (environment) (probe_http_status_code{job="blackbox",service="openbao",probe_module="https_openbao_health"} == 200) == 0)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Every probed OpenBao node reports standby; no node is active
+
+      - alert: OpenBaoAuditDeviceUnavailable
+        expr: (absent(vault_audit_log_request_count{job="codestra-openbao"}) or increase(vault_audit_log_request_count{job="codestra-openbao"}[15m]) == 0) and on() vault_core_unsealed{job="codestra-openbao"} == 1
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: The OpenBao audit device recorded nothing for fifteen minutes while unsealed
+
+      - alert: OpenBaoPolicyDenialRateHigh
+        expr: sum(rate(vault_core_handle_request_count{job="codestra-openbao"}[5m])) > 0 and on() sum(rate(codestra_openbao_permission_denied_total[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: OpenBao permission denials are sustained; correlate with the audit stream in Loki

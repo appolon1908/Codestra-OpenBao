@@ -105,7 +105,7 @@ jq -e --arg path "${mount}/" --arg plugin "$plugin" --arg version "$version" --a
 ' "$response_dir/auth.json" >/dev/null
 
 jq -n --rawfile key "$token_dir/public.pem" \
-  '{jwt_validation_pubkeys:[$key],jwt_supported_algs:["ES256"],bound_issuer:"https://auth.codestra.co/realms/codestra"}' \
+  '{jwt_validation_pubkeys:[$key],jwt_supported_algs:["ES256"],bound_issuer:"https://auth-staging.codestra.co/realms/codestra"}' \
   > "$response_dir/config-payload.json"
 code="$(curl -sS -o "$response_dir/config-response.json" -w '%{http_code}' \
   -H "${header_name}: ${dev_token}" -H 'Content-Type: application/json' \

@@ -104,7 +104,23 @@
       "serviceIdentity": "prometheus-openbao",
       "policyName": "workload-prometheus-openbao-development",
       "path": "openbao/policies/development/prometheus-openbao.hcl",
-      "sha256": "d0c65da71c22e3bef012ad087a8db2164f79eed81704d9b8d477f945b1f18630",
+      "sha256": "a796a6b1d7f58cb2ec1fe85b3d4c7e933bf4eff996164d902639642465aaea2c",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "alertmanager",
+      "policyName": "workload-alertmanager-production",
+      "path": "openbao/policies/production/alertmanager.hcl",
+      "sha256": "8ee18b57659dc5b31f6c79b314f17aa60260bc47e2d02822527346888942c456",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "alloy-collector",
+      "policyName": "workload-alloy-collector-production",
+      "path": "openbao/policies/production/alloy-collector.hcl",
+      "sha256": "452d02afbb2dc904a1fca74178bb2cd054634a61a792f1bc80355cf97a695cf7",
       "runtimeApplyAuthorized": false
     },
     {
@@ -157,6 +173,14 @@
     },
     {
       "environment": "production",
+      "serviceIdentity": "grafana-runtime",
+      "policyName": "workload-grafana-runtime-production",
+      "path": "openbao/policies/production/grafana-runtime.hcl",
+      "sha256": "5416b670da4621c618c58591ee89d7a450e4d800aa31870eaaba6fdb48a4a455",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
       "serviceIdentity": "klyrow-email-adapter",
       "policyName": "workload-klyrow-email-adapter-production",
       "path": "openbao/policies/production/klyrow-email-adapter.hcl",
@@ -177,6 +201,14 @@
       "policyName": "workload-larimia-api-production",
       "path": "openbao/policies/production/larimia-api.hcl",
       "sha256": "ed58736a02ab131a1a3d9d8a1d41a6917904fd816da7a3f8148b44c502fbb0c0",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "loki-runtime",
+      "policyName": "workload-loki-runtime-production",
+      "path": "openbao/policies/production/loki-runtime.hcl",
+      "sha256": "f1ac59fcf6293d55c5b1c41746364e43ecb55e6ca374207db70a6019dfbc439b",
       "runtimeApplyAuthorized": false
     },
     {
@@ -221,10 +253,42 @@
     },
     {
       "environment": "production",
+      "serviceIdentity": "otel-gateway",
+      "policyName": "workload-otel-gateway-production",
+      "path": "openbao/policies/production/otel-gateway.hcl",
+      "sha256": "48661e3f73ae20007a4286f1684d3865f0a4104f4743b2e98a68a5d533fd1b17",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "postgres-exporter",
+      "policyName": "workload-postgres-exporter-production",
+      "path": "openbao/policies/production/postgres-exporter.hcl",
+      "sha256": "5fd448410b56d65a75a1f593e0160b9a68d23e3d73113049aa7b126a605a2fc8",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
       "serviceIdentity": "prometheus-openbao",
       "policyName": "workload-prometheus-openbao-production",
       "path": "openbao/policies/production/prometheus-openbao.hcl",
-      "sha256": "8aaa51e0349903fa3be4ae40279ddaa4bd41941cc94842e748a2b090d8efeb9b",
+      "sha256": "2f96e6ea76c090e79d021abbc89982ea0b68471960f1b77f3801916735bb48ff",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "redis-exporter",
+      "policyName": "workload-redis-exporter-production",
+      "path": "openbao/policies/production/redis-exporter.hcl",
+      "sha256": "d8936596baf3450be15444b897a4a6f8f0168122a40e69dfbbaae3db43163004",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
+      "serviceIdentity": "superset-analytics",
+      "policyName": "workload-superset-analytics-production",
+      "path": "openbao/policies/production/superset-analytics.hcl",
+      "sha256": "c794190e6340c0ba6002f51123328eb41ecba328f218c24281e7c7f08702c19d",
       "runtimeApplyAuthorized": false
     },
     {
@@ -237,10 +301,34 @@
     },
     {
       "environment": "production",
+      "serviceIdentity": "tempo-runtime",
+      "policyName": "workload-tempo-runtime-production",
+      "path": "openbao/policies/production/tempo-runtime.hcl",
+      "sha256": "38e33eb94f572312f8af86cf8884d836fbf05a730a569d597a7f8bac42f1ca3c",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "production",
       "serviceIdentity": "vicidial-adapter",
       "policyName": "workload-vicidial-adapter-production",
       "path": "openbao/policies/production/vicidial-adapter.hcl",
       "sha256": "3618701b580687d7adc0a41c7b363f188250b4d040caccf3ca0e7da1b275cfdf",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "alertmanager",
+      "policyName": "workload-alertmanager-staging",
+      "path": "openbao/policies/staging/alertmanager.hcl",
+      "sha256": "f1e9183f1dfc916e001ee0ef45d12ebafbdb8cb58b71b9e16289c66889c9f392",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "alloy-collector",
+      "policyName": "workload-alloy-collector-staging",
+      "path": "openbao/policies/staging/alloy-collector.hcl",
+      "sha256": "d44d565cce6fe1959323c65e7d4ba530c9ecbeed8755fb0fa7cef0edb020f693",
       "runtimeApplyAuthorized": false
     },
     {
@@ -293,6 +381,14 @@
     },
     {
       "environment": "staging",
+      "serviceIdentity": "grafana-runtime",
+      "policyName": "workload-grafana-runtime-staging",
+      "path": "openbao/policies/staging/grafana-runtime.hcl",
+      "sha256": "cfe2fa2be41b68e44db9607518aad1587106cdbd47df9212888dd3aaf4ea3add",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
       "serviceIdentity": "klyrow-email-adapter",
       "policyName": "workload-klyrow-email-adapter-staging",
       "path": "openbao/policies/staging/klyrow-email-adapter.hcl",
@@ -313,6 +409,14 @@
       "policyName": "workload-larimia-api-staging",
       "path": "openbao/policies/staging/larimia-api.hcl",
       "sha256": "9fdafb3821164900af8c12aff4f280271753ca99a571397b0b826b54902797ea",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "loki-runtime",
+      "policyName": "workload-loki-runtime-staging",
+      "path": "openbao/policies/staging/loki-runtime.hcl",
+      "sha256": "9fada162dcdbb114c9eb3f29d2a24db61afdf20b1e364fc81ba0f76a6732462f",
       "runtimeApplyAuthorized": false
     },
     {
@@ -357,10 +461,42 @@
     },
     {
       "environment": "staging",
+      "serviceIdentity": "otel-gateway",
+      "policyName": "workload-otel-gateway-staging",
+      "path": "openbao/policies/staging/otel-gateway.hcl",
+      "sha256": "7376049618396af18408b4bb5a4cdd6a197eed31e9ac76b991a31826380f88d7",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "postgres-exporter",
+      "policyName": "workload-postgres-exporter-staging",
+      "path": "openbao/policies/staging/postgres-exporter.hcl",
+      "sha256": "e6f7a74e0dae87ed5bb59c283b2ccc9d241b82ebdee57174843d1889697a2cef",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
       "serviceIdentity": "prometheus-openbao",
       "policyName": "workload-prometheus-openbao-staging",
       "path": "openbao/policies/staging/prometheus-openbao.hcl",
-      "sha256": "21401dc4f3b23a832adfa9971c50c300cf507f993f8d926bbf4c917f59c66721",
+      "sha256": "2984ec90234c76dfa51db5e01a66e2e8e1bcf211a0a8ffcd7f5f405491b03882",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "redis-exporter",
+      "policyName": "workload-redis-exporter-staging",
+      "path": "openbao/policies/staging/redis-exporter.hcl",
+      "sha256": "3f5a3ae9e4be0bdc5d30861ac9a9255bf4eac9e18feecd60e911f32edd21f7d7",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "superset-analytics",
+      "policyName": "workload-superset-analytics-staging",
+      "path": "openbao/policies/staging/superset-analytics.hcl",
+      "sha256": "32a81a6c21c76d28eca54a108bfa66d01ab5c3b1ff07efe39bbd2d7c6f24c2c4",
       "runtimeApplyAuthorized": false
     },
     {
@@ -369,6 +505,14 @@
       "policyName": "workload-telnexa-sms-adapter-staging",
       "path": "openbao/policies/staging/telnexa-sms-adapter.hcl",
       "sha256": "5e93c6ded6d57224f271652d7c6b106cbb4cf2aaac9267d18ad516f6ec3d4256",
+      "runtimeApplyAuthorized": false
+    },
+    {
+      "environment": "staging",
+      "serviceIdentity": "tempo-runtime",
+      "policyName": "workload-tempo-runtime-staging",
+      "path": "openbao/policies/staging/tempo-runtime.hcl",
+      "sha256": "bc5890d80bdddc20a5e109dd1f887d3c3f3689875e81f2e1eca2d9c5e686adde",
       "runtimeApplyAuthorized": false
     },
     {
@@ -480,7 +624,7 @@
       "serviceIdentity": "prometheus-openbao",
       "policyName": "workload-prometheus-openbao-test",
       "path": "openbao/policies/test/prometheus-openbao.hcl",
-      "sha256": "1bec613e15205620d57cee0fe324d0f956ad54e1cace4e95678f240791f1f862",
+      "sha256": "e39432a9bf331690f9e25954dfc9ea0adb97fbe205b2c9f43778af17a23679c6",
       "runtimeApplyAuthorized": false
     }
   ]

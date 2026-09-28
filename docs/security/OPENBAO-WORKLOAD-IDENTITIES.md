@@ -2,7 +2,7 @@
 
 `config/policies/workload-identities.v1.json` is the owner and eligibility
 inventory. `config/workload-secret-authority.v1.json` is generated authority;
-`openbao/auth/jwt-roles.v1.json` contains the exact CEL roles. There are 60
+`openbao/auth/jwt-roles.v1.json` contains the exact CEL roles. There are 78
 prepared roles across four environments. All runtime bindings remain disabled.
 
 | Identity | Owner | Environments | Purpose |
@@ -13,6 +13,15 @@ prepared roles across four environments. All runtime bindings remain disabled.
 | `n8n-automation` | automation-platform | all | Middleware client/orchestration credential only |
 | `odoo-integration` | business-integrations | all | exact Odoo integration credential only |
 | `prometheus-openbao` | observability-platform | all | authenticated metrics only; no general secret reads |
+| `grafana-runtime` | observability-platform | staging, production | datasource, Middleware read-token and OIDC client secret only |
+| `alertmanager` | observability-platform | staging, production | Middleware alert-webhook bearer only |
+| `alloy-collector` | observability-platform | staging, production | Loki push and OTLP gateway client credentials only |
+| `otel-gateway` | observability-platform | staging, production | gateway receiver and Tempo/Loki exporter credentials only |
+| `loki-runtime` | observability-platform | staging, production | Loki object-storage credentials only |
+| `tempo-runtime` | observability-platform | staging, production | Tempo object-storage credentials only |
+| `redis-exporter` | observability-platform | staging, production | monitoring-only Redis ACL user |
+| `postgres-exporter` | observability-platform | staging, production | pg_monitor role credential only |
+| `superset-analytics` | analytics-platform | staging, production | read-only projection/metadata database and OIDC client secret only |
 | `klyrow-email-adapter` | klyrow-platform | staging, production | exact email adapter path; live effects remain disabled |
 | `telnexa-sms-adapter` | telnexa-platform | staging, production | exact SMS adapter path; live effects remain disabled |
 | `vicidial-adapter` | communications-platform | staging, production | exact telephony adapter path; dialing remains disabled |

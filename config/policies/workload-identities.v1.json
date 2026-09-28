@@ -145,9 +145,10 @@
         "production"
       ],
       "namespacePrefixes": [
-        "observability/openbao/metrics-client/"
+        "observability/openbao/metrics-client/",
+        "observability/prometheus/scrape-credentials/"
       ],
-      "purpose": "read only the private OpenBao metrics client material",
+      "purpose": "read the private OpenBao metrics client material and the reviewed scrape credentials (monitoring-readonly client secret, exporter basic-auth); never a secret value for any other workload",
       "providerBusinessEffectsEnabled": false
     },
     {
@@ -253,6 +254,123 @@
         "beyvra/funding/providers/"
       ],
       "purpose": "read only beyvra-funding private configuration secrets",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "grafana-runtime",
+      "owner": "observability-platform",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "namespacePrefixes": [
+        "observability/grafana/"
+      ],
+      "purpose": "read Grafana datasource credentials, the Middleware observability read token and the Grafana OIDC client secret",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "alertmanager",
+      "owner": "observability-platform",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "namespacePrefixes": [
+        "observability/alertmanager/"
+      ],
+      "purpose": "read only the Middleware alert-webhook bearer credential used by Alertmanager receivers",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "alloy-collector",
+      "owner": "observability-platform",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "namespacePrefixes": [
+        "observability/alloy/"
+      ],
+      "purpose": "read Loki/Tempo push and OTLP gateway client credentials for the local Alloy collector",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "otel-gateway",
+      "owner": "observability-platform",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "namespacePrefixes": [
+        "observability/otel-gateway/"
+      ],
+      "purpose": "read the central OpenTelemetry gateway receiver and Tempo/Loki exporter credentials",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "loki-runtime",
+      "owner": "observability-platform",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "namespacePrefixes": [
+        "observability/loki/"
+      ],
+      "purpose": "read Loki object-storage and ingestion authentication material",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "tempo-runtime",
+      "owner": "observability-platform",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "namespacePrefixes": [
+        "observability/tempo/"
+      ],
+      "purpose": "read Tempo object-storage and ingestion authentication material",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "redis-exporter",
+      "owner": "observability-platform",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "namespacePrefixes": [
+        "observability/exporters/redis/"
+      ],
+      "purpose": "read the monitoring-only Redis credential for the Redis exporter",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "postgres-exporter",
+      "owner": "observability-platform",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "namespacePrefixes": [
+        "observability/exporters/postgres/"
+      ],
+      "purpose": "read the monitoring-only PostgreSQL role credential for the Postgres exporter",
+      "providerBusinessEffectsEnabled": false
+    },
+    {
+      "serviceIdentity": "superset-analytics",
+      "owner": "analytics-platform",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "namespacePrefixes": [
+        "analytics/superset/"
+      ],
+      "purpose": "read only the read-only analytics projection database credential and the Superset OIDC client secret",
       "providerBusinessEffectsEnabled": false
     }
   ],

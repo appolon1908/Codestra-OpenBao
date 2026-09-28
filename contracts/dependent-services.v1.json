@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "authority": "ingtrader21-spec/Codestra-OpenBao",
   "environment": "production",
   "canonical_endpoint": "https://bao.codestra.media",
@@ -12,11 +12,13 @@
     "secret_engines": "config/secrets/engines.v1.json",
     "initialize": "scripts/initialize.sh",
     "apply": "scripts/apply_saved_plan.sh",
-    "verify": "scripts/verify.sh"
+    "verify": "scripts/verify.sh",
+    "secret_references": "config/secret-references.v1.json",
+    "secret_reference_schema": "contracts/secret-reference.v1.schema.json"
   },
   "authority_binding": {
     "source": "config/workload-secret-authority.v1.json",
-    "source_blob_sha": "50b7a8041823d2eac0c36821b091b727e1071bf8",
+    "source_blob_sha": "1985d3c4948c961a03ff6624bc03b41b70a06419",
     "derivation": "Exact production serviceIdentity and pathPrefixes; no parent-prefix broadening.",
     "default_policy": "deny",
     "runtime_binding_authorized": false
@@ -99,11 +101,120 @@
         {
           "identity": "prometheus-openbao",
           "prefixes": [
-            "codestra/production/observability/openbao/metrics-client/"
+            "codestra/production/observability/openbao/metrics-client/",
+            "codestra/production/observability/prometheus/scrape-credentials/"
           ]
         }
       ],
-      "constraint": "private OpenBao metrics client material only"
+      "constraint": "private OpenBao metrics client material and reviewed scrape credentials only; sys/metrics read is the only system capability"
+    },
+    {
+      "repo": "ingtrader21-spec/Codestra-Grafana-",
+      "access": [
+        {
+          "identity": "grafana-runtime",
+          "prefixes": [
+            "codestra/production/observability/grafana/"
+          ]
+        }
+      ],
+      "constraint": "datasource, Middleware read-token and OIDC client secret only; dashboards never display a secret"
+    },
+    {
+      "repo": "ingtrader21-spec/Codestra-Alertmanager",
+      "access": [
+        {
+          "identity": "alertmanager",
+          "prefixes": [
+            "codestra/production/observability/alertmanager/"
+          ]
+        }
+      ],
+      "constraint": "Middleware webhook bearer only; incidents remain in Middleware"
+    },
+    {
+      "repo": "ingtrader21-spec/Codestra-Alloy",
+      "access": [
+        {
+          "identity": "alloy-collector",
+          "prefixes": [
+            "codestra/production/observability/alloy/"
+          ]
+        }
+      ],
+      "constraint": "push and gateway credentials only; redaction runs before export"
+    },
+    {
+      "repo": "ingtrader21-spec/Codestra-Telemetry",
+      "access": [
+        {
+          "identity": "otel-gateway",
+          "prefixes": [
+            "codestra/production/observability/otel-gateway/"
+          ]
+        }
+      ],
+      "constraint": "receiver and exporter credentials only"
+    },
+    {
+      "repo": "ingtrader21-spec/Codestra-Loki",
+      "access": [
+        {
+          "identity": "loki-runtime",
+          "prefixes": [
+            "codestra/production/observability/loki/"
+          ]
+        }
+      ],
+      "constraint": "object-storage credentials only"
+    },
+    {
+      "repo": "ingtrader21-spec/Codestra-Tempo",
+      "access": [
+        {
+          "identity": "tempo-runtime",
+          "prefixes": [
+            "codestra/production/observability/tempo/"
+          ]
+        }
+      ],
+      "constraint": "object-storage credentials only"
+    },
+    {
+      "repo": "ingtrader21-spec/Codestra-Redis-Exporter",
+      "access": [
+        {
+          "identity": "redis-exporter",
+          "prefixes": [
+            "codestra/production/observability/exporters/redis/"
+          ]
+        }
+      ],
+      "constraint": "monitoring-only Redis ACL user"
+    },
+    {
+      "repo": "ingtrader21-spec/Codestra-Postgres-Exporter",
+      "access": [
+        {
+          "identity": "postgres-exporter",
+          "prefixes": [
+            "codestra/production/observability/exporters/postgres/"
+          ]
+        }
+      ],
+      "constraint": "pg_monitor role only; no application data access"
+    },
+    {
+      "repo": "ingtrader21-spec/Superset",
+      "access": [
+        {
+          "identity": "superset-analytics",
+          "prefixes": [
+            "codestra/production/analytics/superset/"
+          ]
+        }
+      ],
+      "constraint": "read-only analytics identity; never Prometheus, Loki, Tempo or OpenBao administration"
     }
   ],
   "integrations_without_openbao_workload_identity": [
@@ -112,16 +223,20 @@
       "role": "JWT issuer and confidential-client authority; not an admitted OpenBao secret-reading workload"
     },
     {
-      "repo": "ingtrader21-spec/Codestra-Grafana-",
-      "role": "read-only dashboard consumer; no production OpenBao role admitted"
+      "repo": "ingtrader21-spec/Codestra-Node-Exporter",
+      "role": "credential-free host exporter on a private listener; no OpenBao role"
     },
     {
-      "repo": "ingtrader21-spec/Superset",
-      "role": "read-only analytics consumer; no production OpenBao role admitted"
+      "repo": "ingtrader21-spec/Codestra-cAdvisor",
+      "role": "credential-free container exporter on a private listener; no OpenBao role"
     },
     {
-      "repo": "ingtrader21-spec/Codestra-Alertmanager",
-      "role": "routes authenticated events through Middleware; no production OpenBao role admitted"
+      "repo": "ingtrader21-spec/Codestra-Blackbox-Exporter",
+      "role": "safe GET/HEAD/DNS/TCP/TLS prober; holds no credentials; no OpenBao role"
+    },
+    {
+      "repo": "ingtrader21-spec/Caddy",
+      "role": "TLS edge; certificate automation is native; no OpenBao role"
     }
   ],
   "required_runtime_gates": {
@@ -145,5 +260,13 @@
     "native_port_public": false,
     "parent_prefix_broadening": false,
     "unadmitted_workload_identities": false
-  }
+  },
+  "decisions": [
+    {
+      "id": "R7-2026-09-16-monitoring-identities-admitted",
+      "supersedes": "schema 1.1 note that Grafana, Superset and Alertmanager had no production OpenBao role",
+      "decision": "Grafana, Alertmanager, Alloy, the OTel gateway, Loki, Tempo, the Redis and Postgres exporters and Superset are admitted as exact-prefix, read-only, staging/production workload identities so that no monitoring credential lives in Git. Node Exporter, cAdvisor and Blackbox remain credential-free.",
+      "runtime_binding_authorized": false
+    }
+  ]
 }

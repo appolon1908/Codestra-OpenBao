@@ -6,7 +6,16 @@
   "boundIssuer": "https://auth.codestra.co/realms/codestra",
   "boundAudience": "openbao",
   "userClaim": "sub",
-  "requiredClaims": ["iss", "sub", "aud", "azp", "iat", "exp", "jti", "codestra_environment"],
+  "requiredClaims": [
+    "iss",
+    "sub",
+    "aud",
+    "azp",
+    "iat",
+    "exp",
+    "jti",
+    "codestra_environment"
+  ],
   "clockSkewLeewaySeconds": 30,
   "expirationLeewaySeconds": -1,
   "notBeforeLeewaySeconds": -1,
@@ -18,5 +27,19 @@
   "authPluginManifest": "plugins/codestra-jwt-replay/plugin.v1.json",
   "defaultRole": "",
   "roleSource": "config/workload-secret-authority.v1.json",
-  "runtimeApplyAuthorized": false
+  "runtimeApplyAuthorized": false,
+  "issuersByEnvironment": {
+    "development": "https://auth-staging.codestra.co/realms/codestra",
+    "test": "https://auth-staging.codestra.co/realms/codestra",
+    "staging": "https://auth-staging.codestra.co/realms/codestra",
+    "production": "https://auth.codestra.co/realms/codestra"
+  },
+  "discoveryUrlsByEnvironment": {
+    "development": "https://auth-staging.codestra.co/realms/codestra",
+    "test": "https://auth-staging.codestra.co/realms/codestra",
+    "staging": "https://auth-staging.codestra.co/realms/codestra",
+    "production": "https://auth.codestra.co/realms/codestra"
+  },
+  "issuerSource": "ingtrader21-spec/Keycloak config/endpoints/codestra.json and config/endpoints/codestra-staging.json",
+  "foreignIssuerAccepted": false
 }

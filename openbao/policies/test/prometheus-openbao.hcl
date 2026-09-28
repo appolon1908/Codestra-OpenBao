@@ -9,6 +9,14 @@ path "codestra/metadata/test/observability/openbao/metrics-client/*" {
   capabilities = ["read", "list"]
 }
 
+path "codestra/data/test/observability/prometheus/scrape-credentials/*" {
+  capabilities = ["read"]
+}
+
+path "codestra/metadata/test/observability/prometheus/scrape-credentials/*" {
+  capabilities = ["read", "list"]
+}
+
 path "codestra/data/development/*" {
   capabilities = ["deny"]
 }

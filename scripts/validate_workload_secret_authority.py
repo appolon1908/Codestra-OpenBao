@@ -47,7 +47,34 @@ EXPECTED_IDENTITIES = {
     "telnexa-sms-adapter": ("telnexa-platform", ["middleware/worker/sms/telnexa/"]),
     "vicidial-adapter": ("communications-platform", ["middleware/worker/telephony/vicidial/"]),
     "crawler-adapter": ("kyqra-platform", ["middleware/worker/crawler/kyqra/"]),
-    "prometheus-openbao": ("observability-platform", ["observability/openbao/metrics-client/"]),
+    "prometheus-openbao": (
+        "observability-platform",
+        [
+            "observability/openbao/metrics-client/",
+            "observability/prometheus/scrape-credentials/",
+        ],
+    ),
+    "grafana-runtime": ("observability-platform", ["observability/grafana/"]),
+    "alertmanager": ("observability-platform", ["observability/alertmanager/"]),
+    "alloy-collector": ("observability-platform", ["observability/alloy/"]),
+    "otel-gateway": ("observability-platform", ["observability/otel-gateway/"]),
+    "loki-runtime": ("observability-platform", ["observability/loki/"]),
+    "tempo-runtime": ("observability-platform", ["observability/tempo/"]),
+    "redis-exporter": ("observability-platform", ["observability/exporters/redis/"]),
+    "postgres-exporter": ("observability-platform", ["observability/exporters/postgres/"]),
+    "superset-analytics": ("analytics-platform", ["analytics/superset/"]),
+}
+# Monitoring and analytics workloads exist only where the platform runs them.
+STAGING_PRODUCTION_ONLY = {
+    "grafana-runtime", "alertmanager", "alloy-collector", "otel-gateway",
+    "loki-runtime", "tempo-runtime", "redis-exporter", "postgres-exporter",
+    "superset-analytics",
+}
+EXPECTED_ISSUERS = {
+    "development": "https://auth-staging.codestra.co/realms/codestra",
+    "test": "https://auth-staging.codestra.co/realms/codestra",
+    "staging": "https://auth-staging.codestra.co/realms/codestra",
+    "production": "https://auth.codestra.co/realms/codestra",
 }
 
 
@@ -113,6 +140,8 @@ def validate_inventory(inventory: dict) -> None:
     for name, (owner, prefixes) in EXPECTED_IDENTITIES.items():
         if by_name[name]["owner"] != owner or by_name[name]["namespacePrefixes"] != prefixes:
             fail(f"identity scope drifted:{name}")
+        if name in STAGING_PRODUCTION_ONLY and by_name[name]["environments"] != ["staging", "production"]:
+            fail(f"monitoring identity environments drifted:{name}")
 
 
 def validate(policy: dict, inventory: dict | None = None) -> None:
@@ -131,6 +160,13 @@ def validate(policy: dict, inventory: dict | None = None) -> None:
         fail("runtime apply must remain disabled")
     if policy["issuer"] != "https://auth.codestra.co/realms/codestra":
         fail("issuer drift")
+    if policy.get("issuersByEnvironment") != EXPECTED_ISSUERS:
+        fail("per-environment issuer drift")
+    if policy["issuersByEnvironment"]["production"] in {
+        issuer for environment, issuer in policy["issuersByEnvironment"].items()
+        if environment != "production"
+    }:
+        fail("a non-production environment trusts the production issuer")
     if policy["audience"] != "openbao" or policy["maximumTokenLifetimeSeconds"] > 300:
         fail("workload JWT boundary drift")
     seen = set()
