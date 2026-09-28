@@ -15,6 +15,7 @@ for validator in \
   scripts/validate_codestra_openbao.py \
   scripts/validate_codestra_openbao_oidc.py \
   scripts/validate_codestra_review_boundaries.py \
+  scripts/validate_codestra_service_contract.py \
   scripts/validate_workload_secret_authority.py \
   scripts/validate_dependent_service_contract.py \
   scripts/validate_orbit_adoption.py; do
