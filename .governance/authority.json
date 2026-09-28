@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "repository": "Codestra-OpenBao",
+  "repository_url": "https://github.com/ingtrader21-spec/Codestra-OpenBao.git",
+  "active_branch": "governance/single-active-lane-20260926",
+  "base_branch": "main",
+  "base_sha": "f2befac098b5468495ac182af6240c75afd2caa0",
+  "upstream_ref": "origin/main",
+  "publication_branch": "governance/single-active-lane-20260926",
+  "development_workstation": "codestra-desktop",
+  "publication_workstation": "Appolon",
+  "allow_production_effects": false,
+  "allow_force_push": false,
+  "canonical_worktree": "/home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao",
+  "updated_at": "2026-09-28T01:19:00Z"
+}
