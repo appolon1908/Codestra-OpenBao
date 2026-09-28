@@ -18,7 +18,7 @@ ISSUER = "https://auth.codestra.co/realms/codestra"
 CLIENT_ID = "openbao-secrets"
 SECRET_FILE = "/run/secrets/openbao_oidc_client_secret"
 REDIRECTS = [
-    "https://bao.codestra.media/v1/auth/oidc/callback",
+    "https://bao.codestra.media/v1/auth/oidc/oidc/callback",
     "https://bao.codestra.media/ui/vault/auth/oidc/oidc/callback",
     "http://localhost:8250/oidc/callback",
 ]

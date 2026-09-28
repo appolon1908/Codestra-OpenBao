@@ -83,9 +83,12 @@ jobs:
           python3 scripts/verify_sbom.py --candidate "$sbom"
           plugin_dir="$RUNNER_TEMP/plugin-sbom"
           mkdir -p "$plugin_dir"
-          OPENBAO_PLUGIN_OUTPUT="$plugin_dir/codestra-jwt-replay" scripts/build_jti_plugin.sh
+          plugin="$plugin_dir/codestra-jwt-replay"
+          OPENBAO_PLUGIN_OUTPUT="$plugin" scripts/build_jti_plugin.sh
           plugin_sbom="$(mktemp)"
-          syft scan "file:$plugin_dir/codestra-jwt-replay" \
+          syft scan "file:$plugin" \
             -o "cyclonedx-json=$plugin_sbom" >/dev/null
-          python3 scripts/verify_plugin_supply_chain.py --sbom "$plugin_sbom"
+          python3 scripts/verify_plugin_supply_chain.py \
+            --sbom "$plugin_sbom" \
+            --plugin "$plugin"
           (cd artifacts/supply-chain && sha256sum -c SHA256SUMS)

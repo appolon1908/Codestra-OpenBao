@@ -4,13 +4,29 @@ on:
   pull_request:
     paths:
       - 'codestra/api/service-contract.v1.json'
+      - 'codestra/api/native-api-authority.v1.json'
       - 'docs/CODESTRA-SERVICE-API.md'
+      - 'scripts/validate_codestra_service_contract.py'
+      - 'scripts/generate_workload_policies.py'
+      - 'tests/test_service_api_contract.py'
+      - 'config/secrets/engines.v1.json'
+      - 'config/auth/keycloak-jwt.v1.json'
+      - 'config/workload-secret-authority.v1.json'
+      - 'codestra/runtime-v1/oidc-plan.v1.json'
       - '.github/workflows/validate-codestra-service-contract.yml'
   push:
     branches: [development, test, staging, production, main, 'remediation/**', 'sync/upstream/**']
     paths:
       - 'codestra/api/service-contract.v1.json'
+      - 'codestra/api/native-api-authority.v1.json'
       - 'docs/CODESTRA-SERVICE-API.md'
+      - 'scripts/validate_codestra_service_contract.py'
+      - 'scripts/generate_workload_policies.py'
+      - 'tests/test_service_api_contract.py'
+      - 'config/secrets/engines.v1.json'
+      - 'config/auth/keycloak-jwt.v1.json'
+      - 'config/workload-secret-authority.v1.json'
+      - 'codestra/runtime-v1/oidc-plan.v1.json'
       - '.github/workflows/validate-codestra-service-contract.yml'
 
 permissions:
@@ -22,12 +38,12 @@ concurrency:
 
 jobs:
   canonical-contract-authority:
-    uses: ingtrader21-spec/Codestra-Telemetry/.github/workflows/reusable-validate-service-contract.yml@c35d880a730ca5206d445e8a9a688cb465ae2ad4
+    uses: ingtrader21-spec/Codestra-Telemetry/.github/workflows/reusable-validate-service-contract.yml@3517fb3b9bb1077d92419a5c13c07d703ffbebf6
     with:
       expected_repository: 'ingtrader21-spec/Codestra-OpenBao'
       expected_component: 'openbao'
       expected_contract_id: 'codestra.observability.openbao.v1'
-      schema_authority_revision: 'c35d880a730ca5206d445e8a9a688cb465ae2ad4'
+      schema_authority_revision: '3517fb3b9bb1077d92419a5c13c07d703ffbebf6'
 
   validate-service-contract:
     runs-on: ubuntu-24.04
@@ -47,84 +63,10 @@ jobs:
       - name: Validate canonical OpenBao service API contract
         run: |
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
-          python - <<'PY'
-          import json
-          import re
-          from pathlib import Path
+          python3 scripts/validate_codestra_service_contract.py
 
-          contract_path = Path('codestra/api/service-contract.v1.json')
-          contract = json.loads(contract_path.read_text(encoding='utf-8'))
-
-          assert contract['schemaVersion'] == '1.0.0'
-          assert contract['component'] == 'openbao'
-          assert contract['contractId'] == 'codestra.observability.openbao.v1'
-          assert contract['repository'] == 'ingtrader21-spec/Codestra-OpenBao'
-          assert contract['authorityRole'] == 'secrets-pki-workload-identity-authority'
-          assert contract['canonicalHostname'] == 'bao.codestra.media'
-          assert contract['nativeExposure'] == 'private_strong_auth'
-          assert contract['schemaAuthority'] == {
-              'repository': 'ingtrader21-spec/Codestra-Telemetry',
-              'path': 'codestra/api/service-contract.schema.json',
-              'sourceRevision': 'c35d880a730ca5206d445e8a9a688cb465ae2ad4',
-              'version': '1.0.0',
-          }
-
-          native_api = contract['nativeApi']
-          assert re.fullmatch(r'CODESTRA_[A-Z0-9_]+', native_api['baseUrlEnvironment'])
-          authentication = native_api['authentication']
-          assert authentication == {
-              'callerControlledBusinessAllowed': False,
-              'credentialSource': 'secret_file',
-              'requiredScopes': [],
-              'tenantHeader': None,
-              'transport': 'private_mtls',
-          }
-
-          operations = {item['id']: item for item in native_api['operations']}
-          assert len(operations) == len(native_api['operations'])
-          for operation in operations.values():
-              path = operation['path']
-              assert isinstance(path, str) and path.startswith('/') and not path.startswith('//')
-              assert '\r' not in path and '\n' not in path
-              assert operation['controlPlaneProxyAllowed'] is False
-              assert 250 <= operation['timeoutMs'] <= 10000
-              assert operation['acceptedStatuses']
-
-          management = contract['managementReadback']
-          assert management['controlApiOwner'] == 'ingtrader21-spec/Codestra-Telemetry'
-          assert management['registryServiceId'] == 'openbao'
-          assert management['responseBodyPolicy'] == 'discard'
-          assert management['exposesSecretValues'] is False
-          assert management['allowsMutation'] is False
-          for key in ('healthOperationId', 'readinessOperationId'):
-              operation = operations[management[key]]
-              assert operation['method'] in {'GET', 'HEAD'}
-              assert operation['access'] == 'read_only'
-              assert operation['responseBodyPolicy'] == 'discard'
-
-          health = operations['health']
-          readiness = operations['readiness']
-          assert health['path'] == '/v1/sys/health'
-          assert readiness['path'] == '/v1/sys/health'
-          assert health['acceptedStatuses'] == [200, 429, 472, 473]
-          assert readiness['acceptedStatuses'] == [200, 429, 472, 473]
-          assert operations['pki-issue']['access'] == 'mutation'
-          assert operations['pki-issue']['controlPlaneProxyAllowed'] is False
-
-          assert all(item['mutating'] is False for item in contract['integrations'])
-          assert contract['release']['immutableImageRequired'] is True
-          assert re.fullmatch(r'CODESTRA_[A-Z0-9_]+', contract['release']['sourceRevisionEnvironment'])
-          assert re.fullmatch(r'CODESTRA_[A-Z0-9_]+', contract['release']['imageDigestEnvironment'])
-          assert contract['correlation']['indexedFields'] == [
-              'codestra_business', 'application', 'service', 'environment', 'server', 'region', 'deployment'
-          ]
-          assert {'request_id', 'trace_id', 'tenant_id'} <= set(contract['correlation']['protectedNonIndexedFields'])
-          assert all(value is False for value in contract['safety'].values())
-
-          serialized = json.dumps(contract, sort_keys=True)
-          assert 'BEGIN ' + 'PRIVATE KEY' not in serialized
-          assert not re.search(r'AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{20,}', serialized)
-          PY
+      - name: Prove the validator rejects contract, authority, policy and documentation drift
+        run: python3 -m unittest tests.test_service_api_contract -v
 
       - name: Confirm documentation and secret-safe contract source
         run: |

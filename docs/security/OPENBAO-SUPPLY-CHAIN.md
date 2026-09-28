@@ -62,6 +62,11 @@ on these conditions:
   like HIGH/CRITICAL. An unscored finding is not evidence of low impact.
 - A missing or unrecognised severity, a malformed `Results` structure, or a
   finding without an identifier or package fails the gate.
+- CI passes the rebuilt plugin path into the verifier. Its SHA-256 must equal
+  `plugin.v1.json.binarySha256`; a rootfs vulnerability report must name the
+  exact scan root and inventory the expected Go binary. Evidence paths are
+  normalized consistently for POSIX and Windows separators, and absolute
+  binary targets outside the declared scan root are rejected.
 - Freshness comes only from the report's machine-readable `CreatedAt`. The
   gate never reads it from prose. A scan older than 30 days, or dated in the
   future, fails. The image gate binds the fresh CI report to the exact image

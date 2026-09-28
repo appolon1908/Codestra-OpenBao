@@ -23,7 +23,7 @@ PKCE:         S256
 Approved callbacks are limited to:
 
 ```text
-https://bao.codestra.media/v1/auth/oidc/callback
+https://bao.codestra.media/v1/auth/oidc/oidc/callback
 https://bao.codestra.media/ui/vault/auth/oidc/oidc/callback
 http://localhost:8250/oidc/callback
 ```

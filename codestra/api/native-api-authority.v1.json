@@ -1,0 +1,586 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_MAPPED_RUNTIME_UNVERIFIED",
+  "contract": "codestra/api/service-contract.v1.json",
+  "runtimeApplyAuthorized": false,
+  "controlPlaneProxyAllowed": false,
+  "secretValueReadbackEnabled": false,
+  "callerClasses": {
+    "control-plane-readback": {
+      "description": "Codestra-Telemetry control plane. Observes health and readiness HTTP status only; every response body is discarded and no other operation may be proxied.",
+      "authentication": "private mTLS client certificate",
+      "authority": "codestra/api/service-contract.v1.json#managementReadback"
+    },
+    "workload": {
+      "description": "Keycloak JWT service identities generated from config/workload-secret-authority.v1.json. Read-only access to one environment namespace plus token self-management.",
+      "authentication": "auth/jwt-codestra CEL role with bound audience openbao and a five-minute JWT lifetime",
+      "authority": "config/workload-secret-authority.v1.json"
+    },
+    "service-runtime": {
+      "description": "Corporate observability runtimes (Grafana, Loki, Tempo, OpenTelemetry, Superset) that hold dynamic leases under the runtime-v1 overlay.",
+      "authentication": "auth/jwt-codestra runtime roles under codestra/runtime-v1",
+      "authority": "codestra/runtime-v1/desired-state.json"
+    },
+    "operator": {
+      "description": "Human secrets-operator and secrets-admin roles authenticated through Keycloak OIDC with MFA, scoped to one business and one environment.",
+      "authentication": "auth/oidc with client openbao-secrets, PKCE S256 and MFA",
+      "authority": "codestra/runtime-v1/oidc-plan.v1.json"
+    },
+    "auditor": {
+      "description": "Human security auditors with read-only system introspection and no secret, credential or mutation capability.",
+      "authentication": "auth/oidc with the auditor policy",
+      "authority": "codestra/runtime-v1/policies/auditor.hcl"
+    },
+    "platform-security": {
+      "description": "Protected release, custody and recovery ceremonies executed by the platform-security owner through reviewed scripts and protected-environment workflows only.",
+      "authentication": "bootstrap or ceremony token that is revoked after use; never a workload identity",
+      "authority": "REPO_AUTHORITY.md"
+    }
+  },
+  "mounts": {
+    "sys": {
+      "type": "system",
+      "source": "upstream"
+    },
+    "auth/token": {
+      "type": "token",
+      "source": "upstream"
+    },
+    "auth/jwt-codestra": {
+      "type": "jwt",
+      "source": "config/auth/keycloak-jwt.v1.json",
+      "status": "PREPARED_DISABLED"
+    },
+    "auth/oidc": {
+      "type": "oidc",
+      "source": "codestra/runtime-v1/oidc-plan.v1.json",
+      "status": "CONTROL_PLANE_PREPARED_NOT_APPLIED"
+    },
+    "codestra": {
+      "type": "kv-v2",
+      "source": "config/secrets/engines.v1.json",
+      "status": "PREPARED_DISABLED"
+    },
+    "database": {
+      "type": "database",
+      "source": "config/secrets/engines.v1.json",
+      "status": "PREPARED_DISABLED",
+      "enabledByDefault": false
+    },
+    "pki-codestra": {
+      "type": "pki",
+      "source": "config/secrets/engines.v1.json",
+      "status": "PREPARED_DISABLED",
+      "enabledByDefault": false
+    },
+    "transit-codestra": {
+      "type": "transit",
+      "source": "config/secrets/engines.v1.json",
+      "status": "PREPARED_DISABLED",
+      "enabledByDefault": false
+    }
+  },
+  "operations": [
+    {
+      "operationId": "health",
+      "mount": "sys",
+      "callerClasses": ["control-plane-readback", "auditor", "platform-security"],
+      "policyPaths": ["sys/health"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "status_only",
+      "runtimeEntryPoints": ["scripts/verify.sh", "deploy/compose/compose.yaml"],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl", "codestra/api/service-contract.v1.json"],
+      "note": "Only the HTTP status is observed by the control plane; the body is discarded."
+    },
+    {
+      "operationId": "readiness",
+      "mount": "sys",
+      "callerClasses": ["control-plane-readback", "auditor", "platform-security"],
+      "policyPaths": ["sys/health"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "status_only",
+      "runtimeEntryPoints": ["scripts/verify.sh", "deploy/compose/compose.yaml"],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl", "codestra/api/service-contract.v1.json"]
+    },
+    {
+      "operationId": "seal-status",
+      "mount": "sys",
+      "callerClasses": ["auditor", "platform-security"],
+      "policyPaths": ["sys/seal-status"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/initialize.sh", "scripts/unseal_from_files.py", "scripts/preflight.sh"],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl"]
+    },
+    {
+      "operationId": "leader",
+      "mount": "sys",
+      "callerClasses": ["auditor", "platform-security"],
+      "policyPaths": ["sys/leader"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/verify.sh"],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl"]
+    },
+    {
+      "operationId": "metrics",
+      "mount": "sys",
+      "callerClasses": ["workload"],
+      "policyPaths": ["sys/metrics"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": true,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["monitoring/prometheus/openbao-scrape.yml"],
+      "evidence": ["scripts/generate_workload_policies.py", "openbao/policies/production/prometheus-openbao.hcl"],
+      "workloadIdentityScope": ["prometheus-openbao"],
+      "note": "Granted to the prometheus-openbao identity only; every other generated policy denies sys/*."
+    },
+    {
+      "operationId": "raft-configuration",
+      "mount": "sys",
+      "callerClasses": ["auditor", "platform-security"],
+      "policyPaths": ["sys/storage/raft/configuration"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/preflight.sh", "scripts/verify.sh", "scripts/export_runtime_metrics.sh"],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl"]
+    },
+    {
+      "operationId": "raft-autopilot-state",
+      "mount": "sys",
+      "callerClasses": ["auditor", "platform-security"],
+      "policyPaths": ["sys/storage/raft/autopilot/state"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl"]
+    },
+    {
+      "operationId": "jwt-login",
+      "mount": "auth/jwt-codestra",
+      "callerClasses": ["workload"],
+      "policyPaths": ["auth/jwt-codestra/login"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": true,
+      "secretBearingResponse": true,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["openbao/agent/agent.hcl.tpl"],
+      "evidence": ["config/auth/keycloak-jwt.v1.json", "openbao/auth/jwt-roles.v1.json", "plugins/codestra-jwt-replay/plugin.v1.json"],
+      "unauthenticatedPath": true,
+      "note": "Unauthenticated login path; the CEL role, bound audience, five-minute JWT lifetime and JTI replay cache decide admission."
+    },
+    {
+      "operationId": "oidc-auth-url",
+      "mount": "auth/oidc",
+      "callerClasses": ["operator", "auditor"],
+      "policyPaths": ["auth/oidc/oidc/auth_url"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["codestra/docs/OIDC-PRIVATE-EDGE.md"],
+      "evidence": ["codestra/runtime-v1/oidc-plan.v1.json", "scripts/validate_codestra_openbao_oidc.py"],
+      "unauthenticatedPath": true
+    },
+    {
+      "operationId": "oidc-callback",
+      "mount": "auth/oidc",
+      "callerClasses": ["operator", "auditor"],
+      "policyPaths": ["auth/oidc/oidc/callback"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": true,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["codestra/docs/OIDC-PRIVATE-EDGE.md"],
+      "evidence": ["codestra/runtime-v1/oidc-plan.v1.json", "scripts/validate_codestra_openbao_oidc.py"],
+      "unauthenticatedPath": true,
+      "note": "Keycloak redirect target for direct callback mode; MFA and the approved realm role are enforced upstream of this endpoint."
+    },
+    {
+      "operationId": "token-lookup-self",
+      "mount": "auth/token",
+      "callerClasses": ["workload", "operator", "auditor", "platform-security"],
+      "policyPaths": ["auth/token/lookup-self"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": true,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/restore-test.sh"],
+      "evidence": ["openbao/policies/<environment>/<identity>.hcl", "scripts/verify_restored_probe_token.py"]
+    },
+    {
+      "operationId": "token-renew-self",
+      "mount": "auth/token",
+      "callerClasses": ["workload", "operator", "auditor", "platform-security"],
+      "policyPaths": ["auth/token/renew-self"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": true,
+      "secretBearingResponse": true,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["openbao/agent/agent.hcl.tpl"],
+      "evidence": ["openbao/policies/<environment>/<identity>.hcl"]
+    },
+    {
+      "operationId": "token-revoke-self",
+      "mount": "auth/token",
+      "callerClasses": ["workload", "operator", "auditor", "platform-security"],
+      "policyPaths": ["auth/token/revoke-self"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": true,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/restore-test.sh"],
+      "evidence": ["openbao/policies/<environment>/<identity>.hcl"]
+    },
+    {
+      "operationId": "kv-read",
+      "mount": "codestra",
+      "callerClasses": ["workload", "operator"],
+      "policyPaths": ["codestra/data/<environment>/<namespace>/*"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": true,
+      "secretBearingResponse": true,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["openbao/agent/secret.ctmpl.tpl", "scripts/render_agent_config.py"],
+      "evidence": ["openbao/policies/<environment>/<identity>.hcl", "config/secrets/engines.v1.json", "config/workload-secret-authority.v1.json"],
+      "note": "Each identity reads only its own environment namespace; every other environment prefix is an explicit deny."
+    },
+    {
+      "operationId": "kv-metadata-read",
+      "mount": "codestra",
+      "callerClasses": ["workload", "operator"],
+      "policyPaths": ["codestra/metadata/<environment>/<namespace>/*"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": true,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["openbao/policies/<environment>/<identity>.hcl", "config/secrets/engines.v1.json"]
+    },
+    {
+      "operationId": "kv-metadata-list",
+      "mount": "codestra",
+      "callerClasses": ["workload", "operator"],
+      "policyPaths": ["codestra/metadata/<environment>/<namespace>/*"],
+      "capabilities": ["list"],
+      "grantedToWorkloads": true,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["openbao/policies/<environment>/<identity>.hcl", "config/secrets/engines.v1.json"]
+    },
+    {
+      "operationId": "kv-write",
+      "mount": "codestra",
+      "callerClasses": ["operator", "platform-security"],
+      "policyPaths": ["codestra/data/<environment>/<namespace>/*"],
+      "capabilities": ["create", "update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/rotate-test.sh"],
+      "evidence": ["config/secrets/engines.v1.json", "codestra/runtime-v1/policies/business-admin-template.hcl", "docs/operations/OPENBAO-ROTATION.md"],
+      "note": "check-and-set is mandatory (casRequired); workloads never hold write capability."
+    },
+    {
+      "operationId": "kv-config-read",
+      "mount": "codestra",
+      "callerClasses": ["operator", "auditor", "platform-security"],
+      "policyPaths": ["codestra/config"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/plan.sh", "scripts/verify.sh"],
+      "evidence": ["config/secrets/engines.v1.json"]
+    },
+    {
+      "operationId": "database-creds",
+      "mount": "database",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["database/creds/<role>"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": true,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["config/secrets/engines.v1.json", "openbao/policies/<environment>/<identity>.hcl", "codestra/runtime-v1/policies/auditor.hcl", "scripts/validate_codestra_review_boundaries.py"],
+      "note": "Engine is prepared but disabled; generated workload policies and the auditor policy deny database/*. No consumer is admitted."
+    },
+    {
+      "operationId": "pki-issue",
+      "mount": "pki-codestra",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["pki-codestra/issue/<role>"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": true,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["config/secrets/engines.v1.json", "openbao/policies/<environment>/<identity>.hcl", "codestra/runtime-v1/policies/auditor.hcl"],
+      "note": "Engine is prepared but disabled beneath an offline root; generated workload policies deny pki-*. No consumer is admitted."
+    },
+    {
+      "operationId": "transit-encrypt",
+      "mount": "transit-codestra",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["transit-codestra/encrypt/<key>"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["config/secrets/engines.v1.json", "openbao/policies/<environment>/<identity>.hcl", "codestra/runtime-v1/policies/auditor.hcl"],
+      "note": "Engine is prepared but disabled; generated workload policies deny transit-*."
+    },
+    {
+      "operationId": "transit-decrypt",
+      "mount": "transit-codestra",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["transit-codestra/decrypt/<key>"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": true,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["config/secrets/engines.v1.json", "openbao/policies/<environment>/<identity>.hcl", "codestra/runtime-v1/policies/auditor.hcl", "codestra/runtime-v1/policies/beyvra-observability-deny.hcl"],
+      "note": "Engine is prepared but disabled; decrypt is additionally denied to Beyvra observability identities."
+    },
+    {
+      "operationId": "transit-sign",
+      "mount": "transit-codestra",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["transit-codestra/sign/<key>"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["config/secrets/engines.v1.json", "openbao/policies/<environment>/<identity>.hcl", "codestra/runtime-v1/policies/beyvra-observability-deny.hcl"],
+      "note": "Engine is prepared but disabled; signing is additionally denied to Beyvra observability identities."
+    },
+    {
+      "operationId": "transit-verify",
+      "mount": "transit-codestra",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["transit-codestra/verify/<key>"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["config/secrets/engines.v1.json", "openbao/policies/<environment>/<identity>.hcl"],
+      "note": "Engine is prepared but disabled; verification does not change key state."
+    },
+    {
+      "operationId": "lease-renew",
+      "mount": "sys",
+      "callerClasses": ["service-runtime", "platform-security"],
+      "policyPaths": ["sys/leases/renew"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["codestra/runtime-v1/policies/grafana-runtime.hcl", "codestra/runtime-v1/policies/workload-read-template.hcl", "scripts/validate_codestra_review_boundaries.py"],
+      "note": "Only corporate observability runtimes holding dynamic leases renew; ordinary workloads renew their token instead."
+    },
+    {
+      "operationId": "lease-revoke",
+      "mount": "sys",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["sys/leases/revoke"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": [],
+      "evidence": ["scripts/validate_codestra_review_boundaries.py", "docs/operations/OPENBAO-ROTATION.md"]
+    },
+    {
+      "operationId": "init",
+      "mount": "sys",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["sys/init"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": true,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/initialize.sh", ".github/workflows/initialize.yml"],
+      "evidence": ["tests/test_pgp_offline_initialization.py", "tests/security/test_initialization_guard.py"],
+      "note": "Runs once per cluster through scripts/initialize.sh only; shares and the bootstrap root token are PGP-encrypted to offline custody."
+    },
+    {
+      "operationId": "unseal",
+      "mount": "sys",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["sys/unseal"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/unseal_from_files.py"],
+      "evidence": ["docs/recovery/OPENBAO-DISASTER-RECOVERY.md"],
+      "note": "Shares are submitted from protected files; values are never logged or placed in CI."
+    },
+    {
+      "operationId": "raft-snapshot",
+      "mount": "sys",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["sys/storage/raft/snapshot"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": true,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/backup.sh", ".github/workflows/scheduled-backup.yml"],
+      "evidence": ["config/recovery/backup.v1.json", "docs/recovery/OPENBAO-BACKUP-RESTORE.md"],
+      "note": "The snapshot is encrypted at rest immediately; it is never returned to the control plane."
+    },
+    {
+      "operationId": "raft-snapshot-restore",
+      "mount": "sys",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["sys/storage/raft/snapshot-force"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/restore-test.sh", ".github/workflows/backup-restore-test.yml"],
+      "evidence": ["docs/production/OPENBAO-RESTORE-CERTIFICATION.md"]
+    },
+    {
+      "operationId": "policy-read",
+      "mount": "sys",
+      "callerClasses": ["auditor", "platform-security"],
+      "policyPaths": ["sys/policies/acl/*"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/plan.sh"],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl"]
+    },
+    {
+      "operationId": "policy-write",
+      "mount": "sys",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["sys/policies/acl/*"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/apply.sh", "scripts/apply_saved_plan.sh"],
+      "evidence": ["config/policies/generated-policy-index.v1.json"],
+      "note": "Applies only the exact saved, checksummed plan after protected-environment approval."
+    },
+    {
+      "operationId": "jwt-config-read",
+      "mount": "auth/jwt-codestra",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["auth/jwt-codestra/config"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/plan.sh"],
+      "evidence": ["config/auth/keycloak-jwt.v1.json"]
+    },
+    {
+      "operationId": "jwt-config-write",
+      "mount": "auth/jwt-codestra",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["auth/jwt-codestra/config"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/apply.sh"],
+      "evidence": ["config/auth/keycloak-jwt.v1.json", "openbao/auth/jwt-roles.v1.json"]
+    },
+    {
+      "operationId": "jwt-role-read",
+      "mount": "auth/jwt-codestra",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["auth/jwt-codestra/cel/role/*"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/plan.sh"],
+      "evidence": ["openbao/auth/jwt-roles.v1.json"]
+    },
+    {
+      "operationId": "jwt-role-write",
+      "mount": "auth/jwt-codestra",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["auth/jwt-codestra/cel/role/*"],
+      "capabilities": ["update"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/apply.sh"],
+      "evidence": ["openbao/auth/jwt-roles.v1.json", "scripts/generate_jwt_roles.py"]
+    },
+    {
+      "operationId": "mounts-list",
+      "mount": "sys",
+      "callerClasses": ["auditor", "platform-security"],
+      "policyPaths": ["sys/mounts"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/plan.sh"],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl", "config/secrets/engines.v1.json"]
+    },
+    {
+      "operationId": "auth-methods-list",
+      "mount": "sys",
+      "callerClasses": ["auditor", "platform-security"],
+      "policyPaths": ["sys/auth"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/plan.sh"],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl"]
+    },
+    {
+      "operationId": "audit-devices-list",
+      "mount": "sys",
+      "callerClasses": ["auditor", "platform-security"],
+      "policyPaths": ["sys/audit"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/plan.sh"],
+      "evidence": ["codestra/runtime-v1/policies/auditor.hcl", "config/audit/audit.v1.json"]
+    },
+    {
+      "operationId": "plugin-catalog-read",
+      "mount": "sys",
+      "callerClasses": ["platform-security"],
+      "policyPaths": ["sys/plugins/catalog/auth/*"],
+      "capabilities": ["read"],
+      "grantedToWorkloads": false,
+      "secretBearingResponse": false,
+      "controlPlaneVisibility": "none",
+      "runtimeEntryPoints": ["scripts/plan.sh", "scripts/verify.sh"],
+      "evidence": ["plugins/codestra-jwt-replay/plugin.v1.json", "scripts/verify_plugin_supply_chain.py"]
+    }
+  ]
+}
