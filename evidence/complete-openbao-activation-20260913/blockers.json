@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-13T22:15:50+02:00",
+  "missionResult": "BLOCKED",
+  "productionAuthorization": false,
+  "blockers": [
+    {
+      "id": "HOST-AUTHORITY",
+      "severity": "P1",
+      "blocker": "Authenticated administrative discovery and remediation access is unavailable for 10.40.0.1 and 10.40.0.3.",
+      "owner": "platform infrastructure authority",
+      "requiredAction": "Grant the governed SentinelX/service account read and Docker access on both hosts without making the Docker socket world-writable."
+    },
+    {
+      "id": "MEMORY-PROTECTION",
+      "severity": "P1",
+      "blocker": "Node 3 has active unencrypted RAID swap; the other proposed voters cannot be revalidated.",
+      "owner": "platform infrastructure authority",
+      "requiredAction": "Approve a maintenance plan and disable swap persistently or replace it with repository-supported encrypted swap on all three nodes, then verify service recovery."
+    },
+    {
+      "id": "PRODUCTION-PKI",
+      "severity": "P1",
+      "blocker": "Production native mTLS server, cluster, operator, Agent, health and Prometheus certificate material is absent and no secure production signing destination is available.",
+      "owner": "platform security PKI authority",
+      "requiredAction": "Issue the reviewed certificate manifest from the governed production CA and stage only least-privilege files on each target host."
+    },
+    {
+      "id": "OFFLINE-CUSTODY",
+      "severity": "P1",
+      "blocker": "Five distinct custodian public keys, a distinct root-token recipient public key, custody acknowledgements and an offline distribution destination are unavailable.",
+      "owner": "five recovery custodians and root-token custodian",
+      "requiredAction": "Provide six distinct public PGP keys and acknowledgements through the protected custody ceremony; retain every private key offline."
+    },
+    {
+      "id": "INITIALIZATION-WORKFLOW-WIRING",
+      "severity": "P1",
+      "blocker": "The protected initialization workflow exports OPENBAO_INIT_CUSTODY_FILE, but scripts/initialize.sh requires OPENBAO_INIT_CUSTODY_DIR, OPENBAO_UNSEAL_PGP_KEY_FILES and OPENBAO_ROOT_TOKEN_PGP_KEY_FILE. The available OAuth credential cannot update workflow files.",
+      "owner": "repository workflow administrator",
+      "requiredAction": "Apply the fail-closed variable wiring repair using a reviewed credential with workflow scope, then configure only protected runner file paths to the custody directory and six public keys."
+    },
+    {
+      "id": "IMAGE-SIGNATURE-PROVENANCE",
+      "severity": "P1",
+      "blocker": "The mandated digest has no upstream Cosign signature or Codestra production provenance, and its grpc-go VEX disposition is valid only while runtime remains disabled.",
+      "owner": "platform security and release authority",
+      "requiredAction": "Reconcile the exact-digest mandate with the repository-required remediated source-built image, then produce a signed, provenance-bound, freshly scanned immutable release with no activation-invalid disposition."
+    },
+    {
+      "id": "STAGING-CERTIFICATION",
+      "severity": "P1",
+      "blocker": "No production-equivalent three-voter staging cluster, live Keycloak suite, failure injection, load test, backup restore, PITR or DR evidence exists.",
+      "owner": "platform runtime and security owners",
+      "requiredAction": "Provision and certify isolated staging after host, PKI, custody and image gates pass."
+    },
+    {
+      "id": "PROTECTED-PROMOTION",
+      "severity": "P1",
+      "blocker": "Development, test and staging histories diverge; visible rules do not require signed commits, CODEOWNER review, independent approvals or the repository's required status checks.",
+      "owner": "repository administrators and independent reviewers",
+      "requiredAction": "Install and verify non-bypassable protection for the exact promotion sequence, reconcile branch history through reviewed PRs, and approve each exact head independently."
+    },
+    {
+      "id": "LIVE-RUNTIME",
+      "severity": "P1",
+      "blocker": "Node 3 still runs one uninitialized, sealed v2.6.1 container on the wrong digest and network, without native mTLS, audit, backup or quorum.",
+      "owner": "platform runtime authority",
+      "requiredAction": "After every prerequisite passes, preserve the old data and deploy the reviewed three-node uninitialized runtime through the canonical workflow."
+    },
+    {
+      "id": "PRODUCTION-AUTHORIZATION",
+      "severity": "P1",
+      "blocker": "runtimeApplyAuthorized is false and explicit production authorization is absent.",
+      "owner": "production change authority",
+      "requiredAction": "Record explicit production authorization only after staging, custody, TLS, image, audit, backup/restore and rollback gates pass."
+    }
+  ],
+  "businessEffects": {
+    "liveEmail": false,
+    "liveSms": false,
+    "pstnDialing": false,
+    "odooWrites": false,
+    "n8nExternalEffects": false
+  },
+  "secretValuesIncluded": false
+}

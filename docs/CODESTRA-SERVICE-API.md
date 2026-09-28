@@ -4,7 +4,7 @@ This repository owns the **secrets-pki-workload-identity-authority** for the Cod
 
 ## Communication rule
 
-OpenBao keeps its native API and protocol. The shared Codestra control plane in `appolon1908-hue/Codestra-Telemetry` performs only sanitized health, readiness, contract, topology, and immutable-release read-back. It never proxies seal, leader, secret, identity, PKI, token, policy, transit, audit, initialization, unseal, or credential-issuance APIs.
+OpenBao keeps its native API and protocol. The shared Codestra control plane in `ingtrader21-spec/Codestra-Telemetry` performs only sanitized health, readiness, contract, topology, and immutable-release read-back. It never proxies seal, leader, secret, identity, PKI, token, policy, transit, audit, initialization, unseal, or credential-issuance APIs.
 
 Canonical hostname: `bao.codestra.media`
 Native exposure: `private_strong_auth`
@@ -129,8 +129,8 @@ The control plane reads source revision and image digest only from deployment en
 
 ## Contract authority handoff
 
-- Canonical schema repository: `appolon1908-hue/Codestra-Telemetry`
-- Canonical merged Telemetry SHA: `c35d880a730ca5206d445e8a9a688cb465ae2ad4`
+- Canonical schema repository: `ingtrader21-spec/Codestra-Telemetry`
+- Canonical merged Telemetry SHA: `3517fb3b9bb1077d92419a5c13c07d703ffbebf6`
 - Contract version: `1.0.0`
 - Downstream exact head: this PR branch commit; the authoritative literal SHA is the GitHub PR `headRefOid` recorded after this handoff commit.
 - Deployment authorization: unauthorized until staging certification and protected production promotion are complete.

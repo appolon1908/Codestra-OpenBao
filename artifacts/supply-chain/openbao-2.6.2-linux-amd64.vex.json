@@ -1,64 +1,125 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-09T22:55:00+02:00",
+  "revision": 2,
+  "generatedAt": "2026-09-20T05:49:24Z",
+  "supersedes": "artifacts/supply-chain/historical/openbao-2.6.2-linux-amd64.vex.r1-20260909.json",
   "image": "ghcr.io/openbao/openbao@sha256:e29524ba7c3f20d01f562c481e3eccbad6c91df45a2f2531433da4951e408cff",
   "policy": "zero unresolved exploitable HIGH or CRITICAL vulnerabilities",
+  "sourceIdentity": {
+    "upstreamVersion": "2.6.2",
+    "upstreamGitSha": "dd9c19c37a878cf4a81b18efb8d6f0599c7da923",
+    "platform": "linux/amd64",
+    "reportedBinaryVersion": "OpenBao v2.6.2 (dd9c19c37a878cf4a81b18efb8d6f0599c7da923), committed 2026-08-18T15:48:19Z",
+    "binarySha256": "8d18052337908a74f0d7dfacc8da7a1bff5f8a4ab6a2ad136fbf5ffeae243b00"
+  },
+  "scanEvidence": {
+    "scanner": "trivy",
+    "scannerVersion": "0.74.0",
+    "vulnerabilityDatabase": {
+      "version": 2,
+      "updatedAt": "2026-09-19T07:03:12Z"
+    },
+    "scannedAt": "2026-09-19T23:45:41Z",
+    "report": "artifacts/supply-chain/openbao-2.6.2-linux-amd64.trivy.json",
+    "reportSha256": "404aab3c475559deed3dd44338068d72b1aaa75f655a7cd8256959893a27a806",
+    "highCriticalObservations": 11,
+    "historicalReport": "artifacts/supply-chain/historical/openbao-2.6.2-linux-amd64.trivy.r1-20260902.json"
+  },
+  "review": {
+    "assessedBy": "lane-e-identity-security-closure",
+    "securityOwner": "platform-security",
+    "codeowner": "@kazan555",
+    "mechanism": "CODEOWNER approval of the pull request that introduces this revision constitutes the security-owner review; the release workflow signs the evidence bundle with the current repository identity",
+    "status": "PENDING_SECURITY_OWNER_APPROVAL"
+  },
+  "remediation": {
+    "preferred": "protected source-built image (upstream/go.mod pins google.golang.org/grpc v1.83.2 and golang.org/x/crypto v0.55.0; the build overlay applies github.com/moby/go-archive v0.3.2; the distroless static base carries no OpenSSL packages)",
+    "workflow": ".github/workflows/openbao-source-image-authority.yml",
+    "gate": "codestra/vulnerability-gates/grpc-go-cve-2026-84304.v1.json",
+    "status": "BLOCKED_PENDING_PROTECTED_BUILD"
+  },
   "statements": [
     {
-      "vulnerabilityIds": ["CVE-2024-8185", "CVE-2024-9180", "CVE-2025-59043", "CVE-2025-64761", "CVE-2026-45808"],
-      "packageNames": ["github.com/openbao/openbao"],
+      "vulnerabilityIds": [
+        "CVE-2024-8185",
+        "CVE-2024-9180",
+        "CVE-2025-59043",
+        "CVE-2025-64761",
+        "CVE-2026-45808"
+      ],
+      "packageNames": [
+        "github.com/openbao/openbao"
+      ],
       "status": "not_affected",
-      "justification": "inline_mitigations_already_exist",
-      "impact": "Trivy compares the v2.6.2 binary's pseudo-version as v0.0.0. The running binary reports OpenBao v2.6.2 at upstream commit dd9c19c37a878cf4a81b18efb8d6f0599c7da923, which is newer than every listed fixed OpenBao release.",
-      "evidence": "OpenBao v2.6.2 release identity and official OpenBao security advisories",
+      "justification": "vulnerable_code_not_present",
+      "impact": "The scanner reads the main module from the binary's Go build info as pseudo-version v0.0.0-20260818154305-dd9c19c37a87 and compares it as 0.0.0. The exact image executes OpenBao v2.6.2 built from upstream commit dd9c19c37a878cf4a81b18efb8d6f0599c7da923 (build info vcs.revision; `bao version` inside the digest-pinned image on 2026-09-20 reports 'OpenBao v2.6.2 (dd9c19c37a878cf4a81b18efb8d6f0599c7da923), committed 2026-08-18T15:48:19Z'). That release is later than every fixed release the scanner names (2.0.3, 2.4.1, 2.4.4, 2.5.4), so the vulnerable code is not present.",
+      "evidence": "artifacts/supply-chain/openbao-2.6.2-source-identity.json; Go build info of /usr/bin/bao (mod github.com/openbao/openbao v0.0.0-20260818154305-dd9c19c37a87, vcs.revision dd9c19c37a878cf4a81b18efb8d6f0599c7da923); scanner FixedVersion fields; https://github.com/openbao/openbao/releases/tag/v2.6.2",
       "owner": "platform-security",
-      "reviewedAt": "2026-09-01",
-      "expiresAt": "2026-10-01"
+      "reviewedAt": "2026-09-20",
+      "expiresAt": "2026-10-20"
     },
     {
-      "vulnerabilityIds": ["CVE-2026-14456"],
-      "packageNames": ["libcrypto3", "libssl3"],
-      "status": "not_affected",
-      "justification": "vulnerable_code_not_in_execute_path",
-      "impact": "The affected OpenSSL path is QUIC server processing. OpenBao serves HTTP/1.1 and HTTP/2 over TCP/TLS and does not enable a QUIC listener.",
-      "evidence": "production listener contract prohibits QUIC and exposes only TCP 8200/8201 on private networks",
-      "owner": "platform-security",
-      "reviewedAt": "2026-09-01",
-      "expiresAt": "2026-09-15"
-    },
-    {
-      "vulnerabilityIds": ["CVE-2026-17106"],
-      "packageNames": ["github.com/moby/go-archive"],
-      "status": "not_affected",
-      "justification": "vulnerable_code_cannot_be_controlled_by_adversary",
-      "impact": "The affected tar extraction path is not reachable by a workload identity. Runtime plugin installation is disabled; only the protected administrative release process may alter plugin artifacts.",
-      "evidence": "workload policies deny sys/plugins, sys/mounts, sys/raw and administrative mutation",
-      "owner": "platform-security",
-      "reviewedAt": "2026-09-01",
-      "expiresAt": "2026-09-15"
-    },
-    {
-      "vulnerabilityIds": ["CVE-2026-56854"],
-      "packageNames": ["golang.org/x/crypto"],
+      "vulnerabilityIds": [
+        "CVE-2026-14456"
+      ],
+      "packageNames": [
+        "libcrypto3",
+        "libssl3"
+      ],
       "status": "not_affected",
       "justification": "vulnerable_code_not_in_execute_path",
-      "impact": "The affected code authenticates SSH server connections with source-address restrictions. OpenBao is not an SSH server, the SSH secrets engine is disabled, and this mission prohibits SSH-access changes.",
-      "evidence": "desired-state engine allowlist excludes the SSH engine and SSH_CHANGED must remain NO",
+      "impact": "The flaw is unbounded channel allocation in the OpenSSL QUIC server listener while it processes Initial packets. The Alpine 3.24.1 packages libcrypto3/libssl3 3.5.7-r0 are present as OS packages only: /usr/bin/bao is a statically linked Go binary (musl loader reports 'Not a valid dynamic program') that uses Go's crypto/tls and never loads OpenSSL, and the governed listener configuration declares a single tcp listener on 8200 with cluster_address 8201; no QUIC listener exists.",
+      "evidence": "scanner description for CVE-2026-14456 (QUIC server listener); ldd /usr/bin/bao inside the digest-pinned image; openbao/openbao.hcl and openbao/templates/openbao.hcl.tpl listener blocks; production listener contract exposes only TCP 8200/8201 on private networks. The protected source-built image uses a distroless static base without these packages.",
       "owner": "platform-security",
-      "reviewedAt": "2026-09-01",
-      "expiresAt": "2026-09-15"
+      "reviewedAt": "2026-09-20",
+      "expiresAt": "2026-10-20"
     },
     {
-      "vulnerabilityIds": ["CVE-2026-84304", "CVE-2026-84445"],
-      "packageNames": ["google.golang.org/grpc"],
+      "vulnerabilityIds": [
+        "CVE-2026-17106"
+      ],
+      "packageNames": [
+        "github.com/moby/go-archive"
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact": "github.com/moby/go-archive v0.2.0 is linked into the binary (build info dep line) only through test-environment helpers: in the locked upstream source the sole importers are sdk/helper/docker/testhelpers.go and sdk/helper/stepwise/environments/docker/runner.go, reached from physical/postgresql/testing.go via sdk/helper/testhelpers/postgresql. These helpers start Docker test containers and are not invoked by the server or by any API path, so no caller can supply an archive to the vulnerable extraction routines. Runtime plugin installation is additionally disabled: workload policies deny sys/plugins, sys/mounts, sys/raw and administrative mutation.",
+      "evidence": "upstream/go.mod (github.com/moby/go-archive v0.2.0 // indirect); import graph of the locked upstream tree; Go build info of /usr/bin/bao; workload policies under openbao/policies/. The protected source build overlays go-archive v0.3.2 (scripts/prepare_openbao_source_build.py).",
+      "owner": "platform-security",
+      "reviewedAt": "2026-09-20",
+      "expiresAt": "2026-10-20"
+    },
+    {
+      "vulnerabilityIds": [
+        "CVE-2026-56854"
+      ],
+      "packageNames": [
+        "golang.org/x/crypto"
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact": "The flaw is in golang.org/x/crypto/ssh server-side authentication: source-address restrictions returned by PasswordCallback, KeyboardInteractiveCallback, NoClientAuthCallback and GSSAPI callbacks were not enforced. OpenBao does not run an SSH server: the locked upstream source contains no ssh.ServerConfig or NewServerConn usage outside vendored code, and x/crypto/ssh is imported only by the SSH secrets engine (builtin/logical/ssh) for certificate signing. That engine is prohibited by the governed engine allowlist (prohibitedEngines: ssh; mounted engines kv-v2, database, pki, transit) and SSH_CHANGED must remain NO.",
+      "evidence": "scanner description for CVE-2026-56854 (GO-2026-6303); config/secrets/engines.v1.json; import graph of the locked upstream tree; Go build info of /usr/bin/bao (golang.org/x/crypto v0.53.0). The protected source build pins golang.org/x/crypto v0.55.0 (upstream/go.mod).",
+      "owner": "platform-security",
+      "reviewedAt": "2026-09-20",
+      "expiresAt": "2026-10-20"
+    },
+    {
+      "vulnerabilityIds": [
+        "CVE-2026-84304",
+        "CVE-2026-84445"
+      ],
+      "packageNames": [
+        "google.golang.org/grpc"
+      ],
       "status": "not_affected",
       "justification": "vulnerable_code_cannot_be_controlled_by_adversary",
       "condition": "codestra_openbao_runtime_disabled",
-      "impact": "The pinned image contains affected grpc-go v1.82.1, but no Codestra OpenBao runtime is deployed or authorized. Release construction fails while the committed runtime authorities and environment certifications remain false. This disposition is invalid for any future deployment and requires the protected source-built image with grpc-go v1.83.2, or a new reviewed assessment, before runtime authority may be enabled.",
-      "evidence": "GHSA-vp52-pcj8-j9qc; GHSA-2v4p-qf9q-27wj; scripts/verify_vulnerability_gate.py RUNTIME_AUTHORITY_FIELDS; scripts/build_release.py runtime_blocked_by_vex; scripts/deploy_runtime.sh vulnerability gate; protected source dependency google.golang.org/grpc v1.83.2",
+      "impact": "The exact image links grpc-go v1.82.1 (build info dep line; fixed in 1.83.1 and 1.83.2). OpenBao compiles internal gRPC servers for Raft cluster forwarding and plugin RPC, so the code is neither absent nor unreachable in a running server. No adversary can reach it only because no Codestra OpenBao runtime is deployed or authorized: every runtime authority field and environment certification is false, runtimeBindingAuthorized is false for every workload role, and release construction fails (runtime_blocked_by_vex) while this conditional disposition exists. This disposition is invalid for any future deployment. Runtime authority requires the protected source-built image with grpc-go v1.83.2, or a new reviewed assessment, before it may be enabled.",
+      "evidence": "GHSA-vp52-pcj8-j9qc; GHSA-2v4p-qf9q-27wj; Go build info of /usr/bin/bao (google.golang.org/grpc v1.82.1); scripts/verify_vulnerability_gate.py RUNTIME_AUTHORITY_FIELDS; scripts/build_release.py runtime_blocked_by_vex; scripts/deploy_runtime.sh vulnerability gate; codestra/vulnerability-gates/grpc-go-cve-2026-84304.v1.json; protected source dependency google.golang.org/grpc v1.83.2 (upstream/go.mod).",
       "owner": "platform-security",
-      "reviewedAt": "2026-09-09",
-      "expiresAt": "2026-09-16"
+      "reviewedAt": "2026-09-20",
+      "expiresAt": "2026-10-20"
     }
   ]
 }

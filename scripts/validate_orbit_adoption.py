@@ -15,7 +15,7 @@ MANIFEST_PATH = ROOT / "orbit/adoption-manifest.json"
 SCHEMA_PATH = ROOT / "orbit/adoption-manifest.schema.json"
 
 EXPECTED_SCHEMA_VERSION = "2.0.0"
-EXPECTED_REPOSITORY = "appolon1908-hue/Codestra-OpenBao"
+EXPECTED_REPOSITORY = "ingtrader21-spec/Codestra-OpenBao"
 EXPECTED_CLASSIFICATION = "vendor-operator-ui"
 EXPECTED_TARGET_BRANCH = "codex/codestra-orbit-v2-codestra-openbao"
 EXPECTED_ADOPTION_MODE = "operator-theme-sso"

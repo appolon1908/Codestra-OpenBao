@@ -8,6 +8,11 @@ executables:
 - the external `codestra-jwt-replay` v1.1.0 linux/amd64 binary, with CycloneDX
   SBOM and Trivy report showing zero HIGH/CRITICAL observations.
 
+`historical/` keeps every superseded VEX revision and the scan it was reviewed
+against, byte for byte, as evidence of earlier decisions; only the current
+revision at the top level is enforced. The current VEX names its source SHA,
+the exact scan bytes it was reviewed against and the revision it supersedes.
+
 The plugin manifest locks its exact upstream SHA, patched Go toolchain,
 security dependency resolution, overlay module checksums and binary checksum.
 CI rebuilds the binary, regenerates both current scans and rejects package,

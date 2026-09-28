@@ -24,18 +24,18 @@ runtime consumer or granting a new OpenBao role.
 
 | Product/service | Authoritative source | Requested API groups |
 | --- | --- | --- |
-| larimia | `appolon1908-hue/LARIM-A-Backend` | service-catalog, providers, verification, service-areas, availability, pricing, bookings, rescheduling, dispatch, job-status, payments, refunds, payouts, reviews, disputes |
-| breero | `appolon1908-hue/Breero.com` | properties, service-requests, estimates, technicians, availability, matching, work-orders, dispatch, arrival-tracking, job-photos, customer-acceptance, invoices, payments, warranties |
-| moneybee | `appolon1908-hue/Moneybee-Backend` | borrowers, businesses, consent, applications, documents, financial-connections, underwriting, lender-criteria, lender-matches, submissions, offers, signatures, funding-status |
+| larimia | `ingtrader21-spec/LARIM-A-Backend` | service-catalog, providers, verification, service-areas, availability, pricing, bookings, rescheduling, dispatch, job-status, payments, refunds, payouts, reviews, disputes |
+| breero | `ingtrader21-spec/Breero.com` | properties, service-requests, estimates, technicians, availability, matching, work-orders, dispatch, arrival-tracking, job-photos, customer-acceptance, invoices, payments, warranties |
+| moneybee | `ingtrader21-spec/Moneybee-Backend` | borrowers, businesses, consent, applications, documents, financial-connections, underwriting, lender-criteria, lender-matches, submissions, offers, signatures, funding-status |
 | transportation | `appolon1908-hue/transportation-backend-` | shippers, carriers, carrier-verification, equipment, quotes, loads, tenders, assignments, dispatch, tracking, appointments, proof-of-delivery, invoices, settlements, claims |
-| klyrow | `appolon1908-hue/klyrow.com` | accounts, domains, verification, senders, messages, templates, contacts, campaigns, suppressions, unsubscribes, events, usage, billing, plans, signup, onboarding, subscriptions, support |
-| telnexa | `appolon1908-hue/telnexa` | messages, status, senders, routing, inbound, receipts, consent, opt-outs, wallets, pricing, usage, billing, plans, coverage, signup, business-verification, sender-registrations, onboarding, support |
-| vicidial | `appolon1908-hue/Vicidialer-Codestra` | agents, campaigns, assignments, availability, queues, calls, transfers, callbacks, dispositions, events, recordings, supervisor-reporting |
-| social | `appolon1908-hue/social.codestra.co` | channels, media, drafts, approvals, calendar, scheduling, publishing-status, analytics, engagement |
+| klyrow | `ingtrader21-spec/klyrow.com` | accounts, domains, verification, senders, messages, templates, contacts, campaigns, suppressions, unsubscribes, events, usage, billing, plans, signup, onboarding, subscriptions, support |
+| telnexa | `ingtrader21-spec/telnexa` | messages, status, senders, routing, inbound, receipts, consent, opt-outs, wallets, pricing, usage, billing, plans, coverage, signup, business-verification, sender-registrations, onboarding, support |
+| vicidial | `ingtrader21-spec/Vicidialer-Codestra` | agents, campaigns, assignments, availability, queues, calls, transfers, callbacks, dispositions, events, recordings, supervisor-reporting |
+| social | `ingtrader21-spec/social.codestra.co` | channels, media, drafts, approvals, calendar, scheduling, publishing-status, analytics, engagement |
 | realtime | `appolon1908-hue/Websocket-` | session, subscriptions, call-state, screen-pops, presence, reconnect, resume, acknowledgement |
-| odoo | `appolon1908-hue/Odoo` | contacts, leads, opportunities, campaign-assignments, activities, quotations, invoices, payment-reconciliation, support-tickets, product-references |
-| beyvra | `appolon1908-hue/beyvra-backend` | authentication, kyc, instruments, market-data, orders, accounts, portfolio, funding, risk, research, notifications, reports, operations |
-| booked4seasons | `appolon1908-hue/booked4seasons` | service-requests, contact, provider-interest |
+| odoo | `ingtrader21-spec/Odoo` | contacts, leads, opportunities, campaign-assignments, activities, quotations, invoices, payment-reconciliation, support-tickets, product-references |
+| beyvra | `ingtrader21-spec/beyvra-backend` | authentication, kyc, instruments, market-data, orders, accounts, portfolio, funding, risk, research, notifications, reports, operations |
+| booked4seasons | `ingtrader21-spec/booked4seasons` | service-requests, contact, provider-interest |
 | restaurant | `Backend unbound` | reservations, orders, tables, kitchen, staff |
 
 LARIMÍA owns bookings, Breero owns work orders, Moneybee owns funding applications

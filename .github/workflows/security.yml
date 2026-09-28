@@ -79,7 +79,11 @@ jobs:
           python3 scripts/verify_vulnerability_gate.py --report "$report"
           plugin_dir="$RUNNER_TEMP/plugin-vulnerability"
           mkdir -p "$plugin_dir"
-          OPENBAO_PLUGIN_OUTPUT="$plugin_dir/codestra-jwt-replay" scripts/build_jti_plugin.sh
+          plugin="$plugin_dir/codestra-jwt-replay"
+          OPENBAO_PLUGIN_OUTPUT="$plugin" scripts/build_jti_plugin.sh
           plugin_report="$(mktemp)"
           trivy rootfs --scanners vuln --format json --output "$plugin_report" "$plugin_dir"
-          python3 scripts/verify_plugin_supply_chain.py --report "$plugin_report"
+          python3 scripts/verify_plugin_supply_chain.py \
+            --report "$plugin_report" \
+            --plugin "$plugin" \
+            --scan-root "$plugin_dir"

@@ -23,7 +23,11 @@ esac
 [[ -f "$artifact" && -f "$checksum" && -f "$identity" ]]
 [[ -f "$operator_token_file" && ! -L "$operator_token_file" ]]
 [[ -f "$restored_probe_token_file" && ! -L "$restored_probe_token_file" ]]
-for command in age bao jq realpath sha256sum shred stat; do command -v "$command" >/dev/null; done
+for command in age bao jq realpath sha256sum shred stat python3; do command -v "$command" >/dev/null; done
+
+# Validate recovery inputs before contacting or mutating the restore target.
+# Revalidate immediately before unseal as well; files must stay protected.
+python3 "$(dirname "$0")/unseal_from_files.py" --check-inputs
 
 operator_token_real="$(realpath "$operator_token_file")"
 restored_probe_token_real="$(realpath "$restored_probe_token_file")"

@@ -31,14 +31,14 @@ JWT_AUTH_PATH = ROOT / "config" / "auth" / "keycloak-jwt.v1.json"
 OIDC_PLAN_PATH = ROOT / "codestra" / "runtime-v1" / "oidc-plan.v1.json"
 POLICY_GENERATOR_PATH = ROOT / "scripts" / "generate_workload_policies.py"
 
-EXPECTED_REPOSITORY = "appolon1908-hue/Codestra-OpenBao"
+EXPECTED_REPOSITORY = "ingtrader21-spec/Codestra-OpenBao"
 EXPECTED_COMPONENT = "openbao"
 EXPECTED_CONTRACT_ID = "codestra.observability.openbao.v1"
 EXPECTED_HOSTNAME = "bao.codestra.media"
 SCHEMA_AUTHORITY = {
-    "repository": "appolon1908-hue/Codestra-Telemetry",
+    "repository": "ingtrader21-spec/Codestra-Telemetry",
     "path": "codestra/api/service-contract.schema.json",
-    "sourceRevision": "c35d880a730ca5206d445e8a9a688cb465ae2ad4",
+    "sourceRevision": "3517fb3b9bb1077d92419a5c13c07d703ffbebf6",
     "version": "1.0.0",
 }
 

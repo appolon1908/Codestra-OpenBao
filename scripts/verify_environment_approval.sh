@@ -7,7 +7,7 @@ run_id="${GITHUB_RUN_ID:?must run in GitHub Actions}"
 required_reviewer="${OPENBAO_REQUIRED_REVIEWER:-kazan555}"
 expected_environment="${OPENBAO_APPROVAL_ENVIRONMENT:-openbao-${environment}}"
 
-[[ "$repository" == appolon1908-hue/Codestra-OpenBao ]]
+[[ "$repository" == ingtrader21-spec/Codestra-OpenBao ]]
 [[ "$required_reviewer" == kazan555 ]]
 [[ "$expected_environment" == "openbao-${environment}" || \
    "$expected_environment" == "openbao-${environment}-runtime" || \
