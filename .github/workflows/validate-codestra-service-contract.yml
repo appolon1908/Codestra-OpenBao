@@ -37,13 +37,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  canonical-contract-authority:
-    uses: ingtrader21-spec/Codestra-Telemetry/.github/workflows/reusable-validate-service-contract.yml@3517fb3b9bb1077d92419a5c13c07d703ffbebf6
-    with:
-      expected_repository: 'ingtrader21-spec/Codestra-OpenBao'
-      expected_component: 'openbao'
-      expected_contract_id: 'codestra.observability.openbao.v1'
-      schema_authority_revision: '3517fb3b9bb1077d92419a5c13c07d703ffbebf6'
+  # The canonical Telemetry schema is pinned in the contract and mirrored by
+  # scripts/validate_codestra_service_contract.py. Do not call a reusable
+  # workflow from the private sibling repository: GitHub rejects that workflow
+  # at startup unless cross-repository Actions access is separately enabled.
 
   validate-service-contract:
     runs-on: ubuntu-24.04
