@@ -22,7 +22,7 @@ All other worktrees are preserved evidence. Do not reset, clean, stash, delete, 
 - READ_ONLY_RECONCILIATION | /home/codestra/Worktrees/MCR-next8/mcr-i | mission/mcr-i-openbao-contracts-20260924 | c98b83dc19d5812875a1d63d1e067f987f2dd2be
 - READ_ONLY_RECONCILIATION | /home/codestra/Worktrees/MCR-platform/openbao-mcr-i | mission/mcr-i-openbao-20260925 | 25c7af1df7fc537c1eaa9d592ebb83bc4ec5e725
 - READ_ONLY_RECONCILIATION | /home/codestra/Worktrees/MissionControlAgents/PAS-239-CLAUDE | agent/pas-239-openbao-cert-claude-20260925 | 2c9deef4f82a258262f255d05a06dc0af2afa913
-- ACTIVE | /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao | governance/single-active-lane-20260926 | 42fb1fa2fe61db08deeb95483121d6935876a8fb
+- ACTIVE | /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao | governance/single-active-lane-20260926 | f2befac098b5468495ac182af6240c75afd2caa0
 - READ_ONLY_RECONCILIATION | /home/codestra/Worktrees/Monitoring-Active/Codestra-OpenBao | governance/single-lane-20260926 | 98b4d788e1fe1134b27942c6aa48d5b4e198daa2
 - READ_ONLY_RECONCILIATION | /home/codestra/Worktrees/Monitoring-Governance-20260926/Codestra-OpenBao | preserved/governance-draft-stale-20260926 | c5a2a0cc6c808fa3562c38f888ad5cb2c20b961b
 - READ_ONLY_RECONCILIATION | /home/codestra/Worktrees/OpenBao-PAS239-security-closure-20260926 | preserve/20260926/openbao-pr89-local | 8a2edc112d13f7c036d5514a0eb12a8ea9970552

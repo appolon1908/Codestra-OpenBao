@@ -1,9 +1,11 @@
 name: agent-governance
 on:
   pull_request:
+    branches: [main]
   push:
     branches:
       - governance/single-active-lane-20260926
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
