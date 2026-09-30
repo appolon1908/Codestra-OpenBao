@@ -15,8 +15,7 @@ for path in "$plan" "$checksum" "$token_file"; do
   [[ -f "$path" && ! -L "$path" ]]
 done
 [[ "$expected_plan_sha" =~ ^[0-9a-f]{64}$ ]]
-[[ "$(awk 'NR == 1 {print $1}' "$checksum")" == "$expected_plan_sha" ]]
-(cd "$(dirname "$plan")" && sha256sum -c "$(basename "$checksum")") > /dev/null
+scripts/verify_artifact_checksum.sh "$plan" "$checksum" "$expected_plan_sha" > /dev/null
 [[ "$(jq -r .planSourceSha "$plan")" == "$source_sha" ]]
 [[ "$(jq -r .environment "$plan")" == "$environment" ]]
 [[ "$(jq -r .counts.destroy "$plan")" == 0 ]]
@@ -36,7 +35,11 @@ if [[ "$environment" == production ]]; then
   scripts/capture_ssh_baseline.sh "$before_ssh" > /dev/null
 fi
 
-export BAO_TOKEN="$(< "$token_file")"
+operator_token="$(< "$token_file")"
+# An empty token would let the bao CLI fall back to an ambient token helper.
+[[ -n "$operator_token" ]]
+export BAO_TOKEN="$operator_token"
+unset operator_token
 export OPENBAO_PREFLIGHT_EVIDENCE="$evidence_dir/preflight.json"
 scripts/preflight.sh
 export OPENBAO_BACKUP_EVIDENCE="$evidence_dir/prechange-backup.json"

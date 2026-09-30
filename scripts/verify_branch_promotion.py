@@ -43,11 +43,19 @@ def promotion_allowed(base: str, head: str) -> bool:
 
 
 def check_event(event: str, base: str, head: str, ref_name: str) -> None:
+    # Any event other than the three the workflow subscribes to (including an unset
+    # EVENT_NAME) fails closed rather than silently passing the promotion check.
     if event == "pull_request":
         if not promotion_allowed(base, head):
             fail(f"{head} -> {base}")
-    elif event == "push" and ref_name not in PROTECTED:
-        fail("unexpected push branch")
+    elif event == "push":
+        if ref_name not in PROTECTED:
+            fail("unexpected push branch")
+    elif event == "workflow_dispatch":
+        if ref_name not in PROTECTED and not admissible_development_head(ref_name):
+            fail("unexpected dispatch branch")
+    else:
+        fail(f"unsupported event {event!r}")
 
 
 def require_current(head_ref: str, development_ref: str) -> None:

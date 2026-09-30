@@ -57,6 +57,30 @@ class BranchPromotionTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "unexpected push branch"):
             MODULE.check_event("push", "", "", "remediation/pas239-fresh-20260924")
 
+    def test_unknown_or_missing_event_fails_closed(self) -> None:
+        for event in ("", "pull_request_target", "schedule", "workflow_run", "PUSH"):
+            with self.subTest(event=event):
+                with self.assertRaisesRegex(SystemExit, "unsupported event"):
+                    MODULE.check_event(event, "development", "remediation/x", "main")
+        with self.assertRaisesRegex(SystemExit, "unsupported event"):
+            MODULE.main(["--event", ""])
+
+    def test_dispatch_only_on_protected_or_admissible_heads(self) -> None:
+        for ref in (*MODULE.PROTECTED, "remediation/pas239-final-20260925", "sync/openbao-upstream-v2.6.2"):
+            MODULE.check_event("workflow_dispatch", "", "", ref)
+        for ref in ("", "feature/x", "remediation/", "lane-e/openbao-security-closure-20260920"):
+            with self.subTest(ref=ref):
+                with self.assertRaisesRegex(SystemExit, "unexpected dispatch branch"):
+                    MODULE.check_event("workflow_dispatch", "", "", ref)
+
+    def test_workflow_events_are_all_handled(self) -> None:
+        workflow = yaml.safe_load(
+            (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
+        )
+        # PyYAML parses the bare `on:` key as boolean True.
+        events = set(workflow.get("on") or workflow[True])
+        self.assertEqual(events, {"pull_request", "push", "workflow_dispatch"})
+
     def test_workflow_delegates_to_the_tested_script(self) -> None:
         workflow = yaml.safe_load(
             (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")

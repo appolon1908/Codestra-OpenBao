@@ -10,7 +10,7 @@ cd "$repo_root"
 [[ "$environment" =~ ^(development|test|staging|production)$ ]]
 for command in bao jq sha256sum gh; do command -v "$command" >/dev/null; done
 
-(cd "$(dirname "$plan")" && sha256sum -c "$(basename "$checksum")") >/dev/null
+scripts/verify_artifact_checksum.sh "$plan" "$checksum" >/dev/null
 source_sha="$(git rev-parse HEAD)"
 release_id="${OPENBAO_RELEASE_ID:-NOT_APPLICABLE}"
 [[ "$(jq -r '.planSourceSha' "$plan")" == "$source_sha" ]]
