@@ -1,0 +1,84 @@
+name: Validate OpenBao upstream import admission
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/upstream-source-sync.yml
+      - .github/workflows/validate-upstream-import.yml
+      - scripts/prepare_upstream_import.py
+      - scripts/reject_repository_secrets.sh
+      - tests/test_prepare_upstream_import.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbao-upstream-import-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: OpenBao / upstream-import-admission
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+
+      - name: Set up pinned Python toolchain
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.13"
+
+      - name: Compile and run fail-closed importer regressions
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile \
+            scripts/prepare_upstream_import.py \
+            tests/test_prepare_upstream_import.py
+          python3 -m unittest discover \
+            -s tests \
+            -p 'test_prepare_upstream_import.py' \
+            -v
+
+      - name: Prove source-sync workflow uses exact reviewed path admission
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          workflow = Path(".github/workflows/upstream-source-sync.yml").read_text(
+              encoding="utf-8"
+          )
+          required = (
+              "git -C \"$SOURCE_DIR\" ls-files --stage -z",
+              "git -C \"$SOURCE_DIR\" archive --format=tar",
+              "python3 scripts/prepare_upstream_import.py",
+              "GIT_LITERAL_PATHSPECS=1 git add -f",
+              "--pathspec-from-file=\"$PATHSPEC_FILE\"",
+              "--pathspec-file-nul",
+              "git add -u -- \"$IMPORT_PATH\"",
+              "bash scripts/reject_repository_secrets.sh \"$IMPORT_PATH\"",
+          )
+          missing = [marker for marker in required if marker not in workflow]
+          if missing:
+              raise SystemExit(f"source-sync admission markers missing: {missing}")
+
+          forbidden = (
+              "git add -f -A upstream",
+              "git add -f -A \"$IMPORT_PATH\"",
+              "git add -f -- upstream",
+              "git add -f -- \"$IMPORT_PATH\"",
+          )
+          present = [marker for marker in forbidden if marker in workflow]
+          if present:
+              raise SystemExit(f"broad force-add is prohibited: {present}")
+          print("UPSTREAM_IMPORT_WORKFLOW_CONTRACT=PASS")
+          PY
+
+      - name: Re-run repository secret-shape rejection
+        run: |
+          find . -type d -name __pycache__ -prune -exec rm -rf {} +
+          bash scripts/reject_repository_secrets.sh .

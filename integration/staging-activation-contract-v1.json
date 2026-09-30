@@ -51,6 +51,11 @@
   "staging_evidence": {
     "collector_repository": "appolon1908-hue/Codestra-Prometheus",
     "collector_branch": "development",
+    "collector_source_sha": "c41d50bf579d39021c2f81114dd6ad358c483b83",
+    "collector_workflow_path": ".github/workflows/stage6-intake-observability.yml",
+    "collector_event": "workflow_dispatch",
+    "evidence_schema_version": "1.2",
+    "minimum_soak_seconds": 900,
     "checksum": null,
     "state": "PENDING_RUNTIME_EXECUTION",
     "must_verify": ["exact_middleware_source_sha", "immutable_image_digest", "signed_release_manifest", "sigstore_identity", "private_network_only", "metrics_read_scope", "health_read_scope", "unauthorized_request_denied", "wrong_token_denied", "complete_metric_catalogue", "bounded_cardinality", "no_pii_or_secret_exposure", "all_external_effects_disabled", "staging_soak", "rollback_proof"]
