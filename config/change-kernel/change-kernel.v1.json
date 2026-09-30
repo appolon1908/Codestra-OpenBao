@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_IMPLEMENTED_RUNTIME_UNCERTIFIED",
+  "runtimeApplyAuthorized": false,
+  "component": "openbao-v3-change-kernel",
+  "package": "codestra/change_kernel",
+  "planes": {
+    "management": "metadata, desired state, plans, approvals, tenancy, catalogs, entitlements, reconciliation",
+    "runtime": "OpenBao, Raft, KV, database, PKI, transit, JWT, policies, leases, audit, backup, restore, HA",
+    "evidence": "plan digest, source SHA, authority digest, image digest, readback, backup and restore evidence, staging and production certification"
+  },
+  "invariants": {
+    "singleMutationAuthority": "codestra/change_kernel/actuator.py",
+    "singleReadbackCompare": "scripts/verify_applied_plan.py",
+    "secretValuesInControlPlane": false,
+    "secretValuesInOutbox": false,
+    "secretValuesInAuditEvents": false,
+    "secretValuesInEvidence": false,
+    "productionAutoMutationOnDrift": false,
+    "blindReplayOfUnknownOutcome": false,
+    "appliedOnTransportAcceptance": false
+  },
+  "lifecycle": [
+    "REQUEST", "AUTHENTICATE", "RESOLVE_TENANT", "VALIDATE_RESOURCE", "RESOURCE_REGISTRY",
+    "AUTHORIZATION_POLICY", "SAFETY_GATE", "IDEMPOTENCY", "CURRENT_STATE_DISCOVERY", "GENERATE_PLAN",
+    "PLAN_DIGEST", "PERSIST_CHANGE", "PERSIST_AUDIT", "PERSIST_OUTBOX", "COMMIT", "APPROVE",
+    "ACQUIRE_ENVIRONMENT_LOCK", "REVALIDATE_PLAN", "PERSIST_DISPATCH_INTENT", "OPENBAO_MUTATION",
+    "READBACK", "SEMANTIC_COMPARE", "SUCCEEDED | RETRY | RECONCILIATION_REQUIRED | DEAD_LETTER"
+  ],
+  "changeStatuses": [
+    "AWAITING_APPROVAL", "COMMITTED", "EXECUTING", "SUCCEEDED", "RETRY",
+    "RECONCILIATION_REQUIRED", "DEAD_LETTER", "REJECTED"
+  ],
+  "driftClassifications": ["IN_SYNC", "MISSING", "DRIFTED", "UNMANAGED", "CONFLICT", "DISABLED", "SECURITY_CRITICAL"],
+  "headers": {
+    "required": ["Authorization", "X-Request-ID", "X-Correlation-ID", "X-Tenant-ID", "X-Environment"],
+    "requiredForMutation": ["Idempotency-Key"],
+    "conditional": ["X-Change-ID", "X-Plan-Digest"],
+    "tenantHeaderAuthoritative": false,
+    "forwardedIdentityHeadersTrusted": false
+  },
+  "idempotency": {
+    "scope": ["tenant_id", "idempotency_key", "request_fingerprint"],
+    "sameKeySamePayload": "return existing change",
+    "sameKeyDifferentPayload": "409 IDEMPOTENCY_CONFLICT",
+    "retentionHours": 168
+  },
+  "approval": {
+    "requiredApprover": "kazan555",
+    "independentOfSubmitter": true,
+    "bindsTo": ["change_id", "plan_digest", "environment", "exclusion_key"],
+    "maximumValiditySeconds": 3600
+  },
+  "exclusion": {
+    "keySource": "config/environments/{environment}/environment.json",
+    "keyFormat": "openbao:<environment>:<cluster-host>",
+    "description": "One server-resolved mutation lock per target cluster and environment. Callers name only the environment; the key is derived from the protected environment authority, so spelling or branch names cannot create a second lock for the same cluster.",
+    "defaultLeaseSeconds": 900,
+    "maximumLeaseSeconds": 3600,
+    "fence": "monotonic per exclusion key; every lease acquisition increments it and only the newest token may act",
+    "releaseRequiresHolderAndToken": true
+  },
+  "fence": {
+    "checks": [
+      "lease_holder", "lease_not_expired", "fence_token_is_newest", "attempt_number",
+      "plan_digest_unchanged", "resource_fingerprint_unchanged", "tenant_unchanged",
+      "authorization_unchanged", "production_gate_unchanged", "approval_unexpired",
+      "no_unresolved_unknown_dispatch"
+    ],
+    "timing": "checked in the same transaction that persists each dispatch intent, immediately before the OpenBao call",
+    "limitation": "OpenBao does not enforce a custom fence. A process that passed the check can still complete one in-flight call after its lease expires; the lease length bounds that window and the unresolved intent forces reconciliation.",
+    "onFailure": "DO_NOT_EXECUTE"
+  },
+  "outcomes": {
+    "confirmed": "readback matches the planned payload",
+    "unknown": "dispatch intent persisted but no readback-confirmed result; blocks further attempts until resolved by readback evidence",
+    "failedNoEffect": "command failed and readback proves the target is not in the planned state"
+  },
+  "persistence": {
+    "migrations": "config/change-kernel/migrations",
+    "backends": ["sqlite", "postgresql"],
+    "databaseUrlEnvironment": "OPENBAO_CHANGE_KERNEL_DATABASE_URL",
+    "tables": [
+      "schema_migrations", "change_requests", "plans", "operations", "approvals", "attempts",
+      "dispatch_intents", "events", "idempotency_keys", "outbox", "fence_counters",
+      "environment_locks", "reconciliation_runs", "drift_findings", "recovery_evidence"
+    ]
+  },
+  "topology": {
+    "desiredVotingNodesSource": "config/environments/{environment}/environment.json",
+    "stagingVoterContract": 3,
+    "productionVoterContract": 3
+  },
+  "metrics": [
+    "openbao_v3_changes_total", "openbao_v3_change_failures_total", "openbao_v3_policy_denials_total",
+    "openbao_v3_safety_denials_total", "openbao_v3_reconciliation_total", "openbao_v3_drift_total",
+    "openbao_v3_outbox_pending", "openbao_v3_worker_leases", "openbao_v3_backup_age_seconds",
+    "openbao_v3_restore_last_success", "openbao_v3_cluster_voters", "openbao_v3_cluster_sealed"
+  ],
+  "propagatedContext": ["request_id", "correlation_id", "change_id", "tenant_id", "plan_id"]
+}
