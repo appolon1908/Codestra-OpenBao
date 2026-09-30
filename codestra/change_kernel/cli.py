@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from . import actuator
+from . import actuator, metrics, reconciliation
 from .authority import Authority, AuthorityError
 from .canonical import SecretMaterialError, digest
 from .kernel import ChangeKernel, KernelError, Lease, Principal
@@ -183,6 +183,29 @@ def cmd_recover(args: argparse.Namespace) -> None:
     _emit({"change_id": args.change_id, "status": kernel.recover_interrupted(args.change_id, _read_lease(args))})
 
 
+def cmd_reconcile_drift(args: argparse.Namespace) -> None:
+    kernel = _kernel(args)
+    plan = json.loads(Path(args.plan).read_text(encoding="utf-8"))
+    result = reconciliation.record_run(kernel, environment=args.environment, plan=plan,
+                                       live_dir=Path(args.live_dir), lease_state_before=args.lease_before,
+                                       lease_state_after=args.lease_after)
+    _emit(result)
+
+
+def cmd_metrics(args: argparse.Namespace) -> None:
+    kernel = _kernel(args)
+    status = json.loads(Path(args.cluster_status).read_text(encoding="utf-8")) if args.cluster_status else None
+    text = metrics.render(kernel, args.environment,
+                          backup_evidence=Path(args.backup_evidence) if args.backup_evidence else None,
+                          restore_evidence=Path(args.restore_evidence) if args.restore_evidence else None,
+                          cluster_status=status)
+    output = Path(args.output)
+    partial = output.with_name(output.name + ".partial")
+    partial.write_text(text, encoding="utf-8")
+    partial.replace(output)
+    _emit({"written": str(output), "lines": text.count("\n")})
+
+
 def cmd_status(args: argparse.Namespace) -> None:
     kernel = _kernel(args)
     change = kernel.store.one(
@@ -228,7 +251,24 @@ def parser() -> argparse.ArgumentParser:
     add("reconcile", cmd_reconcile, "change-id", "evidence-ref", "lease-file")
     add("recover", cmd_recover, "change-id", "lease-file")
     add("status", cmd_status, "change-id")
+    add("reconcile-drift", cmd_reconcile_drift, "environment", "plan", "live-dir", "lease-before", "lease-after")
+    add("metrics", cmd_metrics, "environment", "output", "backup-evidence?", "restore-evidence?", "cluster-status?")
     return root
+
+
+def _record_denial(args: argparse.Namespace, error: KernelError) -> None:
+    """Best effort: an unavailable store must not hide the original refusal."""
+    try:
+        url = args.database or os.environ.get(DATABASE_ENV, "")
+        if not url:
+            return
+        store = Store(url)
+        store.migrate()
+        actor = getattr(args, "subject", None) or getattr(args, "holder", None) or os.environ.get("GITHUB_ACTOR", "")
+        ChangeKernel(store, Authority()).record_denial(error, actor, getattr(args, "environment", "") or "")
+        store.close()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -239,6 +279,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         args.handler(args)
     except KernelError as exc:
+        _record_denial(args, exc)
         print(f"OPENBAO_CHANGE_KERNEL=REFUSED CODE={exc.code}", file=sys.stderr)
         if exc.code == "ENVIRONMENT_LOCK_HELD":
             print(f"HELD_BY={exc.detail}", file=sys.stderr)

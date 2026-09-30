@@ -16,6 +16,13 @@ leader="$(bao read -format=json sys/leader)"
 [[ "$(jq -r '.data.is_self' <<<"$leader")" == true || "$(jq -r '.data.ha_enabled' <<<"$leader")" == true ]]
 peers="$(bao operator raft list-peers -format=json)"
 peer_count="$(jq '[.data.config.servers[] | select(.voter == true)] | length' <<<"$peers")"
+# Count voters only; non-voters and extra containers do not satisfy the topology.
+desired_peers="$(jq -r .desiredVotingNodes "config/environments/${environment}/environment.json")"
+[[ "$desired_peers" =~ ^[1-9][0-9]*$ ]]
+if (( peer_count < desired_peers )); then
+  echo "RAFT_VOTING_PEERS=${peer_count} DESIRED=${desired_peers} TOPOLOGY=FAIL" >&2
+  exit 1
+fi
 
 mounts="$(bao secrets list -format=json)"
 auths="$(bao auth list -format=json)"

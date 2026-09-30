@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -19,6 +20,16 @@ class VerifyContractTests(unittest.TestCase):
         self.assertIn("docker image inspect", source)
         self.assertIn(".[0].RepoDigests | index($expected) != null", source)
         self.assertNotIn('[[ "$actual_image" == "$expected_image"', source)
+
+    def test_final_readback_enforces_the_desired_voter_topology(self) -> None:
+        source = (ROOT / "scripts/verify.sh").read_text(encoding="utf-8")
+        self.assertIn("select(.voter == true)", source)
+        self.assertIn(".desiredVotingNodes", source)
+        self.assertIn("(( peer_count < desired_peers ))", source)
+        self.assertLess(source.index("(( peer_count < desired_peers ))"), source.index("RAFT_HEALTH=PASS"))
+        for environment, voters in (("staging", 3), ("production", 3)):
+            document = json.loads((ROOT / f"config/environments/{environment}/environment.json").read_text())
+            self.assertEqual(document["desiredVotingNodes"], voters)
 
     def test_kv_v2_security_configuration_is_read_back(self) -> None:
         operation = {

@@ -139,6 +139,15 @@ class ChangeKernel:
         if role not in principal.roles:
             raise KernelError("ROLE_NOT_AUTHORIZED", 403, role)
 
+    def record_denial(self, error: KernelError, actor: str, environment: str) -> None:
+        """Audit a refusal in its own transaction. Lock contention is already recorded."""
+        if error.code == "ENVIRONMENT_LOCK_HELD":
+            return
+        kind = "POLICY_DENIED" if error.status == 403 else "SAFETY_DENIED"
+        with self.store.transaction():
+            self._event(kind, None, actor or "unknown",
+                        {"code": error.code, "environment": environment}, self._now())
+
     # --- submission ------------------------------------------------------------------
 
     def validate_plan(self, plan: dict[str, Any], environment: str) -> tuple[list[dict[str, Any]], str]:
