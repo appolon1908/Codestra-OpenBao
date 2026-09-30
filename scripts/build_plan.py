@@ -44,8 +44,21 @@ def list_values(value) -> set[str]:
     return set()
 
 
+DURATION = re.compile(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?")
+
+
+def semantic(value):
+    """OpenBao stores durations normalized ("2160h" reads back as "2160h0m0s")."""
+    if isinstance(value, str) and value:
+        match = DURATION.fullmatch(value)
+        if match and any(match.groups()):
+            hours, minutes, seconds = match.groups()
+            return ("duration", int(hours or 0) * 3600 + int(minutes or 0) * 60 + float(seconds or 0))
+    return value
+
+
 def selected(mapping: dict, keys: tuple[str, ...]) -> dict:
-    return {key: mapping.get(key) for key in keys}
+    return {key: semantic(mapping.get(key)) for key in keys}
 
 
 def build(environment: str, live_dir: Path, source_sha: str, live_state_sha256: str | None = None) -> dict:
@@ -115,7 +128,8 @@ def build(environment: str, live_dir: Path, source_sha: str, live_state_sha256: 
         "cas_required": desired_engine["casRequired"],
         "delete_version_after": desired_engine["deleteVersionAfter"],
     }
-    if engine_compatible and selected(live_engine_config, tuple(engine_config_payload)) != engine_config_payload:
+    config_keys_kv = tuple(engine_config_payload)
+    if engine_compatible and selected(live_engine_config, config_keys_kv) != selected(engine_config_payload, config_keys_kv):
         operations.append({
             "action": "update" if live_mount is not None else "create",
             "kind": "secret_engine_config",
@@ -233,7 +247,8 @@ def build(environment: str, live_dir: Path, source_sha: str, live_state_sha256: 
         )
     else:
         live_options = live_audit.get("options") or {}
-        if selected(live_options, tuple(audit_payload["options"])) != audit_payload["options"]:
+        audit_keys = tuple(audit_payload["options"])
+        if selected(live_options, audit_keys) != selected(audit_payload["options"], audit_keys):
             warnings.append("file-audit/ option drift requires protected manual remediation; replacement is prohibited")
 
     serialized = json.dumps(operations, sort_keys=True)

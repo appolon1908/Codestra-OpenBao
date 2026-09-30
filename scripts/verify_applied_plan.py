@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+DURATION = re.compile(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?")
 
 
 def command(*args: str) -> str:
@@ -24,8 +27,18 @@ def data(value):
     return value.get("data", value) if isinstance(value, dict) else value
 
 
+def semantic(value):
+    """OpenBao stores durations normalized ("2160h" reads back as "2160h0m0s")."""
+    if isinstance(value, str) and value:
+        match = DURATION.fullmatch(value)
+        if match and any(match.groups()):
+            hours, minutes, seconds = match.groups()
+            return ("duration", int(hours or 0) * 3600 + int(minutes or 0) * 60 + float(seconds or 0))
+    return value
+
+
 def selected(mapping: dict, keys) -> dict:
-    return {key: mapping.get(key) for key in keys}
+    return {key: semantic(mapping.get(key)) for key in keys}
 
 
 def verify(operation: dict) -> None:

@@ -53,6 +53,24 @@ class VerifyContractTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "secret_engine_config_readback_mismatch"):
                 MODULE.verify(operation)
 
+    def test_normalized_durations_read_back_equal_but_other_values_do_not(self) -> None:
+        operation = {
+            "kind": "secret_engine_config",
+            "name": "codestra/config",
+            "payload": {"max_versions": 10, "cas_required": True, "delete_version_after": "2160h"},
+        }
+        # Observed on OpenBao 2.6.2: the stored value reads back normalized.
+        normalized = {"data": {**operation["payload"], "delete_version_after": "2160h0m0s"}}
+        with mock.patch.object(MODULE, "json_command", return_value=normalized):
+            MODULE.verify(operation)
+        for value in ("0s", "2159h0m0s", "", "2160"):
+            shorter = {"data": {**operation["payload"], "delete_version_after": value}}
+            with self.subTest(value=value), mock.patch.object(MODULE, "json_command", return_value=shorter):
+                with self.assertRaisesRegex(ValueError, "secret_engine_config_readback_mismatch"):
+                    MODULE.verify(operation)
+        self.assertNotEqual(MODULE.semantic("v1.1.0"), MODULE.semantic("v1.1.0s"))
+        self.assertEqual(MODULE.semantic("4d1dd974"), "4d1dd974")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
