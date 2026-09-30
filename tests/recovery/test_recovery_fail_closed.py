@@ -176,17 +176,19 @@ class RestoreTargetTests(Workspace):
         shares = []
         for index in range(3):
             share = self.tmp / f"share-{index}"
-            share.write_text(f"synthetic-share-{index}", encoding="utf-8")
-            share.chmod(0o400)
+            if not share.exists():
+                share.write_text(f"synthetic-share-{index}", encoding="utf-8")
+                share.chmod(0o400)
             shares.append(str(share))
         values = {"OPENBAO_UNSEAL_KEY_FILES": ":".join(shares)}
+        tls = self.tmp / "tls"
         if address.startswith("https://"):
-            tls = self.tmp / "tls"
-            tls.mkdir(exist_ok=True)
-            subprocess.run(
-                ["openssl", "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:prime256v1",
-                 "-nodes", "-days", "1", "-subj", "/CN=restore-test", "-keyout", str(tls / "key.pem"),
-                 "-out", str(tls / "cert.pem")], check=True, capture_output=True)
+            if not tls.exists():
+                tls.mkdir()
+                subprocess.run(
+                    ["openssl", "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:prime256v1",
+                     "-nodes", "-days", "1", "-subj", "/CN=restore-test", "-keyout", str(tls / "key.pem"),
+                     "-out", str(tls / "cert.pem")], check=True, capture_output=True)
             values.update({"BAO_CACERT": str(tls / "cert.pem"), "BAO_CLIENT_CERT": str(tls / "cert.pem"),
                            "BAO_CLIENT_KEY": str(tls / "key.pem")})
         return values
