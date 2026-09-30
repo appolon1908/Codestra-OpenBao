@@ -8,9 +8,17 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class PlanRuntimeContractTests(unittest.TestCase):
     def test_plan_reads_the_real_singular_cel_role_list_endpoint(self) -> None:
-        source = (ROOT / "scripts/plan.sh").read_text(encoding="utf-8")
+        source = (ROOT / "scripts/collect_live_state.sh").read_text(encoding="utf-8")
         self.assertIn('"auth/${mount}/cel/role"', source)
         self.assertNotIn('"auth/${mount}/cel/roles"', source)
+        for forbidden in ("bao write", "bao delete", "bao policy write", "bao secrets enable"):
+            self.assertNotIn(forbidden, source)
+
+    def test_plan_binds_the_live_state_it_was_built_from(self) -> None:
+        source = (ROOT / "scripts/plan.sh").read_text(encoding="utf-8")
+        self.assertIn('scripts/collect_live_state.sh "$environment" "$live_dir"', source)
+        self.assertIn("live-fingerprint", source)
+        self.assertIn('--live-state-sha256 "$live_state_sha"', source)
 
     def test_isolated_integration_proves_role_compile_list_and_readback(self) -> None:
         source = (ROOT / "scripts/integration_test.sh").read_text(encoding="utf-8")

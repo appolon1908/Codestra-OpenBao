@@ -46,7 +46,10 @@ class KernelCliTests(unittest.TestCase):
         self.assertIn("ENVIRONMENT_LOCK_HELD", second.stderr)
         self.assertFalse((self.work / "lease-b.json").exists())
 
-        self.assertEqual(self.cli("lock-check").returncode, 0)
+        self.assertEqual(self.cli("lock-check", "--environment", "staging").returncode, 0)
+        wrong = self.cli("lock-check", "--environment", "development")
+        self.assertEqual(wrong.returncode, 2)
+        self.assertIn("LEASE_WRONG_TARGET", wrong.stderr)
         self.assertEqual(self.cli("lock-release").returncode, 0)
         self.assertEqual(self.cli("lock-check").returncode, 2)
         self.assertEqual(self.acquire("restore", "lease-b.json").returncode, 0)
@@ -70,6 +73,9 @@ class KernelCliTests(unittest.TestCase):
             (live / name).write_text(json.dumps(value))
         plan = BUILD_PLAN.build("staging", live, "c" * 40)
         plan["warnings"] = [item for item in plan["warnings"] if "file-audit" not in item]
+        fingerprint = self.cli("live-fingerprint", "--live-dir", str(live))
+        self.assertEqual(fingerprint.returncode, 0, fingerprint.stderr)
+        plan["liveStateSha256"] = json.loads(fingerprint.stdout)["liveStateSha256"]
         plan_file = self.work / "plan.json"
         plan_file.write_text(json.dumps(plan))
         decoy = self.work / "good.json"
@@ -78,12 +84,21 @@ class KernelCliTests(unittest.TestCase):
         checksum.write_text(f"{hashlib.sha256(decoy.read_bytes()).hexdigest()}  good.json\n")
         common = ("submit", "--environment", "staging", "--tenant", "platform", "--idempotency-key", "k1",
                   "--request-id", "r1", "--correlation-id", "c1", "--plan", str(plan_file),
-                  "--checksum", str(checksum), "--live-dir", str(live), "--subject", "operator")
+                  "--checksum", str(checksum), "--subject", "operator")
         refused = self.cli(*common)
         self.assertEqual(refused.returncode, 2)
         self.assertIn("PLAN_CHECKSUM_NAMES_OTHER_FILE", refused.stderr)
 
         checksum.write_text(f"{hashlib.sha256(plan_file.read_bytes()).hexdigest()}  plan.json\n")
+        unbound = dict(plan)
+        del unbound["liveStateSha256"]
+        (self.work / "unbound.json").write_text(json.dumps(unbound))
+        (self.work / "unbound.json.sha256").write_text(
+            f"{hashlib.sha256((self.work / 'unbound.json').read_bytes()).hexdigest()}  unbound.json\n")
+        swapped = [str(self.work / "unbound.json") if item == str(plan_file) else
+                   str(self.work / "unbound.json.sha256") if item == str(checksum) else item for item in common]
+        refused_unbound = self.cli(*swapped)
+        self.assertIn("PLAN_LIVE_STATE_UNBOUND", refused_unbound.stderr)
         accepted = self.cli(*common)
         self.assertEqual(accepted.returncode, 0, accepted.stderr)
         change = json.loads(accepted.stdout)

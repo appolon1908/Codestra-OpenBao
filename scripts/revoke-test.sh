@@ -26,6 +26,7 @@ for callback in \
   [[ -f "$callback" && ! -L "$callback" && -x "$callback" ]]
 done
 
+"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 "$revoke_driver" >/dev/null 2>&1
 if "$target_deny_verifier" >/dev/null 2>&1; then
   echo 'Revoked target workload still has secret access.' >&2

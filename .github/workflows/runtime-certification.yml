@@ -38,7 +38,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: openbao-${{ inputs.environment }}-runtime-certification
+  group: openbao-${{ inputs.environment }}-mutation
   cancel-in-progress: false
 
 jobs:
@@ -49,6 +49,7 @@ jobs:
     timeout-minutes: 45
     env:
       CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      OPENBAO_CHANGE_KERNEL_DATABASE_URL: ${{ vars.OPENBAO_CHANGE_KERNEL_DATABASE_URL }}
       CODESTRA_SOURCE_SHA: ${{ inputs.expected_source_sha }}
       OPENBAO_APPROVAL_ENVIRONMENT: openbao-${{ inputs.environment }}-certify
       BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
@@ -91,6 +92,15 @@ jobs:
           [[ "$(git rev-parse HEAD)" == "$CODESTRA_SOURCE_SHA" ]]
           [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${CODESTRA_ENVIRONMENT}" --jq .object.sha)" == "$CODESTRA_SOURCE_SHA" ]]
           scripts/verify_environment_approval.sh
+      - name: Acquire the cluster mutation lease
+        run: |
+          [[ -n "$OPENBAO_CHANGE_KERNEL_DATABASE_URL" ]]
+          lease_file="$RUNNER_TEMP/openbao-mutation-lease.json"
+          printf 'OPENBAO_CHANGE_KERNEL_LEASE_FILE=%s\n' "$lease_file" >> "$GITHUB_ENV"
+          python3 -m codestra.change_kernel.cli lock-acquire --environment "$CODESTRA_ENVIRONMENT" \
+            --holder "github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_JOB}" --purpose runtime-certification \
+            --run-ref "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            --ttl 3600 --lease-file "$lease_file"
       - name: Prove CAS rotation agent refresh old denial and health
         run: |
           umask 077
@@ -110,3 +120,9 @@ jobs:
           path: ${{ runner.temp }}/openbao-certification/
           if-no-files-found: error
           retention-days: 90
+      - name: Release the cluster mutation lease
+        if: always()
+        run: |
+          if [[ -f "${OPENBAO_CHANGE_KERNEL_LEASE_FILE:-}" ]]; then
+            python3 -m codestra.change_kernel.cli lock-release --lease-file "$OPENBAO_CHANGE_KERNEL_LEASE_FILE"
+          fi

@@ -12,13 +12,24 @@ class ApplyGuardTests(unittest.TestCase):
         for required in (
             "verify_artifact_checksum.sh", ".planSourceSha", ".counts.destroy", ".runtimeApplyAuthorized",
             "jtiReplayCacheImplemented", "verify_environment_approval.sh",
-            "APPLY_EXACT_OPENBAO_PLAN_", "verify_applied_plan.py",
-            "OPENBAO_PLUGIN_BINARY", "bao plugin register", "-plugin-name=",
+            "APPLY_EXACT_OPENBAO_PLAN_", "verify_applied_plan.py", "OPENBAO_PLUGIN_BINARY",
+            "scripts/require_mutation_lease.sh", "scripts/collect_live_state.sh",
+            "python3 -m codestra.change_kernel.cli", " submit ", " approve ", " apply ",
+            "--expected-plan-sha256", "--approver kazan555",
         ):
             self.assertIn(required, source)
-        self.assertNotIn("operator init", source)
-        self.assertNotIn("audit disable", source)
-        self.assertNotIn("secrets disable", source)
+        for forbidden in ("operator init", "audit disable", "secrets disable", "bao write",
+                          "bao policy write", "bao plugin register", "bao secrets enable", "bao auth enable"):
+            self.assertNotIn(forbidden, source)
+
+    def test_single_actuator_owns_every_plan_mutation_command(self) -> None:
+        source = (ROOT / "codestra/change_kernel/actuator.py").read_text(encoding="utf-8")
+        for required in ('"plugin", "register"', '"secrets", "enable"', '"auth", "enable"',
+                         "-plugin-name=", '"policy", "write"', '"bao", "write"',
+                         "kernel.intend(", "UNSUPPORTED_OR_DESTRUCTIVE_OPERATION"):
+            self.assertIn(required, source)
+        for forbidden in ('"delete"', '"disable"', '"destroy"', "operator"):
+            self.assertNotIn(forbidden, source)
 
     def test_required_approver_is_kazan555(self) -> None:
         source = (ROOT / "scripts/verify_environment_approval.sh").read_text(encoding="utf-8")

@@ -71,70 +71,42 @@ cleanup() {
 trap cleanup EXIT
 
 started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-while IFS= read -r operation; do
-  action="$(jq -r '.action' <<<"$operation")"
-  kind="$(jq -r '.kind' <<<"$operation")"
-  name="$(jq -r '.name' <<<"$operation")"
-  [[ "$action" == create || "$action" == update ]]
-  payload="$apply_dir/payload.json"
-  jq '.payload' <<<"$operation" > "$payload"
-  case "$kind:$action" in
-    auth_plugin:create)
-      bao plugin register \
-        -sha256="$(jq -r '.sha256' "$payload")" \
-        -command="$(jq -r '.command' "$payload")" \
-        -version="$(jq -r '.version' "$payload")" \
-        auth "$(jq -r '.name' "$payload")" >/dev/null
-      ;;
-    secret_engine:create)
-      bao secrets enable -path="$(jq -r '.path' "$payload")" \
-        -description="$(jq -r '.description' "$payload")" -version=2 kv >/dev/null
-      ;;
-    secret_engine_config:create|secret_engine_config:update)
-      bao write "$name" @"$payload" >/dev/null
-      ;;
-    auth_method:create)
-      bao auth enable -path="$(jq -r '.path' "$payload")" \
-        -plugin-name="$(jq -r '.plugin_name' "$payload")" \
-        -plugin-version="$(jq -r '.plugin_version' "$payload")" plugin >/dev/null
-      ;;
-    policy:create|policy:update)
-      jq -r '.policy' "$payload" > "$apply_dir/policy.hcl"
-      bao policy write "$name" "$apply_dir/policy.hcl" >/dev/null
-      ;;
-    auth_config:create|auth_config:update|jwt_role:create|jwt_role:update)
-      bao write "$name" @"$payload" >/dev/null
-      ;;
-    *)
-      echo "Unsupported or destructive plan operation: ${kind}:${action}" >&2
-      exit 2
-      ;;
-  esac
-done < <(jq -c '
-  .operations |
-  sort_by(
-    if .kind == "auth_plugin" then 0
-    elif .kind == "secret_engine" then 1
-    elif .kind == "secret_engine_config" then 2
-    elif .kind == "auth_method" then 3
-    elif .kind == "policy" then 4
-    elif .kind == "auth_config" then 5
-    elif .kind == "jwt_role" then 6
-    else 99 end
-  )[]
-' "$plan")
+# Every OpenBao mutation goes through the change kernel's single actuator:
+# fenced dispatch intent, one call, readback-only confirmation.
+scripts/require_mutation_lease.sh
+plan_sha="$(scripts/verify_artifact_checksum.sh "$plan" "$checksum")"
+kernel=(python3 -m codestra.change_kernel.cli)
+live_dir="$apply_dir/live"
+mkdir "$live_dir"
+scripts/collect_live_state.sh "$environment" "$live_dir"
+submitted="$("${kernel[@]}" submit --environment "$environment" --tenant platform \
+  --idempotency-key "saved-plan-${plan_sha}" \
+  --request-id "github-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:-1}" \
+  --correlation-id "saved-plan-${plan_sha}" \
+  --plan "$plan" --checksum "$checksum" --expected-plan-sha256 "$plan_sha" \
+  --subject "${GITHUB_ACTOR:?}")"
+change_id="$(jq -r '.change_id' <<<"$submitted")"
+[[ "$change_id" =~ ^chg_[0-9a-f]{32}$ ]]
+if [[ "$(jq -r '.status' <<<"$submitted")" == AWAITING_APPROVAL ]]; then
+  # verify_environment_approval.sh above proved the protected-environment
+  # approval for this run; bind it to this exact plan digest and cluster.
+  "${kernel[@]}" approve --change-id "$change_id" --approver kazan555 \
+    --plan-digest "$(jq -r '.plan_digest' <<<"$submitted")" --environment "$environment" \
+    --evidence-ref "github-run:${GITHUB_REPOSITORY:?}/${GITHUB_RUN_ID}" --valid-seconds 3600 >/dev/null
+fi
+"${kernel[@]}" apply --change-id "$change_id" --environment "$environment" --tenant platform \
+  --live-dir "$live_dir" --subject "$GITHUB_ACTOR" >/dev/null
 
 python3 scripts/verify_applied_plan.py "$plan"
 completed="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-plan_sha="$(awk '{print $1}' "$checksum")"
 jq -n \
   --arg environment "$environment" --arg sourceSha "$source_sha" \
   --arg planSha256 "$plan_sha" --arg startedAt "$started" --arg completedAt "$completed" \
-  --arg releaseId "$release_id" \
+  --arg releaseId "$release_id" --arg changeId "$change_id" \
   --arg approvedBy kazan555 \
   --argjson createCount "$(jq '.counts.create' "$plan")" \
   --argjson changeCount "$(jq '.counts.change' "$plan")" \
-  '{schemaVersion:1,environment:$environment,sourceSha:$sourceSha,releaseId:$releaseId,planSha256:$planSha256,startedAt:$startedAt,completedAt:$completedAt,approvedBy:$approvedBy,createCount:$createCount,changeCount:$changeCount,destroyCount:0,planAppliedExactly:true}' \
+  '{schemaVersion:1,environment:$environment,sourceSha:$sourceSha,releaseId:$releaseId,changeId:$changeId,planSha256:$planSha256,startedAt:$startedAt,completedAt:$completedAt,approvedBy:$approvedBy,createCount:$createCount,changeCount:$changeCount,destroyCount:0,planAppliedExactly:true}' \
   > "$evidence"
 chmod 400 "$evidence"
 

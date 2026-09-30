@@ -120,8 +120,15 @@ def cmd_lock_heartbeat(args: argparse.Namespace) -> None:
 
 def cmd_lock_check(args: argparse.Namespace) -> None:
     kernel = _kernel(args)
-    kernel.check_fence(_read_lease(args))
-    _emit({"fence": "VALID"})
+    lease = _read_lease(args)
+    if args.environment and lease.exclusion_key != kernel.authority.exclusion_key(args.environment):
+        raise KernelError("LEASE_WRONG_TARGET", 409)
+    kernel.check_fence(lease)
+    _emit({"fence": "VALID", "exclusionKey": lease.exclusion_key})
+
+
+def cmd_live_fingerprint(args: argparse.Namespace) -> None:
+    _emit({"liveStateSha256": live_fingerprint(Path(args.live_dir))})
 
 
 def cmd_lock_release(args: argparse.Namespace) -> None:
@@ -137,10 +144,14 @@ def cmd_lock_status(args: argparse.Namespace) -> None:
 
 def cmd_submit(args: argparse.Namespace) -> None:
     kernel = _kernel(args)
+    plan = _verified_plan(args)
+    recorded = plan.get("liveStateSha256")
+    if not isinstance(recorded, str) or len(recorded) != 64:
+        raise KernelError("PLAN_LIVE_STATE_UNBOUND", 422)
     change = kernel.submit(_principal(args, {"change.submit"}), tenant_id=args.tenant,
                            environment=args.environment, idempotency_key=args.idempotency_key,
                            request_id=args.request_id, correlation_id=args.correlation_id,
-                           plan=_verified_plan(args), resource_fingerprint=live_fingerprint(Path(args.live_dir)))
+                           plan=plan, resource_fingerprint=recorded)
     _emit({key: change[key] for key in ("change_id", "status", "plan_digest", "risk_class", "exclusion_key")})
 
 
@@ -194,20 +205,23 @@ def parser() -> argparse.ArgumentParser:
     def add(name, handler, *arguments):
         sub = commands.add_parser(name)
         for argument in arguments:
-            sub.add_argument(f"--{argument}", required=argument not in {"ttl", "change-id", "subject",
-                                                                         "lease-file", "expected-plan-sha256"})
+            optional = argument.endswith("?")
+            argument = argument.rstrip("?")
+            sub.add_argument(f"--{argument}", required=not optional and argument not in {
+                "ttl", "change-id", "subject", "lease-file", "expected-plan-sha256"})
         sub.set_defaults(handler=handler)
         return sub
 
     add("migrate", cmd_migrate)
-    for name, handler in (("lock-heartbeat", cmd_lock_heartbeat), ("lock-check", cmd_lock_check),
-                          ("lock-release", cmd_lock_release)):
+    add("live-fingerprint", cmd_live_fingerprint, "live-dir")
+    add("lock-check", cmd_lock_check, "lease-file", "environment?")
+    for name, handler in (("lock-heartbeat", cmd_lock_heartbeat), ("lock-release", cmd_lock_release)):
         add(name, handler, "lease-file", "ttl")
     add("lock-acquire", cmd_lock_acquire, "environment", "holder", "purpose", "run-ref", "ttl",
         "change-id", "lease-file")
     add("lock-status", cmd_lock_status, "environment")
     add("submit", cmd_submit, "environment", "tenant", "idempotency-key", "request-id", "correlation-id",
-        "plan", "checksum", "expected-plan-sha256", "live-dir", "subject")
+        "plan", "checksum", "expected-plan-sha256", "subject")
     add("approve", cmd_approve, "change-id", "approver", "plan-digest", "environment", "evidence-ref",
         "valid-seconds")
     add("apply", cmd_apply, "change-id", "environment", "tenant", "live-dir", "subject", "lease-file")

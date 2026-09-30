@@ -54,6 +54,7 @@ cleanup() {
 trap cleanup EXIT
 [[ ! -e "$artifact" && ! -e "$checksum" ]]
 
+"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 bao operator raft snapshot save "$plain" >/dev/null
 [[ -s "$plain" ]]
 plain_sha="$(sha256sum "$plain" | awk '{print $1}')"

@@ -7,6 +7,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,7 +48,7 @@ def selected(mapping: dict, keys: tuple[str, ...]) -> dict:
     return {key: mapping.get(key) for key in keys}
 
 
-def build(environment: str, live_dir: Path, source_sha: str) -> dict:
+def build(environment: str, live_dir: Path, source_sha: str, live_state_sha256: str | None = None) -> dict:
     authority_path = ROOT / "config/workload-secret-authority.v1.json"
     roles_path = ROOT / "openbao/auth/jwt-roles.v1.json"
     audit_path = ROOT / "config/audit/audit.v1.json"
@@ -253,7 +254,7 @@ def build(environment: str, live_dir: Path, source_sha: str) -> dict:
             environment_config.get("runtimeApplyAuthorized"),
         )
     )
-    return {
+    plan = {
         "schemaVersion": 1,
         "planSourceSha": source_sha,
         "environment": environment,
@@ -272,6 +273,11 @@ def build(environment: str, live_dir: Path, source_sha: str) -> dict:
         "warnings": warnings,
         "operations": operations,
     }
+    if live_state_sha256 is not None:
+        # Binds the reviewed plan to the live state it was computed from; apply
+        # refuses when a fresh read of live state no longer matches.
+        plan["liveStateSha256"] = live_state_sha256
+    return plan
 
 
 def main() -> None:
@@ -280,11 +286,14 @@ def main() -> None:
     parser.add_argument("--live-dir", required=True, type=Path)
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--live-state-sha256")
     args = parser.parse_args()
     if len(args.source_sha) != 40 or any(character not in "0123456789abcdef" for character in args.source_sha):
         raise SystemExit("OPENBAO_PLAN=FAIL ERROR=invalid_source_sha")
     try:
-        plan = build(args.environment, args.live_dir, args.source_sha)
+        if args.live_state_sha256 is not None and not re.fullmatch(r"[0-9a-f]{64}", args.live_state_sha256):
+            raise ValueError("invalid_live_state_sha256")
+        plan = build(args.environment, args.live_dir, args.source_sha, args.live_state_sha256)
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         raise SystemExit(f"OPENBAO_PLAN=FAIL ERROR={exc}") from exc
     args.output.write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")

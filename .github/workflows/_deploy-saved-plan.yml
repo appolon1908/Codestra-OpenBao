@@ -29,12 +29,16 @@ permissions:
 
 jobs:
   apply:
+    concurrency:
+      group: openbao-${{ inputs.environment }}-mutation
+      cancel-in-progress: false
     name: OpenBao exact saved-plan apply
     environment: openbao-${{ inputs.environment }}
     runs-on: [self-hosted, linux, x64, codestra-openbao]
     timeout-minutes: 60
     env:
       CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      OPENBAO_CHANGE_KERNEL_DATABASE_URL: ${{ vars.OPENBAO_CHANGE_KERNEL_DATABASE_URL }}
       CODESTRA_SOURCE_SHA: ${{ inputs.expected_source_sha }}
       OPENBAO_EXPECTED_PLAN_SHA256: ${{ inputs.plan_sha256 }}
       OPENBAO_APPLY_CONFIRMATION: ${{ inputs.confirmation }}
@@ -98,6 +102,15 @@ jobs:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.plan_run_id }}
+      - name: Acquire the cluster mutation lease
+        run: |
+          [[ -n "$OPENBAO_CHANGE_KERNEL_DATABASE_URL" ]]
+          lease_file="$RUNNER_TEMP/openbao-mutation-lease.json"
+          printf 'OPENBAO_CHANGE_KERNEL_LEASE_FILE=%s\n' "$lease_file" >> "$GITHUB_ENV"
+          python3 -m codestra.change_kernel.cli lock-acquire --environment "$CODESTRA_ENVIRONMENT" \
+            --holder "github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_JOB}" --purpose saved-plan-apply \
+            --run-ref "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            --ttl 3600 --lease-file "$lease_file"
       - name: Back up, apply only the saved plan, and independently read back
         env:
           GH_TOKEN: ${{ github.token }}
@@ -112,3 +125,9 @@ jobs:
           path: ${{ runner.temp }}/openbao-deployment-evidence/
           if-no-files-found: error
           retention-days: 90
+      - name: Release the cluster mutation lease
+        if: always()
+        run: |
+          if [[ -f "${OPENBAO_CHANGE_KERNEL_LEASE_FILE:-}" ]]; then
+            python3 -m codestra.change_kernel.cli lock-release --lease-file "$OPENBAO_CHANGE_KERNEL_LEASE_FILE"
+          fi

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import stat
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -177,12 +178,41 @@ printf '%s\\n' "${FAKE_RAM_TYPE:-tmpfs}"
             "OPENBAO_OFFLINE_CUSTODY_ACKNOWLEDGED": "true",
             "OPENBAO_INIT_RAM_ROOT": str(self.work),
         })
+        self.hold_mutation_lease()
+
+    def hold_mutation_lease(self) -> None:
+        """Initialization is a mutation: the ceremony must hold the test cluster's lease."""
+        sys.path.insert(0, str(ROOT))
+        from codestra.change_kernel.authority import Authority
+        from codestra.change_kernel.kernel import ChangeKernel
+        from codestra.change_kernel.store import Store
+
+        url = f"sqlite:///{(self.work / 'kernel.db').as_posix()}"
+        store = Store(url)
+        store.migrate()
+        lease = ChangeKernel(store, Authority()).acquire_lock(
+            "test", holder="initialization-test", purpose="initialize", run_ref="unit-test")
+        store.close()
+        self.lease_file = self.work / "lease.json"
+        self.lease_file.write_text(json.dumps({
+            "exclusionKey": lease.exclusion_key, "holder": lease.holder,
+            "fenceToken": lease.fence_token, "expiresAt": lease.expires_at}), encoding="utf-8")
+        self.env.update({"OPENBAO_CHANGE_KERNEL_DATABASE_URL": url,
+                         "OPENBAO_CHANGE_KERNEL_LEASE_FILE": str(self.lease_file)})
 
     def run_initializer(self) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             ["bash", str(ROOT / "scripts/initialize.sh")],
             env={**os.environ, **self.env}, capture_output=True, text=True, check=False, timeout=15,
         )
+
+    def test_missing_or_released_lease_never_reaches_operator_init(self) -> None:
+        self.enable_synthetic_init()
+        self.lease_file.unlink()
+        result = self.run_initializer()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("operator", self.calls.read_text() if self.calls.exists() else "")
+        self.assertFalse((self.parent / "ceremony").exists())
 
     def test_bad_parent_fails_before_bao_and_preserves_mode(self) -> None:
         self.parent.chmod(0o755)

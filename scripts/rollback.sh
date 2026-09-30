@@ -50,6 +50,7 @@ if [[ "$environment" == production ]]; then
   scripts/capture_ssh_baseline.sh "$ssh_before" >/dev/null
 fi
 
+"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 failed="${current}-failed-rollback-$(date -u +%Y%m%dT%H%M%SZ)"
 recover_current() {
   docker stop --time 30 "$current" >/dev/null 2>&1 || true

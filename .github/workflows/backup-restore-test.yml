@@ -27,6 +27,9 @@ concurrency:
 
 jobs:
   backup:
+    concurrency:
+      group: openbao-${{ inputs.environment }}-mutation
+      cancel-in-progress: false
     name: Create encrypted off-host snapshot
     environment: openbao-${{ inputs.environment }}-backup
     runs-on: [self-hosted, linux, x64, codestra-openbao]
@@ -36,6 +39,7 @@ jobs:
       checksum: ${{ steps.snapshot.outputs.checksum }}
     env:
       CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      OPENBAO_CHANGE_KERNEL_DATABASE_URL: ${{ vars.OPENBAO_CHANGE_KERNEL_DATABASE_URL }}
       CODESTRA_SOURCE_SHA: ${{ inputs.expected_source_sha }}
       OPENBAO_APPROVAL_ENVIRONMENT: openbao-${{ inputs.environment }}-backup
       BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
@@ -54,6 +58,15 @@ jobs:
         with:
           ref: ${{ inputs.expected_source_sha }}
           persist-credentials: false
+      - name: Acquire the cluster mutation lease
+        run: |
+          [[ -n "$OPENBAO_CHANGE_KERNEL_DATABASE_URL" ]]
+          lease_file="$RUNNER_TEMP/openbao-mutation-lease.json"
+          printf 'OPENBAO_CHANGE_KERNEL_LEASE_FILE=%s\n' "$lease_file" >> "$GITHUB_ENV"
+          python3 -m codestra.change_kernel.cli lock-acquire --environment "$CODESTRA_ENVIRONMENT" \
+            --holder "github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_JOB}" --purpose backup \
+            --run-ref "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            --ttl 3600 --lease-file "$lease_file"
       - name: Take, encrypt, verify and copy immutable snapshot off-host
         id: snapshot
         env:
@@ -80,6 +93,12 @@ jobs:
           path: ${{ runner.temp }}/backup-evidence.json
           if-no-files-found: error
           retention-days: 90
+      - name: Release the cluster mutation lease
+        if: always()
+        run: |
+          if [[ -f "${OPENBAO_CHANGE_KERNEL_LEASE_FILE:-}" ]]; then
+            python3 -m codestra.change_kernel.cli lock-release --lease-file "$OPENBAO_CHANGE_KERNEL_LEASE_FILE"
+          fi
 
   isolated-restore:
     name: Restore and verify on isolated non-production cluster

@@ -130,6 +130,7 @@ trap cleanup EXIT
 
 pgp_csv="$(IFS=,; printf '%s' "${unseal_pgp_keys[*]}")"
 initialization_attempted=true
+"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 bao operator init \
   -key-shares=5 \
   -key-threshold=3 \

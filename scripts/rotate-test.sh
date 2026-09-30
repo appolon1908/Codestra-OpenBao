@@ -51,6 +51,7 @@ trap cleanup EXIT
 bao kv metadata get -format=json "codestra/${environment}/${kv_path}" > "$metadata"
 [[ "$(jq -r .data.current_version "$metadata")" == "$expected_version" ]]
 
+"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 bao kv put -cas="$expected_version" "codestra/${environment}/${kv_path}" \
   @"$new_secret_file" >/dev/null
 new_version="$((expected_version + 1))"
