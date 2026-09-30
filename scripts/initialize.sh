@@ -103,6 +103,9 @@ unique_count="$(printf '%s\n' "${fingerprints[@]}" | sort -u | wc -l | tr -d ' '
   exit 2
 }
 
+# The lease is checked before the first side effect, the custody directory,
+# so a refused ceremony leaves nothing behind that would block a retry.
+"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 umask 077
 mkdir -- "$custody_dir"
 chmod 700 -- "$custody_dir"
@@ -130,7 +133,6 @@ trap cleanup EXIT
 
 pgp_csv="$(IFS=,; printf '%s' "${unseal_pgp_keys[*]}")"
 initialization_attempted=true
-"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 bao operator init \
   -key-shares=5 \
   -key-threshold=3 \

@@ -18,7 +18,6 @@ recovery_policy="$(dirname "$0")/../config/recovery/backup.v1.json"
 [[ "$restored_probe_policy" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$ ]]
 [[ "$started_epoch" =~ ^[0-9]{1,12}$ ]]
 (( started_epoch <= $(date +%s) ))
-rto_seconds="$(jq -er '.rtoTargetHours | select(type == "number" and . > 0) * 3600 | floor' "$recovery_policy")"
 case "${restored_probe_policy,,}" in
   default|root)
     echo 'Reserved default/root policies cannot certify a restore probe.' >&2
@@ -33,6 +32,7 @@ for command in age bao jq realpath sha256sum shred stat python3; do command -v "
 # Validate recovery inputs before contacting or mutating the restore target.
 # Revalidate immediately before unseal as well; files must stay protected.
 python3 "$(dirname "$0")/unseal_from_files.py" --check-inputs
+rto_seconds="$(jq -er '.rtoTargetHours | select(type == "number" and . > 0) * 3600 | floor' "$recovery_policy")"
 
 operator_token_real="$(realpath "$operator_token_file")"
 restored_probe_token_real="$(realpath "$restored_probe_token_file")"

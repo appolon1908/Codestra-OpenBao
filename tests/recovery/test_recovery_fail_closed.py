@@ -171,7 +171,28 @@ class BackupAttestationTests(Workspace):
 
 
 class RestoreTargetTests(Workspace):
-    def run_restore(self, address: str, started: str | None = None) -> subprocess.CompletedProcess[str]:
+    def unseal_inputs(self, address: str) -> dict[str, str]:
+        """Valid synthetic inputs, so a refusal is caused by the target check under test."""
+        shares = []
+        for index in range(3):
+            share = self.tmp / f"share-{index}"
+            share.write_text(f"synthetic-share-{index}", encoding="utf-8")
+            share.chmod(0o400)
+            shares.append(str(share))
+        values = {"OPENBAO_UNSEAL_KEY_FILES": ":".join(shares)}
+        if address.startswith("https://"):
+            tls = self.tmp / "tls"
+            tls.mkdir(exist_ok=True)
+            subprocess.run(
+                ["openssl", "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:prime256v1",
+                 "-nodes", "-days", "1", "-subj", "/CN=restore-test", "-keyout", str(tls / "key.pem"),
+                 "-out", str(tls / "cert.pem")], check=True, capture_output=True)
+            values.update({"BAO_CACERT": str(tls / "cert.pem"), "BAO_CLIENT_CERT": str(tls / "cert.pem"),
+                           "BAO_CLIENT_KEY": str(tls / "key.pem")})
+        return values
+
+    def run_restore(self, address: str, started: str | None = None,
+                    environment: str = "staging") -> subprocess.CompletedProcess[str]:
         self.stub("bao", """if [[ "$1" == status ]]; then echo '{"cluster_id":"isolated"}'; exit 2; fi; exit 1""")
         self.stub("age", "exit 1")
         artifact = self.tmp / "snapshot.age"
@@ -186,7 +207,8 @@ class RestoreTargetTests(Workspace):
         return subprocess.run(
             [str(ROOT / "scripts/restore-test.sh")],
             env=self.env(
-                CODESTRA_ENVIRONMENT="staging",
+                **self.unseal_inputs(address),
+                CODESTRA_ENVIRONMENT=environment,
                 OPENBAO_RESTORE_ARTIFACT=str(artifact),
                 OPENBAO_RESTORE_CHECKSUM=str(checksum),
                 OPENBAO_AGE_IDENTITY_FILE=str(tokens["identity"]),
@@ -206,20 +228,23 @@ class RestoreTargetTests(Workspace):
         )
 
     def test_restore_host_is_parsed_not_substring_matched(self) -> None:
-        for address in (
-            "https://vault.prod.example/restore",
-            "https://vault.prod.example/?localhost",
-            "https://127.0.0.1.prod.example:8200",
+        for address, environment in (
+            ("https://vault.prod.example/restore", "staging"),
+            ("https://vault.prod.example/?localhost", "staging"),
+            ("https://127.0.0.1.prod.example:8200", "staging"),
+            # Cleartext unseal to loopback is only for isolated development/test targets.
+            ("http://127.0.0.1:8200", "staging"),
         ):
-            with self.subTest(address=address):
+            with self.subTest(address=address, environment=environment):
                 (self.marks / "age").unlink(missing_ok=True)
-                self.run_restore(address)
+                self.run_restore(address, environment=environment)
                 self.assertFalse(self.reached("age"))
-        for address in ("https://openbao-restore.internal:8200", "http://127.0.0.1:8200"):
-            with self.subTest(address=address):
+        for address, environment in (("https://openbao-restore.internal:8200", "staging"),
+                                     ("http://127.0.0.1:8200", "test")):
+            with self.subTest(address=address, environment=environment):
                 (self.marks / "age").unlink(missing_ok=True)
-                self.run_restore(address)
-                self.assertTrue(self.reached("age"))
+                result = self.run_restore(address, environment=environment)
+                self.assertTrue(self.reached("age"), result.stderr)
 
     def test_start_epoch_is_validated_before_any_restore_step(self) -> None:
         future = str(int(time.time()) + 86400)
