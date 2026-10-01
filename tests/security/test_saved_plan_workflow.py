@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 class SavedPlanWorkflowTests(unittest.TestCase):
     def test_saved_plan_apply_never_plans_or_deploys_a_container(self) -> None:
         source = (ROOT / "scripts/apply_saved_plan.sh").read_text(encoding="utf-8")
-        self.assertIn("sha256sum -c", source)
+        self.assertIn("scripts/verify_artifact_checksum.sh \"$plan\" \"$checksum\" \"$expected_plan_sha\"", source)
         self.assertIn("scripts/preflight.sh", source)
         self.assertIn("scripts/backup.sh", source)
         self.assertIn("scripts/apply.sh", source)

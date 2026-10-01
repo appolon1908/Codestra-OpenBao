@@ -69,6 +69,17 @@ class BuildPlanTests(unittest.TestCase):
         self.assertEqual(operation["action"], "update")
         self.assertEqual(operation["name"], "codestra/config")
 
+    def test_normalized_live_duration_is_not_perpetual_drift(self) -> None:
+        live = self.live()
+        (live / "mounts.json").write_text(json.dumps({
+            "codestra/": {"type": "kv", "options": {"version": "2"}}
+        }))
+        (live / "codestra-config.json").write_text(json.dumps({
+            "data": {"max_versions": 10, "cas_required": True, "delete_version_after": "2160h0m0s"}
+        }))
+        plan = MODULE.build("development", live, "f" * 40)
+        self.assertFalse(any(item["kind"] == "secret_engine_config" for item in plan["operations"]))
+
     def test_environment_plan_contains_only_environment_roles(self) -> None:
         plan = MODULE.build("staging", self.live(), "c" * 40)
         names = [item["name"] for item in plan["operations"] if item["kind"] in {"policy", "jwt_role"}]

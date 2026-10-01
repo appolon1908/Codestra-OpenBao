@@ -9,6 +9,7 @@ import ssl
 import subprocess
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -186,6 +187,7 @@ class UnsealFileTests(unittest.TestCase):
             "OPENBAO_RESTORED_PROBE_TOKEN_FILE": self.files[1],
             "OPENBAO_RESTORED_PROBE_EXPECTED_POLICY": "restored-probe",
             "OPENBAO_ISOLATED_RESTORE_ACKNOWLEDGED": "true",
+            "OPENBAO_RESTORE_STARTED_EPOCH": str(int(time.time())),
         }
         result = subprocess.run(
             ["bash", str(ROOT / "scripts/restore-test.sh")],

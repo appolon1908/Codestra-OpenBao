@@ -148,6 +148,7 @@ image_json="$(docker image inspect "$image")"
 jq -e --arg expected "ghcr.io/openbao/openbao@${expected_digest}" \
   '.[0].RepoDigests | index($expected) != null' <<<"$image_json" >/dev/null
 
+"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 previous_container=''
 previous_image=''
 previous_source=''

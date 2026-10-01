@@ -103,6 +103,9 @@ unique_count="$(printf '%s\n' "${fingerprints[@]}" | sort -u | wc -l | tr -d ' '
   exit 2
 }
 
+# The lease is checked before the first side effect, the custody directory,
+# so a refused ceremony leaves nothing behind that would block a retry.
+"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 umask 077
 mkdir -- "$custody_dir"
 chmod 700 -- "$custody_dir"

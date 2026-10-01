@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 30
     env:
       CODESTRA_ENVIRONMENT: ${{ matrix.environment }}
+      OPENBAO_CHANGE_KERNEL_DATABASE_URL: ${{ vars.OPENBAO_CHANGE_KERNEL_DATABASE_URL }}
       BAO_ADDR: ${{ vars.OPENBAO_ADDR }}
       BAO_CACERT: ${{ vars.OPENBAO_CA_CERT_PATH }}
       BAO_CLIENT_CERT: ${{ vars.OPENBAO_OBSERVER_CERT_PATH }}

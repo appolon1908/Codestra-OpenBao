@@ -34,7 +34,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: openbao-${{ inputs.environment }}-runtime
+  group: openbao-${{ inputs.environment }}-mutation
   cancel-in-progress: false
 
 jobs:
@@ -45,6 +45,7 @@ jobs:
     timeout-minutes: 60
     env:
       CODESTRA_ENVIRONMENT: ${{ inputs.environment }}
+      OPENBAO_CHANGE_KERNEL_DATABASE_URL: ${{ vars.OPENBAO_CHANGE_KERNEL_DATABASE_URL }}
       CODESTRA_SOURCE_SHA: ${{ inputs.current_source_sha }}
       OPENBAO_APPROVAL_ENVIRONMENT: openbao-${{ inputs.environment }}-runtime
       OPENBAO_CONTAINER_NAME: ${{ vars.OPENBAO_CONTAINER_NAME }}
@@ -69,6 +70,15 @@ jobs:
           ref: ${{ inputs.current_source_sha }}
           persist-credentials: false
           fetch-depth: 0
+      - name: Acquire the cluster mutation lease
+        run: |
+          [[ -n "$OPENBAO_CHANGE_KERNEL_DATABASE_URL" ]]
+          lease_file="$RUNNER_TEMP/openbao-mutation-lease.json"
+          printf 'OPENBAO_CHANGE_KERNEL_LEASE_FILE=%s\n' "$lease_file" >> "$GITHUB_ENV"
+          python3 -m codestra.change_kernel.cli lock-acquire --environment "$CODESTRA_ENVIRONMENT" \
+            --holder "github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_JOB}" --purpose runtime-rollback \
+            --run-ref "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            --ttl 3600 --lease-file "$lease_file"
       - name: Bind reviewed rollback authorization and take fresh backup
         env:
           GH_TOKEN: ${{ github.token }}
@@ -119,3 +129,9 @@ jobs:
           path: ${{ runner.temp }}/openbao-rollback-evidence/
           if-no-files-found: error
           retention-days: 90
+      - name: Release the cluster mutation lease
+        if: always()
+        run: |
+          if [[ -f "${OPENBAO_CHANGE_KERNEL_LEASE_FILE:-}" ]]; then
+            python3 -m codestra.change_kernel.cli lock-release --lease-file "$OPENBAO_CHANGE_KERNEL_LEASE_FILE"
+          fi

@@ -17,10 +17,10 @@ for path in "$recipient_file" "$identity_file" "$immutability_attestation"; do
   [[ -f "$path" && ! -L "$path" ]]
 done
 jq -e --arg remote "$offhost_remote" '
-  .schemaVersion == 1 and
+  (.schemaVersion | type == "number") and .schemaVersion == 1 and
   .remote == $remote and
   .objectLockEnabled == true and
-  .retentionDays >= 30 and
+  (.retentionDays | type == "number") and .retentionDays >= 30 and
   (.owner | type == "string" and length > 0) and
   (.verifiedAt | type == "string" and length > 0)
 ' "$immutability_attestation" >/dev/null
@@ -54,6 +54,7 @@ cleanup() {
 trap cleanup EXIT
 [[ ! -e "$artifact" && ! -e "$checksum" ]]
 
+"$(dirname "${BASH_SOURCE[0]}")/require_mutation_lease.sh" >/dev/null
 bao operator raft snapshot save "$plain" >/dev/null
 [[ -s "$plain" ]]
 plain_sha="$(sha256sum "$plain" | awk '{print $1}')"

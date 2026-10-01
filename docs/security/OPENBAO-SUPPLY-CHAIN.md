@@ -74,6 +74,14 @@ on these conditions:
   `scannerVersion`, `highCriticalObservations`, database date) to agree with
   the committed report, and it requires every statement to be reviewed on or
   after the scan date.
+- The plugin report must use Trivy schema 2 and contain a `gobinary` result
+  whose target is the plugin command (`codestra-jwt-replay`). A scan of an
+  empty or wrong directory has zero findings. It cannot pass as a clean plugin
+  scan.
+
+`scripts/verify_branch_promotion.py` fails closed on an unset or unsupported
+event. `workflow_dispatch` is accepted only on a protected branch or an
+admissible `remediation/*` / `sync/openbao-upstream-*` head.
 
 Open blockers (the gates stay red until each is resolved; neither is waived):
 
@@ -86,6 +94,17 @@ Open blockers (the gates stay red until each is resolved; neither is waived):
    `govulncheck -mode=binary` on both binaries is the appropriate evidence for
    a security-owner disposition. Without it, the fix is a rebuild that drops
    the package.
+   Local observation on 2026-09-25, recorded as input for that review. It is
+   not a disposition and adds no VEX statement. `/usr/bin/bao` was copied from
+   the exact pinned image digest (file sha256
+   `8d18052337908a74f0d7dfacc8da7a1bff5f8a4ab6a2ad136fbf5ffeae243b00`).
+   `go tool nm` lists symbols from 23 `golang.org/x/crypto/*` packages but none
+   from `golang.org/x/crypto/openpgp`. `go version -m` shows
+   `golang.org/x/crypto v0.53.0` and `github.com/ProtonMail/go-crypto v1.4.1`.
+   Still missing: `govulncheck -mode=binary` output for both binaries (the
+   local install timed out on the network) and the same symbol check on the
+   plugin binary. The plugin binary requires the pinned Go 1.25.13 toolchain
+   to rebuild.
 2. The review mechanism requires CODEOWNER approval, and `.github/CODEOWNERS`
    names a single owner (`@kazan555`). That owner's collaborator acceptance
    is still pending (see the production certification). Independent security

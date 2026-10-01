@@ -24,7 +24,7 @@ for validator in \
 done
 
 python3 -m unittest discover -s tests -p 'test_*.py' -v
-for suite in tests/policy tests/security tests/unit tests/integration tests/recovery tests/runtime; do
+for suite in tests/policy tests/security tests/unit tests/integration tests/recovery tests/runtime tests/change_kernel; do
   python3 -m unittest discover -s "$suite" -p 'test_*.py' -v
 done
 

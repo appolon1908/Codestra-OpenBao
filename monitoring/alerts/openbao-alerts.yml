@@ -193,3 +193,27 @@ groups:
           severity: warning
         annotations:
           summary: OpenBao permission denials are sustained; correlate with the audit stream in Loki
+
+      - alert: OpenBaoChangeNeedsReconciliation
+        expr: increase(openbao_v3_change_failures_total[30m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: An OpenBao change is in retry, reconciliation or dead letter; its outcome must be read back before any new attempt
+
+      - alert: OpenBaoSecurityCriticalDrift
+        expr: openbao_v3_drift_total{classification=~"SECURITY_CRITICAL|DISABLED"} > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Live OpenBao differs from protected source on audit, authentication or a disabled engine; correct only through a reviewed saved plan
+
+      - alert: OpenBaoChangeOutboxBacklog
+        expr: openbao_v3_outbox_pending > 50
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Change-kernel outbox messages are not being delivered
