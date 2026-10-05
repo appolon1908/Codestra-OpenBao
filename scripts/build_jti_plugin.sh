@@ -54,7 +54,21 @@ mkdir -p "$(dirname "$overlay")"
   go mod tidy
   [[ "$(sha256sum go.mod | awk '{print $1}')" == "$(jq -r .overlayGoModSha256 "$manifest")" ]]
   [[ "$(sha256sum go.sum | awk '{print $1}')" == "$(jq -r .overlayGoSumSha256 "$manifest")" ]]
-  while IFS=  export CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+  while IFS=$'\t' read -r module version; do
+    [[ "$(go list -m -f '{{.Version}}' "$module")" == "$version" ]]
+  done < <(jq -r '.resolvedSecurityModules | to_entries[] | [.key,.value] | @tsv' "$manifest")
+  while IFS=$'\t' read -r vulnerability module prohibited_prefix; do
+    [[ "$vulnerability" == "GO-2026-5932" ]]
+    [[ "$module" == "golang.org/x/crypto" ]]
+    deps="$(go list -deps ./codestra/plugins/codestra-jwt-replay/...)"
+    if printf '%s\n' "$deps" | grep -Fxq "$prohibited_prefix" ||
+       printf '%s\n' "$deps" | grep -Fq "$prohibited_prefix/"; then
+      echo "MODULE_ONLY_ADVISORY_CONTROL=FAIL vulnerability=$vulnerability package=$prohibited_prefix" >&2
+      exit 1
+    fi
+    echo "MODULE_ONLY_ADVISORY_CONTROL=PASS vulnerability=$vulnerability prohibited_package_absent=$prohibited_prefix"
+  done < <(jq -r '.moduleOnlyAdvisoryControls[] | [.vulnerabilityId,.module,.prohibitedPackagePrefix] | @tsv' "$manifest")
+  export CGO_ENABLED=0 GOOS=linux GOARCH=amd64
   go test ./codestra/plugins/codestra-jwt-replay
   go build -trimpath -buildvcs=false -ldflags='-buildid=' \
     -o "$work/codestra-jwt-replay" \
