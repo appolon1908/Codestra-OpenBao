@@ -21,6 +21,9 @@ class BranchPromotionTests(unittest.TestCase):
             "remediation/pas239-fresh-20260924",
             "remediation/openbao-production-completion-v1",
             "sync/openbao-upstream-v2.6.2",
+            "feature/openbao-hardening",
+            "fix/openbao-validation",
+            "ci/environment-promotion-pipeline-20261005",
         ):
             self.assertTrue(MODULE.promotion_allowed("development", head), head)
             MODULE.check_event("pull_request", "development", head, "")
@@ -30,7 +33,8 @@ class BranchPromotionTests(unittest.TestCase):
             "remediation/",
             "sync/openbao-upstream-",
             "lane-e/openbao-security-closure-20260920",
-            "feature/remediation/x",
+            "feature/",
+            "ci/",
             "Remediation/x",
             "sync/upstream/v2.6.2",
             "main",
@@ -66,9 +70,15 @@ class BranchPromotionTests(unittest.TestCase):
             MODULE.main(["--event", ""])
 
     def test_dispatch_only_on_protected_or_admissible_heads(self) -> None:
-        for ref in (*MODULE.PROTECTED, "remediation/pas239-final-20260925", "sync/openbao-upstream-v2.6.2"):
+        for ref in (
+            *MODULE.PROTECTED,
+            "remediation/pas239-final-20260925",
+            "sync/openbao-upstream-v2.6.2",
+            "feature/openbao-hardening",
+            "ci/environment-promotion-pipeline-20261005",
+        ):
             MODULE.check_event("workflow_dispatch", "", "", ref)
-        for ref in ("", "feature/x", "remediation/", "lane-e/openbao-security-closure-20260920"):
+        for ref in ("", "feature/", "ci/", "remediation/", "lane-e/openbao-security-closure-20260920"):
             with self.subTest(ref=ref):
                 with self.assertRaisesRegex(SystemExit, "unexpected dispatch branch"):
                     MODULE.check_event("workflow_dispatch", "", "", ref)
