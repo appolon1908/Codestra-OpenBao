@@ -1,6 +1,6 @@
 version: 1
 repository: Codestra-OpenBao
-repository_url: https://github.com/ingtrader21-spec/Codestra-OpenBao.git
+repository_url: https://github.com/appolon1908/Codestra-OpenBao.git
 canonical_path: /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao
 active_worktree: /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao
 active_branch: governance/single-active-lane-20260926
