@@ -56,12 +56,19 @@ class PluginSupplyChainTests(unittest.TestCase):
         self.assertGreaterEqual(components, 50)
         self.assertEqual(observations, 0)
 
-    def test_committed_plugin_exposes_the_unscored_finding(self) -> None:
-        with self.assertRaisesRegex(
-            ValueError,
-            r"plugin_unresolved_high_critical:1:GO-2026-5932:golang.org/x/crypto:UNKNOWN$",
-        ):
-            MODULE.validate(MODULE.SBOM, MODULE.REPORT, now=NOW)
+    def test_committed_plugin_accepts_reviewed_module_only_advisory(self) -> None:
+        components, observations = MODULE.validate(MODULE.SBOM, MODULE.REPORT, now=NOW)
+        self.assertGreaterEqual(components, 50)
+        self.assertEqual(observations, 0)
+        manifest = MODULE.load(MODULE.MANIFEST)
+        controls = manifest.get("moduleOnlyAdvisoryControls", [])
+        self.assertEqual(len(controls), 1)
+        self.assertEqual(controls[0]["vulnerabilityId"], "GO-2026-5932")
+        self.assertEqual(controls[0]["module"], "golang.org/x/crypto")
+        self.assertEqual(
+            controls[0]["prohibitedPackagePrefix"],
+            "golang.org/x/crypto/openpgp",
+        )
 
     def test_high_critical_and_unknown_findings_fail_closed(self) -> None:
         for severity in ("HIGH", "CRITICAL", "UNKNOWN"):
