@@ -120,6 +120,21 @@
       "owner": "platform-security",
       "reviewedAt": "2026-09-20",
       "expiresAt": "2026-10-20"
+    },
+    {
+      "vulnerabilityIds": [
+        "GO-2026-5932"
+      ],
+      "packageNames": [
+        "golang.org/x/crypto"
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact": "The Go advisory applies specifically to the deprecated golang.org/x/crypto/openpgp package family. The exact locked OpenBao source contains no imports of golang.org/x/crypto/openpgp, and the finding is emitted at module scope because x/crypto is present for other packages. The production runtime remains fail-closed and this disposition does not authorize runtime activation.",
+      "evidence": "https://pkg.go.dev/vuln/GO-2026-5932; exact upstream source dd9c19c37a878cf4a81b18efb8d6f0599c7da923 searched for golang.org/x/crypto/openpgp with no matches; repository vulnerability gate continues to fail closed on every other UNKNOWN/HIGH/CRITICAL finding.",
+      "owner": "platform-security",
+      "reviewedAt": "2026-10-05",
+      "expiresAt": "2026-11-05"
     }
   ]
 }
