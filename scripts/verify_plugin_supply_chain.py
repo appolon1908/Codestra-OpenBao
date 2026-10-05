@@ -221,6 +221,11 @@ def validate(
     require_report_scan_binding(report, manifest, scan_root)
     require_current_scan(report, now)
 
+    module_only_controls = {
+        (str(item.get("vulnerabilityId")), str(item.get("module"))): item
+        for item in manifest.get("moduleOnlyAdvisoryControls", [])
+        if isinstance(item, dict)
+    }
     unresolved: list[str] = []
     for result in report["Results"]:
         vulnerabilities = result.get("Vulnerabilities")
@@ -242,6 +247,15 @@ def validate(
             if severity not in KNOWN_SEVERITIES:
                 raise ValueError(f"plugin_unrecognized_severity:{identity}:{severity!r}")
             if severity in GATED_SEVERITIES:
+                control = module_only_controls.get((vulnerability_id, package_name))
+                if control is not None:
+                    if severity != "UNKNOWN":
+                        raise ValueError(
+                            f"module_only_advisory_severity_drift:{identity}:{severity}"
+                        )
+                    if control.get("prohibitedPackagePrefix") != "golang.org/x/crypto/openpgp":
+                        raise ValueError(f"module_only_advisory_control_drift:{identity}")
+                    continue
                 unresolved.append(f"{identity}:{severity}")
     if unresolved:
         raise ValueError(
