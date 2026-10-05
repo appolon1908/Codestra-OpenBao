@@ -138,7 +138,7 @@ class RepositorySecurityTests(unittest.TestCase):
         self.assertIn(
             "ingtrader21-spec/Codestra-Telemetry/.github/workflows/"
             "reusable-validate-service-contract.yml@"
-            "c35d880a730ca5206d445e8a9a688cb465ae2ad4",
+            "3517fb3b9bb1077d92419a5c13c07d703ffbebf6",
             VALIDATOR.APPROVED_ACTION_REFERENCES,
         )
         mutable = self.sync_source.replace(
