@@ -39,7 +39,7 @@ fi
 
 overlay="$work/openbao/codestra/plugins/codestra-jwt-replay"
 mkdir -p "$(dirname "$overlay")"
-  cp -R "$repo_root/plugins/codestra-jwt-replay" "$overlay"
+cp -R "$repo_root/plugins/codestra-jwt-replay" "$overlay"
 
 (
   cd "$work/openbao"
@@ -54,58 +54,11 @@ mkdir -p "$(dirname "$overlay")"
   go mod tidy
   [[ "$(sha256sum go.mod | awk '{print $1}')" == "$(jq -r .overlayGoModSha256 "$manifest")" ]]
   [[ "$(sha256sum go.sum | awk '{print $1}')" == "$(jq -r .overlayGoSumSha256 "$manifest")" ]]
-  while IFS=  export CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-  go test ./codestra/plugins/codestra-jwt-replay
-  go build -trimpath -buildvcs=false -ldflags='-buildid=' \
-    -o "$work/codestra-jwt-replay" \
-    ./codestra/plugins/codestra-jwt-replay/cmd
-  if [[ -n "${OPENBAO_TEST_TOKEN_OUTPUT:-}" ]]; then
-    go run ./codestra/plugins/codestra-jwt-replay/testtoken \
-      --output "$OPENBAO_TEST_TOKEN_OUTPUT"
-  fi
-)
-
-install -m 0555 "$work/codestra-jwt-replay" "$output"
-(
-  cd "$(dirname "$output")"
-  sha256sum "$(basename "$output")" > "$(basename "$output").sha256"
-)
-chmod 0444 "$output.sha256"
-actual_plugin_sha="$(awk '{print $1}' "$output.sha256")"
-expected_plugin_sha="$(jq -r .binarySha256 "$manifest")"
-[[ "$actual_plugin_sha" == "$expected_plugin_sha" ]]
-
-echo 'OPENBAO_JTI_PLUGIN_BUILD=PASS'
-echo "OPENBAO_UPSTREAM_SHA=${upstream_sha}"
-echo "OPENBAO_PLUGIN_SHA256=${actual_plugin_sha}"
-\t' read -r module version; do
+  while IFS=$'\t' read -r module version; do
     [[ "$(go list -m -f '{{.Version}}' "$module")" == "$version" ]]
   done < <(jq -r '.resolvedSecurityModules | to_entries[] | [.key,.value] | @tsv' "$manifest")
-  while IFS=  export CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-  go test ./codestra/plugins/codestra-jwt-replay
-  go build -trimpath -buildvcs=false -ldflags='-buildid=' \
-    -o "$work/codestra-jwt-replay" \
-    ./codestra/plugins/codestra-jwt-replay/cmd
-  if [[ -n "${OPENBAO_TEST_TOKEN_OUTPUT:-}" ]]; then
-    go run ./codestra/plugins/codestra-jwt-replay/testtoken \
-      --output "$OPENBAO_TEST_TOKEN_OUTPUT"
-  fi
-)
 
-install -m 0555 "$work/codestra-jwt-replay" "$output"
-(
-  cd "$(dirname "$output")"
-  sha256sum "$(basename "$output")" > "$(basename "$output").sha256"
-)
-chmod 0444 "$output.sha256"
-actual_plugin_sha="$(awk '{print $1}' "$output.sha256")"
-expected_plugin_sha="$(jq -r .binarySha256 "$manifest")"
-[[ "$actual_plugin_sha" == "$expected_plugin_sha" ]]
-
-echo 'OPENBAO_JTI_PLUGIN_BUILD=PASS'
-echo "OPENBAO_UPSTREAM_SHA=${upstream_sha}"
-echo "OPENBAO_PLUGIN_SHA256=${actual_plugin_sha}"
-\t' read -r vulnerability module prohibited_prefix; do
+  while IFS=$'\t' read -r vulnerability module prohibited_prefix; do
     [[ "$vulnerability" == "GO-2026-5932" ]]
     [[ "$module" == "golang.org/x/crypto" ]]
     deps="$(go list -deps ./codestra/plugins/codestra-jwt-replay/...)"
@@ -116,6 +69,7 @@ echo "OPENBAO_PLUGIN_SHA256=${actual_plugin_sha}"
     fi
     echo "MODULE_ONLY_ADVISORY_CONTROL=PASS vulnerability=$vulnerability prohibited_package_absent=$prohibited_prefix"
   done < <(jq -r '.moduleOnlyAdvisoryControls[] | [.vulnerabilityId,.module,.prohibitedPackagePrefix] | @tsv' "$manifest")
+
   export CGO_ENABLED=0 GOOS=linux GOARCH=amd64
   go test ./codestra/plugins/codestra-jwt-replay
   go build -trimpath -buildvcs=false -ldflags='-buildid=' \
