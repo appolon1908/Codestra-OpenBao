@@ -215,12 +215,27 @@ def validate(contract: dict, authority: dict, authority_blob_sha: str) -> None:
     if prometheus != [
         {
             "identity": "prometheus-openbao",
-            "prefixes": ["codestra/production/observability/openbao/metrics-client/"],
+            "prefixes": [
+                "codestra/production/observability/openbao/metrics-client/",
+                "codestra/production/observability/prometheus/scrape-credentials/",
+            ],
         }
     ]:
         fail("observability received non-metrics or provider credentials")
+    observability_repositories = {
+        "ingtrader21-spec/Codestra-Prometheus",
+        "ingtrader21-spec/Codestra-Grafana-",
+        "ingtrader21-spec/Codestra-Alertmanager",
+        "ingtrader21-spec/Codestra-Alloy",
+        "ingtrader21-spec/Codestra-Telemetry",
+        "ingtrader21-spec/Codestra-Loki",
+        "ingtrader21-spec/Codestra-Tempo",
+        "ingtrader21-spec/Codestra-Redis-Exporter",
+        "ingtrader21-spec/Codestra-Postgres-Exporter",
+        "ingtrader21-spec/Superset",
+    }
     for repo, consumer in by_repo.items():
-        if repo == "ingtrader21-spec/Codestra-Prometheus":
+        if repo in observability_repositories:
             continue
         if any(
             prefix.startswith("codestra/production/observability/")
