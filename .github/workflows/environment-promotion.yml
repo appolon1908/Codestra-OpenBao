@@ -2,7 +2,7 @@ name: Environment promotion contract
 
 on:
   pull_request:
-    branches: [development, testing, staging, production]
+    branches: [development, test, staging, production, main]
   workflow_dispatch:
 
 permissions:
