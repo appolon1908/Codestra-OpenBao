@@ -1,0 +1,26 @@
+{
+  "prefix": "ob",
+  "development": "development",
+  "test": "test",
+  "staging": "staging",
+  "production": "production",
+  "main": "main",
+  "sections": [
+    "ob-01-kv",
+    "ob-02-auth",
+    "ob-03-policy",
+    "ob-04-dynamic-creds",
+    "ob-05-pki",
+    "ob-06-transit",
+    "ob-07-rotation",
+    "ob-08-tenancy",
+    "ob-09-audit",
+    "ob-10-ha",
+    "ob-11-seal",
+    "ob-12-dr",
+    "ob-13-control-api",
+    "ob-14-integrations",
+    "ob-15-cicd",
+    "ob-16-certification"
+  ]
+}
