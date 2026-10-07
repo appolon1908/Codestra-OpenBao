@@ -1,7 +1,7 @@
 # Codestra Agent Rules
 
 1. Work only in the assigned subsection branch/worktree.
-2. Follow: subsection -> section -> development -> testing -> staging -> production.
+2. Follow: subsection -> section -> development -> test -> staging -> production.
 3. Fetch first; require a clean tree; record base SHA; check ahead/behind.
 4. Never overwrite unknown local work or bypass conflicts.
 5. Every atomic task needs code, tests, docs/contracts/migrations when applicable.
