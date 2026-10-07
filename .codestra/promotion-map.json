@@ -1,6 +1,6 @@
 {
   "prefix": "ob",
-  "testing": "testing",
+  "testing": "test",
   "staging": "staging",
   "production": "production"
 }
