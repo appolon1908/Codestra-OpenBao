@@ -2,9 +2,9 @@ name: Codestra Environment CI/CD
 
 on:
   push:
-    branches: [development, testing, staging, production]
+    branches: [development, test, staging, production]
   pull_request:
-    branches: [development, testing, staging, production]
+    branches: [development, test, staging, production]
   workflow_dispatch:
 
 permissions:
@@ -19,9 +19,10 @@ jobs:
     name: Validate source and environment contract
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Git whitespace validation
         run: git diff --check
@@ -56,7 +57,7 @@ jobs:
             "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" "$GITHUB_SHA" "$GITHUB_EVENT_NAME" \
             > .codestra-ci/candidate.txt
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: codestra-candidate-${{ github.sha }}
           path: .codestra-ci/candidate.txt
@@ -65,7 +66,7 @@ jobs:
   deploy:
     name: Gated middleware-host deployment
     needs: ci
-    if: github.event_name == 'push' && vars.CODESTRA_DEPLOY_ENABLED == 'true'
+    if: github.event_name == 'push' && vars.CODESTRA_DEPLOY_ENABLED == 'true' && (github.ref_name != 'production' || vars.PRODUCTION_GO == 'YES')
     runs-on: [self-hosted, linux, x64, codestra-middleware]
     environment: ${{ github.ref_name }}
     steps:
