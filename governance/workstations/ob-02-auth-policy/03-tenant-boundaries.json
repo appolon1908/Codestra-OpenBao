@@ -1,0 +1,24 @@
+{
+  "workstation": "openbao::ob-02-auth-policy::03-tenant-boundaries",
+  "product": "openbao",
+  "section": "ob-02-auth-policy",
+  "subsection": "03-tenant-boundaries",
+  "branch": "subsection/ob-02-auth-policy--03-tenant-boundaries",
+  "parent_branch": "section/ob-02-auth-policy",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-02-auth-policy/subsections/03-tenant-boundaries/repo",
+  "depends_on": [
+    "openbao::ob-01-runtime::03-unseal-readiness",
+    "openbao::ob-02-auth-policy::02-policies"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

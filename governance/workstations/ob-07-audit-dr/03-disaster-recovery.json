@@ -1,0 +1,24 @@
+{
+  "workstation": "openbao::ob-07-audit-dr::03-disaster-recovery",
+  "product": "openbao",
+  "section": "ob-07-audit-dr",
+  "subsection": "03-disaster-recovery",
+  "branch": "subsection/ob-07-audit-dr--03-disaster-recovery",
+  "parent_branch": "section/ob-07-audit-dr",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-07-audit-dr/subsections/03-disaster-recovery/repo",
+  "depends_on": [
+    "openbao::ob-06-integrations::03-n8n-providers",
+    "openbao::ob-07-audit-dr::02-backup-restore"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

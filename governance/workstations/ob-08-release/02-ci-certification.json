@@ -1,0 +1,24 @@
+{
+  "workstation": "openbao::ob-08-release::02-ci-certification",
+  "product": "openbao",
+  "section": "ob-08-release",
+  "subsection": "02-ci-certification",
+  "branch": "subsection/ob-08-release--02-ci-certification",
+  "parent_branch": "section/ob-08-release",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-08-release/subsections/02-ci-certification/repo",
+  "depends_on": [
+    "openbao::ob-07-audit-dr::03-disaster-recovery",
+    "openbao::ob-08-release::01-security"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

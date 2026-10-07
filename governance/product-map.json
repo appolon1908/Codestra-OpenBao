@@ -1,0 +1,109 @@
+{
+  "product": "openbao",
+  "repository": "appolon1908/Codestra-OpenBao",
+  "promotion_chain": [
+    "subsection/*",
+    "section/*",
+    "development",
+    "testing",
+    "staging",
+    "production"
+  ],
+  "sections": [
+    {
+      "section": "ob-01-runtime",
+      "branch": "section/ob-01-runtime",
+      "depends_on": [],
+      "subsections": [
+        "01-runtime-config",
+        "02-storage-ha",
+        "03-unseal-readiness"
+      ]
+    },
+    {
+      "section": "ob-02-auth-policy",
+      "branch": "section/ob-02-auth-policy",
+      "depends_on": [
+        "ob-01-runtime"
+      ],
+      "subsections": [
+        "01-auth-methods",
+        "02-policies",
+        "03-tenant-boundaries"
+      ]
+    },
+    {
+      "section": "ob-03-dynamic-credentials",
+      "branch": "section/ob-03-dynamic-credentials",
+      "depends_on": [
+        "ob-02-auth-policy"
+      ],
+      "subsections": [
+        "01-database",
+        "02-cloud-service",
+        "03-lease-revocation"
+      ]
+    },
+    {
+      "section": "ob-04-pki-transit",
+      "branch": "section/ob-04-pki-transit",
+      "depends_on": [
+        "ob-02-auth-policy"
+      ],
+      "subsections": [
+        "01-pki",
+        "02-transit",
+        "03-key-lifecycle"
+      ]
+    },
+    {
+      "section": "ob-05-rotation",
+      "branch": "section/ob-05-rotation",
+      "depends_on": [
+        "ob-03-dynamic-credentials",
+        "ob-04-pki-transit"
+      ],
+      "subsections": [
+        "01-secret-rotation",
+        "02-cert-rotation",
+        "03-breakglass"
+      ]
+    },
+    {
+      "section": "ob-06-integrations",
+      "branch": "section/ob-06-integrations",
+      "depends_on": [
+        "ob-05-rotation"
+      ],
+      "subsections": [
+        "01-middleware",
+        "02-keycloak-kong-caddy",
+        "03-n8n-providers"
+      ]
+    },
+    {
+      "section": "ob-07-audit-dr",
+      "branch": "section/ob-07-audit-dr",
+      "depends_on": [
+        "ob-06-integrations"
+      ],
+      "subsections": [
+        "01-audit",
+        "02-backup-restore",
+        "03-disaster-recovery"
+      ]
+    },
+    {
+      "section": "ob-08-release",
+      "branch": "section/ob-08-release",
+      "depends_on": [
+        "ob-07-audit-dr"
+      ],
+      "subsections": [
+        "01-security",
+        "02-ci-certification",
+        "03-promotion-rollback"
+      ]
+    }
+  ]
+}

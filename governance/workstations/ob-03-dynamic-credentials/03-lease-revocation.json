@@ -1,0 +1,24 @@
+{
+  "workstation": "openbao::ob-03-dynamic-credentials::03-lease-revocation",
+  "product": "openbao",
+  "section": "ob-03-dynamic-credentials",
+  "subsection": "03-lease-revocation",
+  "branch": "subsection/ob-03-dynamic-credentials--03-lease-revocation",
+  "parent_branch": "section/ob-03-dynamic-credentials",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-03-dynamic-credentials/subsections/03-lease-revocation/repo",
+  "depends_on": [
+    "openbao::ob-02-auth-policy::03-tenant-boundaries",
+    "openbao::ob-03-dynamic-credentials::02-cloud-service"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "workstation": "openbao::ob-08-release::03-promotion-rollback",
+  "product": "openbao",
+  "section": "ob-08-release",
+  "subsection": "03-promotion-rollback",
+  "branch": "subsection/ob-08-release--03-promotion-rollback",
+  "parent_branch": "section/ob-08-release",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-08-release/subsections/03-promotion-rollback/repo",
+  "depends_on": [
+    "openbao::ob-07-audit-dr::03-disaster-recovery",
+    "openbao::ob-08-release::02-ci-certification"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

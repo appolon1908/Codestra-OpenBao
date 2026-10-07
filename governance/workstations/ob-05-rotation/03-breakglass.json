@@ -1,0 +1,25 @@
+{
+  "workstation": "openbao::ob-05-rotation::03-breakglass",
+  "product": "openbao",
+  "section": "ob-05-rotation",
+  "subsection": "03-breakglass",
+  "branch": "subsection/ob-05-rotation--03-breakglass",
+  "parent_branch": "section/ob-05-rotation",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-05-rotation/subsections/03-breakglass/repo",
+  "depends_on": [
+    "openbao::ob-03-dynamic-credentials::03-lease-revocation",
+    "openbao::ob-04-pki-transit::03-key-lifecycle",
+    "openbao::ob-05-rotation::02-cert-rotation"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "workstation": "openbao::ob-05-rotation::02-cert-rotation",
+  "product": "openbao",
+  "section": "ob-05-rotation",
+  "subsection": "02-cert-rotation",
+  "branch": "subsection/ob-05-rotation--02-cert-rotation",
+  "parent_branch": "section/ob-05-rotation",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-05-rotation/subsections/02-cert-rotation/repo",
+  "depends_on": [
+    "openbao::ob-03-dynamic-credentials::03-lease-revocation",
+    "openbao::ob-04-pki-transit::03-key-lifecycle",
+    "openbao::ob-05-rotation::01-secret-rotation"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

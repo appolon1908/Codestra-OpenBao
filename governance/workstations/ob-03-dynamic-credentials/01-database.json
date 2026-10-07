@@ -1,0 +1,23 @@
+{
+  "workstation": "openbao::ob-03-dynamic-credentials::01-database",
+  "product": "openbao",
+  "section": "ob-03-dynamic-credentials",
+  "subsection": "01-database",
+  "branch": "subsection/ob-03-dynamic-credentials--01-database",
+  "parent_branch": "section/ob-03-dynamic-credentials",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-03-dynamic-credentials/subsections/01-database/repo",
+  "depends_on": [
+    "openbao::ob-02-auth-policy::03-tenant-boundaries"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}
