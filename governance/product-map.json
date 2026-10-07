@@ -3,106 +3,222 @@
   "repository": "appolon1908/Codestra-OpenBao",
   "promotion_chain": [
     "subsection/*",
-    "section/*",
+    "section",
     "development",
-    "testing",
+    "test",
     "staging",
-    "production"
+    "production",
+    "main"
   ],
   "sections": [
     {
-      "section": "ob-01-runtime",
-      "branch": "section/ob-01-runtime",
+      "section": "ob-01-kv",
+      "branch": "ob-01-kv",
       "depends_on": [],
       "subsections": [
-        "01-runtime-config",
-        "02-storage-ha",
-        "03-unseal-readiness"
+        "01-engine",
+        "02-versioning",
+        "03-deletion",
+        "04-retention"
       ]
     },
     {
-      "section": "ob-02-auth-policy",
-      "branch": "section/ob-02-auth-policy",
+      "section": "ob-02-auth",
+      "branch": "ob-02-auth",
       "depends_on": [
-        "ob-01-runtime"
+        "ob-01-kv"
       ],
       "subsections": [
-        "01-auth-methods",
-        "02-policies",
-        "03-tenant-boundaries"
+        "01-approle",
+        "02-jwt",
+        "03-kubernetes",
+        "04-machine-auth",
+        "05-rotation"
       ]
     },
     {
-      "section": "ob-03-dynamic-credentials",
-      "branch": "section/ob-03-dynamic-credentials",
+      "section": "ob-03-policy",
+      "branch": "ob-03-policy",
       "depends_on": [
-        "ob-02-auth-policy"
+        "ob-02-auth"
       ],
       "subsections": [
-        "01-database",
-        "02-cloud-service",
-        "03-lease-revocation"
+        "01-policy-model",
+        "02-least-privilege",
+        "03-tenant-policy",
+        "04-policy-tests"
       ]
     },
     {
-      "section": "ob-04-pki-transit",
-      "branch": "section/ob-04-pki-transit",
+      "section": "ob-04-dynamic-creds",
+      "branch": "ob-04-dynamic-creds",
       "depends_on": [
-        "ob-02-auth-policy"
+        "ob-03-policy"
       ],
       "subsections": [
-        "01-pki",
-        "02-transit",
-        "03-key-lifecycle"
+        "01-postgres",
+        "02-service-creds",
+        "03-ttl",
+        "04-revocation"
       ]
     },
     {
-      "section": "ob-05-rotation",
-      "branch": "section/ob-05-rotation",
+      "section": "ob-05-pki",
+      "branch": "ob-05-pki",
       "depends_on": [
-        "ob-03-dynamic-credentials",
-        "ob-04-pki-transit"
+        "ob-04-dynamic-creds"
+      ],
+      "subsections": [
+        "01-root",
+        "02-intermediate",
+        "03-roles",
+        "04-issuance",
+        "05-revocation"
+      ]
+    },
+    {
+      "section": "ob-06-transit",
+      "branch": "ob-06-transit",
+      "depends_on": [
+        "ob-05-pki"
+      ],
+      "subsections": [
+        "01-encrypt",
+        "02-decrypt",
+        "03-key-versioning",
+        "04-rotation"
+      ]
+    },
+    {
+      "section": "ob-07-rotation",
+      "branch": "ob-07-rotation",
+      "depends_on": [
+        "ob-06-transit"
       ],
       "subsections": [
         "01-secret-rotation",
-        "02-cert-rotation",
-        "03-breakglass"
+        "02-key-rotation",
+        "03-db-rotation",
+        "04-cert-rotation"
       ]
     },
     {
-      "section": "ob-06-integrations",
-      "branch": "section/ob-06-integrations",
+      "section": "ob-08-tenancy",
+      "branch": "ob-08-tenancy",
       "depends_on": [
-        "ob-05-rotation"
+        "ob-07-rotation"
+      ],
+      "subsections": [
+        "01-namespaces",
+        "02-path-isolation",
+        "03-policy-isolation",
+        "04-audit-isolation"
+      ]
+    },
+    {
+      "section": "ob-09-audit",
+      "branch": "ob-09-audit",
+      "depends_on": [
+        "ob-08-tenancy"
+      ],
+      "subsections": [
+        "01-devices",
+        "02-format",
+        "03-integrity",
+        "04-retention"
+      ]
+    },
+    {
+      "section": "ob-10-ha",
+      "branch": "ob-10-ha",
+      "depends_on": [
+        "ob-09-audit"
+      ],
+      "subsections": [
+        "01-raft",
+        "02-leader",
+        "03-failover",
+        "04-autopilot"
+      ]
+    },
+    {
+      "section": "ob-11-seal",
+      "branch": "ob-11-seal",
+      "depends_on": [
+        "ob-10-ha"
+      ],
+      "subsections": [
+        "01-unseal",
+        "02-recovery",
+        "03-auto-unseal",
+        "04-ceremony"
+      ]
+    },
+    {
+      "section": "ob-12-dr",
+      "branch": "ob-12-dr",
+      "depends_on": [
+        "ob-11-seal"
+      ],
+      "subsections": [
+        "01-snapshots",
+        "02-restore",
+        "03-rpo-rto",
+        "04-offline-copy"
+      ]
+    },
+    {
+      "section": "ob-13-control-api",
+      "branch": "ob-13-control-api",
+      "depends_on": [
+        "ob-12-dr"
+      ],
+      "subsections": [
+        "01-secret-request",
+        "02-lease-api",
+        "03-revoke-api",
+        "04-audit-api"
+      ]
+    },
+    {
+      "section": "ob-14-integrations",
+      "branch": "ob-14-integrations",
+      "depends_on": [
+        "ob-13-control-api"
       ],
       "subsections": [
         "01-middleware",
-        "02-keycloak-kong-caddy",
-        "03-n8n-providers"
+        "02-keycloak",
+        "03-kong",
+        "04-caddy",
+        "05-n8n"
       ]
     },
     {
-      "section": "ob-07-audit-dr",
-      "branch": "section/ob-07-audit-dr",
+      "section": "ob-15-cicd",
+      "branch": "ob-15-cicd",
       "depends_on": [
-        "ob-06-integrations"
+        "ob-14-integrations"
       ],
       "subsections": [
-        "01-audit",
-        "02-backup-restore",
-        "03-disaster-recovery"
+        "01-policy-lint",
+        "02-config-test",
+        "03-security",
+        "04-promotion"
       ]
     },
     {
-      "section": "ob-08-release",
-      "branch": "section/ob-08-release",
+      "section": "ob-16-certification",
+      "branch": "ob-16-certification",
       "depends_on": [
-        "ob-07-audit-dr"
+        "ob-15-cicd"
       ],
       "subsections": [
-        "01-security",
-        "02-ci-certification",
-        "03-promotion-rollback"
+        "01-rotation",
+        "02-revocation",
+        "03-failover",
+        "04-compromise",
+        "05-release"
       ]
     }
   ]

@@ -1,27 +1,22 @@
 {
-  "version": 1,
-  "accepted_promotions": [
-    {
-      "head": "subsection/*",
-      "base": "section/*",
-      "relation": "matching-section-required"
-    },
-    {
-      "head": "section/*",
-      "base": "development"
-    },
-    {
-      "head": "development",
-      "base": "testing"
-    },
-    {
-      "head": "testing",
-      "base": "staging"
-    },
-    {
-      "head": "staging",
-      "base": "production"
-    }
+  "version": 2,
+  "authoritative_sections": [
+    "ob-01-kv",
+    "ob-02-auth",
+    "ob-03-policy",
+    "ob-04-dynamic-creds",
+    "ob-05-pki",
+    "ob-06-transit",
+    "ob-07-rotation",
+    "ob-08-tenancy",
+    "ob-09-audit",
+    "ob-10-ha",
+    "ob-11-seal",
+    "ob-12-dr",
+    "ob-13-control-api",
+    "ob-14-integrations",
+    "ob-15-cicd",
+    "ob-16-certification"
   ],
   "bootstrap_exception": {
     "head": "governance/development-control-plane-v1",
@@ -30,12 +25,13 @@
   "protected": [
     "main",
     "development",
-    "testing",
+    "test",
     "staging",
     "production"
   ],
   "required_status_contexts": [
     "promotion-guard",
+    "control-plane-certification",
     "promotion-gate"
   ],
   "production_defaults": {
