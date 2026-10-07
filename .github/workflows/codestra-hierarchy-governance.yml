@@ -1,36 +1,44 @@
 name: Codestra Hierarchy Governance
 on:
-  pull_request:
-    branches: [main, development, testing, staging, production]
+  pull_request_target:
+
 permissions:
   contents: read
   pull-requests: read
+
 jobs:
   promotion-guard:
     name: promotion-guard
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Check out trusted default branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
       - name: Enforce promotion path
         env:
-          GITHUB_HEAD_REF: ${{ github.head_ref }}
-          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          GITHUB_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          GITHUB_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          GITHUB_BASE_REPO: ${{ github.event.pull_request.base.repo.full_name }}
         run: python3 governance/promotion_guard.py
 
   control-plane-certification:
     name: control-plane-certification
+    needs: promotion-guard
     runs-on: [self-hosted, linux, x64, codestra-control-plane]
     timeout-minutes: 5
+    env:
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      BASE_REF: ${{ github.event.pull_request.base.ref }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - name: Verify exact SHA in Codestra development control plane
         run: |
-          /srv/codestra/dev-platform/control-plane/bin/codestra-github-check \
-            --product 'openbao' \
-            --repo-path '/srv/codestra/apps/Codestra-OpenBao' \
-            --head-ref '${{ github.head_ref }}' \
-            --base-ref '${{ github.base_ref }}' \
-            --head-sha '${{ github.event.pull_request.head.sha }}'
+          /srv/codestra/dev-platform/control-plane/bin/codestra-github-check             --product openbao             --repo-path /srv/codestra/apps/Codestra-OpenBao             --head-ref "$HEAD_REF"             --base-ref "$BASE_REF"             --head-sha "$HEAD_SHA"

@@ -1,5 +1,23 @@
 {
-  "version": 2,
+  "schema_version": 2,
+  "promotion": [
+    "subsection",
+    "section",
+    "development",
+    "test",
+    "staging",
+    "production",
+    "main"
+  ],
+  "statuses": [
+    "NOT_STARTED",
+    "CLAIMED",
+    "IN_PROGRESS",
+    "BLOCKED",
+    "REVIEW",
+    "COMPLETE",
+    "CERTIFIED"
+  ],
   "authoritative_sections": [
     "ob-01-kv",
     "ob-02-auth",
@@ -18,25 +36,9 @@
     "ob-15-cicd",
     "ob-16-certification"
   ],
-  "bootstrap_exception": {
-    "head": "governance/development-control-plane-v1",
-    "base": "main"
-  },
-  "protected": [
-    "main",
-    "development",
-    "test",
-    "staging",
-    "production"
-  ],
-  "required_status_contexts": [
-    "promotion-guard",
-    "control-plane-certification",
-    "promotion-gate"
-  ],
   "production_defaults": {
     "PRODUCTION_GO": "NO",
     "LIVE_CAPABILITIES_ENABLED": "NO",
-    "EXTERNAL_EFFECTS": "false"
+    "EXTERNAL_EFFECTS": false
   }
 }
