@@ -1,0 +1,23 @@
+{
+  "workstation": "openbao::ob-01-runtime::03-unseal-readiness",
+  "product": "openbao",
+  "section": "ob-01-runtime",
+  "subsection": "03-unseal-readiness",
+  "branch": "subsection/ob-01-runtime--03-unseal-readiness",
+  "parent_branch": "section/ob-01-runtime",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-01-runtime/subsections/03-unseal-readiness/repo",
+  "depends_on": [
+    "openbao::ob-01-runtime::02-storage-ha"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

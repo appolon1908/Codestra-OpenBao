@@ -1,0 +1,23 @@
+{
+  "workstation": "openbao::ob-07-audit-dr::01-audit",
+  "product": "openbao",
+  "section": "ob-07-audit-dr",
+  "subsection": "01-audit",
+  "branch": "subsection/ob-07-audit-dr--01-audit",
+  "parent_branch": "section/ob-07-audit-dr",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-07-audit-dr/subsections/01-audit/repo",
+  "depends_on": [
+    "openbao::ob-06-integrations::03-n8n-providers"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

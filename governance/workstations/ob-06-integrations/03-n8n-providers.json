@@ -1,0 +1,24 @@
+{
+  "workstation": "openbao::ob-06-integrations::03-n8n-providers",
+  "product": "openbao",
+  "section": "ob-06-integrations",
+  "subsection": "03-n8n-providers",
+  "branch": "subsection/ob-06-integrations--03-n8n-providers",
+  "parent_branch": "section/ob-06-integrations",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-06-integrations/subsections/03-n8n-providers/repo",
+  "depends_on": [
+    "openbao::ob-05-rotation::03-breakglass",
+    "openbao::ob-06-integrations::02-keycloak-kong-caddy"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

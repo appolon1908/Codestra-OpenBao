@@ -1,0 +1,23 @@
+{
+  "workstation": "openbao::ob-06-integrations::01-middleware",
+  "product": "openbao",
+  "section": "ob-06-integrations",
+  "subsection": "01-middleware",
+  "branch": "subsection/ob-06-integrations--01-middleware",
+  "parent_branch": "section/ob-06-integrations",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-06-integrations/subsections/01-middleware/repo",
+  "depends_on": [
+    "openbao::ob-05-rotation::03-breakglass"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

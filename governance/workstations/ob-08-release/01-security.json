@@ -1,0 +1,23 @@
+{
+  "workstation": "openbao::ob-08-release::01-security",
+  "product": "openbao",
+  "section": "ob-08-release",
+  "subsection": "01-security",
+  "branch": "subsection/ob-08-release--01-security",
+  "parent_branch": "section/ob-08-release",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-08-release/subsections/01-security/repo",
+  "depends_on": [
+    "openbao::ob-07-audit-dr::03-disaster-recovery"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

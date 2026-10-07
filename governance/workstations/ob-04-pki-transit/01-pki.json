@@ -1,0 +1,23 @@
+{
+  "workstation": "openbao::ob-04-pki-transit::01-pki",
+  "product": "openbao",
+  "section": "ob-04-pki-transit",
+  "subsection": "01-pki",
+  "branch": "subsection/ob-04-pki-transit--01-pki",
+  "parent_branch": "section/ob-04-pki-transit",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-04-pki-transit/subsections/01-pki/repo",
+  "depends_on": [
+    "openbao::ob-02-auth-policy::03-tenant-boundaries"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "workstation": "openbao::ob-01-runtime::02-storage-ha",
+  "product": "openbao",
+  "section": "ob-01-runtime",
+  "subsection": "02-storage-ha",
+  "branch": "subsection/ob-01-runtime--02-storage-ha",
+  "parent_branch": "section/ob-01-runtime",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Codestra-OpenBao/sections/ob-01-runtime/subsections/02-storage-ha/repo",
+  "depends_on": [
+    "openbao::ob-01-runtime::01-runtime-config"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}
