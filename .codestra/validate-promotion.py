@@ -8,7 +8,7 @@ maps={
 "Kong":("kg","testing","staging","production"),
 "Caddy":("cd","testing","staging","production"),
 "Keycloak":("kc","testing","staging","production"),
-"Codestra-OpenBao":("ob","testing","staging","production"),
+"Codestra-OpenBao":("ob","test","staging","production"),
 "N8N":("n8","testing/environment","staging","production/environment"),
 }
 if repo not in maps:
