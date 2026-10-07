@@ -1,0 +1,31 @@
+name: Workstation governance
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+
+jobs:
+  promotion-gate:
+    name: promotion-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate promotion from trusted default branch
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.event.pull_request.base.repo.full_name }}
+          REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "PROMOTION_ALLOWED=NO fork_source_not_allowed"
+            exit 1
+          fi
+          mkdir -p trusted-policy
+          gh api             -H "Accept: application/vnd.github.raw+json"             "/repos/$REPOSITORY/contents/.codestra/validate-promotion.py?ref=$DEFAULT_BRANCH"             > trusted-policy/validate-promotion.py
+          python3 trusted-policy/validate-promotion.py "$HEAD_REF" "$BASE_REF"
