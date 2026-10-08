@@ -4,13 +4,15 @@
 Reviewed implementation heads may target development; protected environment branches
 may only move forward through the promotion chain. With --require-current, a local
 head must also contain the given development ref, so stale work is rejected before
-a pull request is opened.
+a pull request is opened. The ob-15-cicd section also accepts strictly named
+subsection heads for review, without changing environment promotions.
 """
 
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -50,6 +52,10 @@ def admissible_development_head(head: str) -> bool:
 def promotion_allowed(base: str, head: str) -> bool:
     if base == "development":
         return admissible_development_head(head)
+    # A section review can accept only its own strictly named subsection;
+    # it does not grant promotion into testing, staging, or production.
+    if base == "ob-15-cicd":
+        return re.fullmatch(r"subsection/ob-15-cicd--[a-z0-9]+(?:-[a-z0-9]+)*", head) is not None
     return base in PROMOTIONS and head == PROMOTIONS[base]
 
 

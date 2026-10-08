@@ -55,6 +55,26 @@ class BranchPromotionTests(unittest.TestCase):
             self.assertFalse(MODULE.promotion_allowed(base, "remediation/x"))
         self.assertFalse(MODULE.promotion_allowed("feature", "remediation/x"))
 
+    def test_section_subsection_review_cannot_promote_environments(self) -> None:
+        valid = "subsection/ob-15-cicd--environment-promotion-repair-v2"
+        self.assertTrue(MODULE.promotion_allowed("ob-15-cicd", valid))
+        MODULE.check_event("pull_request", "ob-15-cicd", valid, "")
+        for invalid in (
+            "subsection/ob-15-cicd--",
+            "subsection/ob-14-integrations--different-section",
+            "subsection/ob-15-cicd/alternate",
+            "ob-15-cicd",
+            "development",
+            "subsection/ob-15-cicd--environment-promotion-repair-v2/../main",
+            "subsection/ob-15-cicd--Uppercase",
+        ):
+            with self.subTest(head=invalid):
+                self.assertFalse(MODULE.promotion_allowed("ob-15-cicd", invalid))
+                with self.assertRaisesRegex(SystemExit, "OPENBAO_BRANCH_PROMOTION=FAIL"):
+                    MODULE.check_event("pull_request", "ob-15-cicd", invalid, "")
+        for target in ("testing", "test", "staging", "production", "main"):
+            self.assertFalse(MODULE.promotion_allowed(target, valid))
+
     def test_push_only_to_protected_branches(self) -> None:
         for ref in MODULE.PROTECTED:
             MODULE.check_event("push", "", "", ref)
