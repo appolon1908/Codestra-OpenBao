@@ -1,0 +1,27 @@
+{
+  "critical_count": 0,
+  "cve_2026_56851_detected": false,
+  "high_count": 0,
+  "image_config_digest": "sha256:c49c0f523d66da8f70aa942e50ecd5dd7863ee7620306c0267a96ec5353d3239",
+  "image_platform": "linux/amd64",
+  "image_reference": "ghcr.io/openbao/openbao@sha256:a36ea8c27f0dcff5757664ad080425f96d3b6b2f33db3e76c4e2d3112fb17005",
+  "image_tag_observed": "2.7.1",
+  "production_go": false,
+  "promotion_authorized": false,
+  "reason": "GO-2026-5932 has no independently certified package-reachability disposition for this exact digest",
+  "report_path": "artifacts/security/openbao-v2.7.1-linux-amd64.trivy.json",
+  "report_sha256": "8d0106346206886c42c49d605f292c8ba97e07d21114f137da6dd31a330f936e",
+  "scan_timestamp": "2026-10-08T15:04:04.340407351-04:00",
+  "scanner": "trivy",
+  "scanner_version": "0.75.0",
+  "schema_version": 1,
+  "unknown_count": 1,
+  "unknown_findings": [
+    {
+      "installed_version": "v0.56.0",
+      "package_name": "golang.org/x/crypto",
+      "vulnerability_id": "GO-2026-5932"
+    }
+  ],
+  "upstream_release_commit_observed": "a5db72cef75c24b920ade02065b18dd8eb666bac"
+}
