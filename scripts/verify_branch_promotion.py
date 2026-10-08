@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Enforce the reviewed promotion path: development -> test -> staging -> production -> main.
 
-Only remediation/* and sync/openbao-upstream-* heads may target development. With
---require-current, a local head must also contain the given development ref, so a
-stale remediation head is rejected before a pull request is opened.
+Reviewed implementation heads may target development; protected environment branches
+may only move forward through the promotion chain. With --require-current, a local
+head must also contain the given development ref, so stale work is rejected before
+a pull request is opened.
 """
 
 from __future__ import annotations
@@ -16,7 +17,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTECTED = ("development", "test", "staging", "production", "main")
-DEVELOPMENT_HEAD_PREFIXES = ("remediation/", "sync/openbao-upstream-")
+DEVELOPMENT_HEAD_PREFIXES = (
+    "remediation/",
+    "sync/openbao-upstream-",
+    "feat/",
+    "feature/",
+    "fix/",
+    "chore/",
+    "docs/",
+    "refactor/",
+    "ci/",
+)
 PROMOTIONS = {
     "test": "development",
     "staging": "test",

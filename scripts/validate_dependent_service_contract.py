@@ -30,30 +30,51 @@ CANONICAL_FRAMEWORK = {
     "initialize": "scripts/initialize.sh",
     "apply": "scripts/apply_saved_plan.sh",
     "verify": "scripts/verify.sh",
+    "secret_references": "config/secret-references.v1.json",
+    "secret_reference_schema": "contracts/secret-reference.v1.schema.json",
 }
 
 # Repository-to-identity admission is intentionally explicit. Prefixes and
 # operations are derived from the canonical production authority below.
 REQUIRED_CONSUMERS = {
-    "appolon1908-hue/Middleware-": ("middleware-api", "middleware-worker"),
-    "appolon1908-hue/Odoo": ("odoo-integration",),
-    "appolon1908-hue/klyrow.com": ("klyrow-email-adapter",),
-    "appolon1908-hue/telnexa": ("telnexa-sms-adapter",),
-    "appolon1908-hue/Vicidialer-Codestra": ("vicidial-adapter",),
-    "appolon1908-hue/Codestra-Prometheus": ("prometheus-openbao",),
+    "ingtrader21-spec/Middleware-": ("middleware-api", "middleware-worker"),
+    "ingtrader21-spec/Odoo": ("odoo-integration",),
+    "ingtrader21-spec/klyrow.com": ("klyrow-email-adapter",),
+    "ingtrader21-spec/telnexa": ("telnexa-sms-adapter",),
+    "ingtrader21-spec/Vicidialer-Codestra": ("vicidial-adapter",),
+    "ingtrader21-spec/Codestra-Prometheus": ("prometheus-openbao",),
+    "ingtrader21-spec/Codestra-Grafana-": ("grafana-runtime",),
+    "ingtrader21-spec/Codestra-Alertmanager": ("alertmanager",),
+    "ingtrader21-spec/Codestra-Alloy": ("alloy-collector",),
+    "ingtrader21-spec/Codestra-Telemetry": ("otel-gateway",),
+    "ingtrader21-spec/Codestra-Loki": ("loki-runtime",),
+    "ingtrader21-spec/Codestra-Tempo": ("tempo-runtime",),
+    "ingtrader21-spec/Codestra-Redis-Exporter": ("redis-exporter",),
+    "ingtrader21-spec/Codestra-Postgres-Exporter": ("postgres-exporter",),
+    "ingtrader21-spec/Superset": ("superset-analytics",),
 }
 CONSTRAINTS = {
-    "appolon1908-hue/Odoo": "credentials only; no business data",
-    "appolon1908-hue/klyrow.com": "live email delivery remains separately gated",
-    "appolon1908-hue/telnexa": "live SMS remains separately gated",
-    "appolon1908-hue/Vicidialer-Codestra": "production dialing remains separately gated",
-    "appolon1908-hue/Codestra-Prometheus": "private OpenBao metrics client material only",
+    "ingtrader21-spec/Odoo": "credentials only; no business data",
+    "ingtrader21-spec/klyrow.com": "live email delivery remains separately gated",
+    "ingtrader21-spec/telnexa": "live SMS remains separately gated",
+    "ingtrader21-spec/Vicidialer-Codestra": "production dialing remains separately gated",
+    "ingtrader21-spec/Codestra-Prometheus": "private OpenBao metrics client material and reviewed scrape credentials only; sys/metrics read is the only system capability",
+    "ingtrader21-spec/Codestra-Grafana-": "datasource, Middleware read-token and OIDC client secret only; dashboards never display a secret",
+    "ingtrader21-spec/Codestra-Alertmanager": "Middleware webhook bearer only; incidents remain in Middleware",
+    "ingtrader21-spec/Codestra-Alloy": "push and gateway credentials only; redaction runs before export",
+    "ingtrader21-spec/Codestra-Telemetry": "receiver and exporter credentials only",
+    "ingtrader21-spec/Codestra-Loki": "object-storage credentials only",
+    "ingtrader21-spec/Codestra-Tempo": "object-storage credentials only",
+    "ingtrader21-spec/Codestra-Redis-Exporter": "monitoring-only Redis ACL user",
+    "ingtrader21-spec/Codestra-Postgres-Exporter": "pg_monitor role only; no application data access",
+    "ingtrader21-spec/Superset": "read-only analytics identity; never Prometheus, Loki, Tempo or OpenBao administration",
 }
 NO_DIRECT_IDENTITY_REPOSITORIES = {
-    "appolon1908-hue/Keycloak",
-    "appolon1908-hue/Codestra-Grafana-",
-    "appolon1908-hue/Superset",
-    "appolon1908-hue/Codestra-Alertmanager",
+    "ingtrader21-spec/Keycloak",
+    "ingtrader21-spec/Codestra-Node-Exporter",
+    "ingtrader21-spec/Codestra-cAdvisor",
+    "ingtrader21-spec/Codestra-Blackbox-Exporter",
+    "ingtrader21-spec/Caddy",
 }
 REQUIRED_RUNTIME_GATES = {
     "exact_scanned_image": True,
@@ -113,11 +134,12 @@ def validate(contract: dict, authority: dict, authority_blob_sha: str) -> None:
         "integrations_without_openbao_workload_identity",
         "required_runtime_gates",
         "invariants",
+        "decisions",
     }:
         fail("top-level fields drifted")
-    if contract["schema_version"] != "1.1":
+    if contract["schema_version"] != "1.2":
         fail("schema version drifted")
-    if contract["authority"] != "appolon1908-hue/Codestra-OpenBao":
+    if contract["authority"] != "ingtrader21-spec/Codestra-OpenBao":
         fail("repository authority drifted")
     if contract["environment"] != "production":
         fail("dependency contract must be production-scoped")
@@ -189,16 +211,31 @@ def validate(contract: dict, authority: dict, authority_blob_sha: str) -> None:
         if access != expected_access:
             fail(f"identity or prefix drifted:{repo}")
 
-    prometheus = by_repo["appolon1908-hue/Codestra-Prometheus"]["access"]
+    prometheus = by_repo["ingtrader21-spec/Codestra-Prometheus"]["access"]
     if prometheus != [
         {
             "identity": "prometheus-openbao",
-            "prefixes": ["codestra/production/observability/openbao/metrics-client/"],
+            "prefixes": [
+                "codestra/production/observability/openbao/metrics-client/",
+                "codestra/production/observability/prometheus/scrape-credentials/",
+            ],
         }
     ]:
         fail("observability received non-metrics or provider credentials")
+    observability_repositories = {
+        "ingtrader21-spec/Codestra-Prometheus",
+        "ingtrader21-spec/Codestra-Grafana-",
+        "ingtrader21-spec/Codestra-Alertmanager",
+        "ingtrader21-spec/Codestra-Alloy",
+        "ingtrader21-spec/Codestra-Telemetry",
+        "ingtrader21-spec/Codestra-Loki",
+        "ingtrader21-spec/Codestra-Tempo",
+        "ingtrader21-spec/Codestra-Redis-Exporter",
+        "ingtrader21-spec/Codestra-Postgres-Exporter",
+        "ingtrader21-spec/Superset",
+    }
     for repo, consumer in by_repo.items():
-        if repo == "appolon1908-hue/Codestra-Prometheus":
+        if repo in observability_repositories:
             continue
         if any(
             prefix.startswith("codestra/production/observability/")
