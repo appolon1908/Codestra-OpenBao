@@ -31,7 +31,8 @@ printf '%s\n' \
   'subjectAltName=DNS:codestra-bao-production-01,DNS:localhost,IP:127.0.0.1' \
   'extendedKeyUsage=serverAuth' > "$verify_dir/server-ext"
 openssl x509 -req -in "$verify_dir/server-csr" \
-  -CA "$verify_dir/ca-cert" -CAkey "$verify_dir/ca-key" -CAcreateserial \
+  -CA "$verify_dir/ca-cert" -CAkey "$verify_dir/ca-key" \
+  -CAserial "$verify_dir/ca-cert.srl" -CAcreateserial \
   -out "$verify_dir/server-cert" -days 1 -extfile "$verify_dir/server-ext" \
   >/dev/null 2>&1
 chmod 644 "$verify_dir"/*
