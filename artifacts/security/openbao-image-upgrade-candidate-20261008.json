@@ -3,6 +3,8 @@
   "cve_2026_56851_detected": false,
   "high_count": 0,
   "image_config_digest": "sha256:c49c0f523d66da8f70aa942e50ecd5dd7863ee7620306c0267a96ec5353d3239",
+  "image_index_digest": "sha256:6d2b93856e3fcf7b18ad855a0b51eaba474dc8b79cf554379ea32034797d2acf",
+  "image_manifest_digest": "sha256:a36ea8c27f0dcff5757664ad080425f96d3b6b2f33db3e76c4e2d3112fb17005",
   "image_platform": "linux/amd64",
   "image_reference": "ghcr.io/openbao/openbao@sha256:a36ea8c27f0dcff5757664ad080425f96d3b6b2f33db3e76c4e2d3112fb17005",
   "image_tag_observed": "2.7.1",

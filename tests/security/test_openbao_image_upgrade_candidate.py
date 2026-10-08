@@ -50,6 +50,37 @@ class UpgradeCandidateTests(unittest.TestCase):
         with self.assertRaisesRegex(GATE.CandidateError, "mutable"):
             self.evaluate(summary=summary)
 
+    def test_image_manifest_and_index_cannot_be_swapped_or_guessed(self) -> None:
+        summary = copy.deepcopy(self.summary)
+        summary["image_manifest_digest"] = summary["image_index_digest"]
+        with self.assertRaisesRegex(GATE.CandidateError, "manifest digest"):
+            self.evaluate(summary=summary)
+        summary = copy.deepcopy(self.summary)
+        summary["image_index_digest"] = summary["image_manifest_digest"]
+        with self.assertRaisesRegex(GATE.CandidateError, "conflated"):
+            self.evaluate(summary=summary)
+        summary = copy.deepcopy(self.summary)
+        summary["image_manifest_digest"] = "sha256:" + "a" * 64
+        with self.assertRaisesRegex(GATE.CandidateError, "manifest digest"):
+            self.evaluate(summary=summary)
+        summary = copy.deepcopy(self.summary)
+        summary.pop("image_manifest_digest")
+        with self.assertRaisesRegex(GATE.CandidateError, "manifest digest"):
+            self.evaluate(summary=summary)
+
+    def test_manifest_cannot_read_outside_reviewed_security_artifact(self) -> None:
+        for tampered in (
+            "../../etc/passwd",
+            "artifacts/security/../secrets.json",
+            "/etc/passwd",
+            "artifacts/security/another-report.json",
+        ):
+            with self.subTest(tampered=tampered):
+                summary = copy.deepcopy(self.summary)
+                summary["report_path"] = tampered
+                with self.assertRaisesRegex(GATE.CandidateError, "report path"):
+                    GATE.load_report_path(summary)
+
     def test_unknown_findings_cannot_be_downgraded(self) -> None:
         summary = copy.deepcopy(self.summary)
         summary["unknown_count"] = 0

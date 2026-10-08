@@ -1,0 +1,67 @@
+name: OpenBao candidate scan evidence (not promotion)
+on:
+  pull_request:
+    paths:
+      - 'artifacts/security/openbao-v2.7.1-linux-amd64.trivy.json'
+      - 'artifacts/security/openbao-image-upgrade-candidate-20261008.json'
+      - 'scripts/validate_openbao_image_upgrade_candidate.py'
+      - 'tests/security/test_openbao_image_upgrade_candidate.py'
+      - '.github/workflows/openbao-candidate-evidence.yml'
+  push:
+    branches: [development, test, staging, production]
+    paths:
+      - 'artifacts/security/openbao-v2.7.1-linux-amd64.trivy.json'
+      - 'artifacts/security/openbao-image-upgrade-candidate-20261008.json'
+      - 'scripts/validate_openbao_image_upgrade_candidate.py'
+      - 'tests/security/test_openbao_image_upgrade_candidate.py'
+      - '.github/workflows/openbao-candidate-evidence.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbao-candidate-evidence-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  candidate-evidence:
+    name: OpenBao / candidate-evidence-integrity (not release)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact non-deploying candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Run path/digest and negative-case regressions
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          PYTHONDONTWRITEBYTECODE=1 python3 tests/security/test_openbao_image_upgrade_candidate.py
+          git diff --check
+      - name: Require recorded candidate to remain blocked
+        run: |
+          set -Eeuo pipefail
+          # Evidence integrity is never a release/promotion approval.
+          result="$(mktemp)"
+          trap 'rm -f "$result"' EXIT
+          code=0
+          python3 scripts/validate_openbao_image_upgrade_candidate.py > "$result" || code=$?
+          test "$code" -eq 1
+          python3 - "$result" <<'PYEOF'
+          import json,sys
+          from pathlib import Path
+          decision=json.loads(Path(sys.argv[1]).read_text())
+          if decision.get('status') != 'BLOCKED':
+              raise SystemExit('candidate incorrectly marked releasable')
+          blockers=decision.get('blockers')
+          if not isinstance(blockers,list) or not any('GO-2026-5932' in x for x in blockers):
+              raise SystemExit('required unknown-severity advisory missing')
+          print('OPENBAO_CANDIDATE_EVIDENCE_INTEGRITY=PASS')
+          print('OPENBAO_CANDIDATE_RELEASE_GO=NO')
+          PYEOF

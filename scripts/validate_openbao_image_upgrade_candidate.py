@@ -34,6 +34,16 @@ def validate(summary: dict, report: dict, raw_report: bytes, now: dt.datetime | 
         raise CandidateError("report does not match the immutable image")
     if summary.get("image_platform") != "linux/amd64":
         raise CandidateError("unreviewed image platform")
+    manifest = summary.get("image_manifest_digest", "")
+    index = summary.get("image_index_digest", "")
+    if not isinstance(manifest, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", manifest):
+        raise CandidateError("image manifest digest missing or malformed")
+    if reference != "ghcr.io/openbao/openbao@" + manifest:
+        raise CandidateError("scan reference is not bound to the image manifest digest")
+    if not isinstance(index, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", index):
+        raise CandidateError("OCI index digest missing or malformed")
+    if index == manifest:
+        raise CandidateError("image manifest and OCI index identities were conflated")
     if report.get("ArtifactID") != summary.get("image_config_digest"):
         raise CandidateError("image config digest mismatch")
     if hashlib.sha256(raw_report).hexdigest() != summary.get("report_sha256"):
@@ -90,12 +100,27 @@ def validate(summary: dict, report: dict, raw_report: bytes, now: dt.datetime | 
             "blockers": sorted(set(blockers)), "image_reference": reference, **counts}
 
 
+def load_report_path(summary: dict) -> Path:
+    """Resolve only the reviewed immutable report, refusing symlink/path traversal."""
+    if not isinstance(summary, dict):
+        raise CandidateError("summary must be an object")
+    report_name = summary.get("report_path")
+    if report_name != "artifacts/security/openbao-v2.7.1-linux-amd64.trivy.json":
+        raise CandidateError("report path outside reviewed security artifact")
+    report_path = ROOT / report_name
+    if report_path.is_symlink() or not report_path.resolve().is_relative_to(ROOT.resolve()):
+        raise CandidateError("report symlink or path escaped repository")
+    if not report_path.is_file() or report_path.stat().st_size > 10_000_000:
+        raise CandidateError("report missing or oversized")
+    return report_path
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--summary", type=Path, default=DEFAULT_SUMMARY)
     args = parser.parse_args()
     summary = json.loads(args.summary.read_text(encoding="utf-8"))
-    report_path = ROOT / summary["report_path"]
+    report_path = load_report_path(summary)
     raw = report_path.read_bytes()
     result = validate(summary, json.loads(raw), raw)
     print(json.dumps(result, sort_keys=True))

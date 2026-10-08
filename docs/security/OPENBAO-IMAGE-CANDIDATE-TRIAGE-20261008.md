@@ -38,3 +38,17 @@ identity, digest, scan freshness, counter integrity, and fail-closed severity po
 
 `STAGING_GO=NO`; `PRODUCTION_GO=NO`; `LIVE_CAPABILITIES_ENABLED=NO`; `EXTERNAL_EFFECTS=false`.
 No initialization, unseal, secret write, DNS change, provider activation, runtime deployment, forced branch update, or protection bypass is authorized by this assessment.
+
+## Candidate evidence CI contract
+
+The non-deploying OpenBao candidate evidence workflow checks this source commit,
+validates OCI index/manifest/config distinctions, checks the committed scan
+checksum and freshness, and executes regression tests for forged digests,
+tampered scan findings, authorization flags, and report path traversal. Its
+**expected safe outcome** is a passing evidence-integrity job with
+OPENBAO_CANDIDATE_RELEASE_GO=NO; the underlying image validator itself exits
+nonzero because GO-2026-5932 remains blocked.
+
+The workflow has contents: read only. It does not deploy, change image authority,
+disposition a vulnerability, or certify a protected branch. No workflow
+result substitutes for independent security-owner review of the exact digest.
