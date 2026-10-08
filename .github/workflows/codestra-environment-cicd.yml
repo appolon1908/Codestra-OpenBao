@@ -37,11 +37,24 @@ jobs:
           import py_compile
 
           root = pathlib.Path(".")
+          # These two upstream TypeScript tsconfig files use JSONC syntax.
+          # All other JSON files must parse strictly; no generic upstream exclusion.
+          jsonc_paths = {
+              pathlib.Path("upstream/ui/tsconfig.json"),
+              pathlib.Path("upstream/website/tsconfig.json"),
+          }
+          assert all(path.is_file() for path in jsonc_paths), "reviewed upstream JSONC paths missing"
           for path in root.rglob("*.json"):
               if any(part in {".git", "node_modules", ".venv", "vendor"} for part in path.parts):
                   continue
-              with path.open("r", encoding="utf-8") as handle:
-                  json.load(handle)
+              if path in jsonc_paths:
+                  print(f"JSONC_SOURCE_DELEGATED={path}")
+                  continue
+              try:
+                  with path.open("r", encoding="utf-8") as handle:
+                      json.load(handle)
+              except (json.JSONDecodeError, UnicodeError) as exc:
+                  raise SystemExit(f"JSON_VALIDATION_FAIL={path}: {exc}") from exc
 
           for path in root.rglob("*.py"):
               if any(part in {".git", "node_modules", ".venv", "vendor"} for part in path.parts):
