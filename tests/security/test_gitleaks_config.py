@@ -9,12 +9,12 @@ ROOT = Path(__file__).resolve().parents[2]
 class GitleaksConfigTests(unittest.TestCase):
     def test_only_exact_documented_false_positives_are_allowed(self) -> None:
         source = (ROOT / ".gitleaks.toml").read_text(encoding="utf-8")
-        self.assertEqual(source.count("[[allowlists]]"), 6)
+        self.assertEqual(source.count("[[allowlists]]"), 7)
         self.assertIn("useDefault = true", source)
         self.assertIn(r"^codestra/runtime-v1/desired-state\.json$", source)
         self.assertIn(r"^15m-default-1h-maximum$", source)
         self.assertIn("Non-secret database lease policy duration", source)
-        self.assertEqual(source.count('condition = "AND"'), 5)
+        self.assertEqual(source.count('condition = "AND"'), 6)
         self.assertEqual(source.count('regexTarget = "line"'), 5)
         self.assertIn(r"^upstream/builtin/credential/token/cli\.go$", source)
         self.assertIn(r"^upstream/builtin/credential/jwt/path_config\.go$", source)
@@ -34,6 +34,14 @@ class GitleaksConfigTests(unittest.TestCase):
         )
         self.assertIn("reviewed 2026-09-01 by platform-security", source)
         self.assertIn("reviewed 2026-09-04 by platform-security", source)
+        # The additional historical finding is a non-secret section name.
+        # Preserve exact rule, path and matched-token scope; no blanket commit
+        # exceptions, token patterns or disabled default rules are permitted.
+        self.assertEqual(source.count('targetRules = ["generic-api-key"]'), 1)
+        self.assertEqual(source.count('regexTarget = "match"'), 1)
+        self.assertIn(r"(^|/)\.codestra/validate-promotion\.py$", source)
+        self.assertIn(r'^ob-13-control-api\",\"ob-14-integrations\"$', source)
+        self.assertNotIn("disabledRules", source)
 
 
 if __name__ == "__main__":
