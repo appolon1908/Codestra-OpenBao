@@ -19,9 +19,10 @@ jobs:
     name: Validate source and environment contract
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Git whitespace validation
         run: git diff --check
@@ -36,11 +37,24 @@ jobs:
           import py_compile
 
           root = pathlib.Path(".")
+          # Exactly two inherited TypeScript tsconfig JSONC files are exempt
+          # from strict JSON parsing. All other repository JSON stays strict.
+          jsonc_paths = {
+              pathlib.Path("upstream/ui/tsconfig.json"),
+              pathlib.Path("upstream/website/tsconfig.json"),
+          }
+          assert all(path.is_file() for path in jsonc_paths), "reviewed upstream JSONC paths missing"
           for path in root.rglob("*.json"):
               if any(part in {".git", "node_modules", ".venv", "vendor"} for part in path.parts):
                   continue
-              with path.open("r", encoding="utf-8") as handle:
-                  json.load(handle)
+              if path in jsonc_paths:
+                  print(f"JSONC_SOURCE_DELEGATED={path}")
+                  continue
+              try:
+                  with path.open("r", encoding="utf-8") as handle:
+                      json.load(handle)
+              except (json.JSONDecodeError, UnicodeError) as exc:
+                  raise SystemExit(f"JSON_VALIDATION_FAIL={path}: {exc}") from exc
 
           for path in root.rglob("*.py"):
               if any(part in {".git", "node_modules", ".venv", "vendor"} for part in path.parts):
@@ -56,7 +70,7 @@ jobs:
             "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" "$GITHUB_SHA" "$GITHUB_EVENT_NAME" \
             > .codestra-ci/candidate.txt
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: codestra-candidate-${{ github.sha }}
           path: .codestra-ci/candidate.txt

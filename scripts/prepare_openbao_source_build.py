@@ -40,18 +40,67 @@ REVIEWED_TRANSITIVE_VERSIONS = {
 }
 REVIEWED_GRPC_GRAPH_VERSIONS = {
     "cel.dev/expr": "v0.25.2",
-    "golang.org/x/crypto": "v0.55.0",
-    "golang.org/x/mod": "v0.38.0",
-    "golang.org/x/net": "v0.58.0",
-    "golang.org/x/sync": "v0.22.0",
-    "golang.org/x/sys": "v0.47.0",
-    "golang.org/x/term": "v0.45.0",
-    "golang.org/x/text": "v0.41.0",
-    "golang.org/x/tools": "v0.48.0",
+    "golang.org/x/crypto": "v0.57.0",
+    "golang.org/x/mod": "v0.41.0",
+    "golang.org/x/net": "v0.60.0",
+    "golang.org/x/sync": "v0.23.0",
+    "golang.org/x/sys": "v0.48.0",
+    "golang.org/x/term": "v0.46.0",
+    "golang.org/x/text": "v0.42.0",
+    "golang.org/x/tools": "v0.49.0",
     "google.golang.org/genproto/googleapis/api": "v0.0.0-20260526163538-3dc84a4a5aaa",
     "google.golang.org/genproto/googleapis/rpc": "v0.0.0-20260526163538-3dc84a4a5aaa",
     "google.golang.org/grpc": "v1.83.2",
 }
+SOURCE_GO_DIRECTIVE = "1.25.8"
+BUILD_GO_DIRECTIVE = "1.26.0"
+# Exact reviewed MVS dependency graph from the Go module checksum database.
+# This is a build-only transformation: imported upstream source stays byte-identical.
+SECURITY_GRAPH_UPGRADES = {
+    "golang.org/x/crypto": ("v0.55.0", "v0.57.0"),
+    "golang.org/x/mod": ("v0.38.0", "v0.41.0"),
+    "golang.org/x/net": ("v0.58.0", "v0.60.0"),
+    "golang.org/x/sync": ("v0.22.0", "v0.23.0"),
+    "golang.org/x/sys": ("v0.47.0", "v0.48.0"),
+    "golang.org/x/term": ("v0.45.0", "v0.46.0"),
+    "golang.org/x/text": ("v0.41.0", "v0.42.0"),
+    "golang.org/x/tools": ("v0.48.0", "v0.49.0"),
+}
+REVIEWED_SECURITY_SUM_LINES = {
+    "golang.org/x/crypto": (
+        "golang.org/x/crypto v0.57.0 h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M=",
+        "golang.org/x/crypto v0.57.0/go.mod h1:Fdz0i5U6CoizGwLda9DttjSk6qlZo25zYNtR+ycvuZA=",
+    ),
+    "golang.org/x/mod": (
+        "golang.org/x/mod v0.41.0 h1:qJmnOUb4YB+FsEuM3HcWucdZASCPGhsX6uljO6pog0c=",
+        "golang.org/x/mod v0.41.0/go.mod h1:Ek9pY8RKWXwsWvd3rQiHYtMqkjSUV+s1Rj7j4H5Ur6o=",
+    ),
+    "golang.org/x/net": (
+        "golang.org/x/net v0.60.0 h1:79p50tfZlm0J9YfoDsSi639qSXNGVwEzOPLCxM2FsYU=",
+        "golang.org/x/net v0.60.0/go.mod h1:2DA/G1UfVbCpQPeWTmMPGY7Cs2PkBkwu743bVX5PIVg=",
+    ),
+    "golang.org/x/sync": (
+        "golang.org/x/sync v0.23.0 h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk=",
+        "golang.org/x/sync v0.23.0/go.mod h1:sUUOizhqBxiL6pEWpqNLUiaJn1ShEbZ6BBqskPbjZm0=",
+    ),
+    "golang.org/x/sys": (
+        "golang.org/x/sys v0.48.0 h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo=",
+        "golang.org/x/sys v0.48.0/go.mod h1:hNLxWAXmnKAxqDtdwIYC4bM9oQPEecfsnNMuSxOs3og=",
+    ),
+    "golang.org/x/term": (
+        "golang.org/x/term v0.46.0 h1:3+OXuTbaKDgwk8jTi3aSLHRlmWqHEUDUtxnbFigO4YE=",
+        "golang.org/x/term v0.46.0/go.mod h1:+K02xbkittuwc0Am4abfA3Fc+XRGXkvBXNO88NCXPoc=",
+    ),
+    "golang.org/x/text": (
+        "golang.org/x/text v0.42.0 h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI=",
+        "golang.org/x/text v0.42.0/go.mod h1:ojzP1Z+2QtioaF8DTtO8K5q7JWVVYwZKenzujK0Zd0E=",
+    ),
+    "golang.org/x/tools": (
+        "golang.org/x/tools v0.49.0 h1:3NI7VXzL9+1WZD52Dx2ttoPwD5DWrFGpl9mFZDlmisI=",
+        "golang.org/x/tools v0.49.0/go.mod h1:SJNXV9DBKT0UbdttsQjbfJlAE/q+y36++zo3uL3N0Oo=",
+    ),
+}
+
 REVIEWED_TRANSITIVE_SUM_LINES = {
     "github.com/moby/patternmatcher": (
         "github.com/moby/patternmatcher v0.6.1 h1:qlhtafmr6kgMIJjKJMDmMWq7WLkKIo23hsrpR3x084U=",
@@ -141,7 +190,7 @@ def validate_tidy_result(
     final_mod: str,
     final_sum: str,
 ) -> dict[str, list[str]]:
-    if go_directive(final_mod) != go_directive(original_mod):
+    if go_directive(original_mod) != SOURCE_GO_DIRECTIVE or go_directive(final_mod) != BUILD_GO_DIRECTIVE:
         fail("go mod tidy changed the reviewed Go version directive")
 
     original_versions = module_versions(original_mod)
@@ -165,6 +214,8 @@ def validate_tidy_result(
     required_sums = [*NEW_SUM_LINES]
     for lines in REVIEWED_TRANSITIVE_SUM_LINES.values():
         required_sums.extend(lines)
+    for lines in REVIEWED_SECURITY_SUM_LINES.values():
+        required_sums.extend(lines)
     final_sum_lines = set(final_sum.splitlines())
     missing_sums = [line for line in required_sums if line not in final_sum_lines]
     if missing_sums:
@@ -177,7 +228,7 @@ def validate_tidy_result(
 
 
 def run_tidy(source_root: Path, original_mod: str, original_sum: str) -> dict[str, list[str]]:
-    version = go_directive(original_mod)
+    version = BUILD_GO_DIRECTIVE
     env = dict(os.environ)
     env.update({"GOTOOLCHAIN": "local", "GOWORK": "off"})
     completed = subprocess.run(
@@ -224,6 +275,27 @@ def apply(
     for old, new in zip(OLD_SUM_LINES, NEW_SUM_LINES, strict=True):
         updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum archive checksum")
 
+    if go_directive(updated_mod) != SOURCE_GO_DIRECTIVE:
+        fail("source go directive did not match reviewed imported OpenBao version")
+    updated_mod = replace_exactly_once(
+        updated_mod, f"go {SOURCE_GO_DIRECTIVE}\n", f"go {BUILD_GO_DIRECTIVE}\n",
+        "build-only Go module directive",
+    )
+    # Keep the existing direct/indirect qualifiers unchanged; only replace
+    # reviewed exact module versions, rejecting missing or duplicate entries.
+    for module, (old_version, new_version) in SECURITY_GRAPH_UPGRADES.items():
+        pattern = re.compile(
+            rf"(?m)^(?P<indent>[ \t]*){re.escape(module)} {re.escape(old_version)}"
+            r"(?P<qualifier>(?: // indirect)?)$"
+        )
+        matches = list(pattern.finditer(updated_mod))
+        if len(matches) != 1:
+            fail(f"reviewed module requirement missing or repeated: {module}")
+        updated_mod = pattern.sub(
+            lambda match: f"{match.group('indent')}{module} {new_version}{match.group('qualifier')}",
+            updated_mod, count=1,
+        )
+
     go_mod.write_text(updated_mod, encoding="utf-8")
     go_sum.write_text(updated_sum, encoding="utf-8")
 
@@ -250,6 +322,8 @@ def apply(
         "old_version": OLD_VERSION.removeprefix("v"),
         "new_version": NEW_VERSION.removeprefix("v"),
         "go_version": go_directive(original_mod),
+        "build_go_directive": BUILD_GO_DIRECTIVE,
+        "reviewed_security_module_versions": {module: version for module, (_, version) in SECURITY_GRAPH_UPGRADES.items()},
         "go_mod_sha256_before": hashlib.sha256(original_mod.encode()).hexdigest(),
         "go_mod_sha256_after_overlay": overlay_mod_sha256,
         "go_mod_sha256_after": sha256(go_mod),
