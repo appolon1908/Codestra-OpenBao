@@ -45,3 +45,11 @@ condition = "AND"
 regexTarget = "line"
 paths = ['''^scripts/prepare_openbao_source_build\.py$''']
 regexes = ['''^\s*"google\.golang\.org/genproto/googleapis/(?:api|rpc)": "v0\.0\.0-20260526163538-3dc84a4a5aaa",\s*$''']
+
+[[allowlists]]
+description = "2026-10-08 reviewed historical section constants, not credentials; exact old policy path and line only."
+condition = "AND"
+targetRules = ["generic-api-key"]
+regexTarget = "line"
+paths = ['''^\.codestra/validate-promotion\.py$''']
+regexes = ['''^SECTIONS=\["ob-01-kv","ob-02-auth","ob-03-policy","ob-04-dynamic-creds","ob-05-pki","ob-06-transit","ob-07-rotation","ob-08-tenancy","ob-09-audit","ob-10-ha","ob-11-seal","ob-12-dr","ob-13-control-api","ob-14-integrations","ob-15-cicd","ob-16-certification"\]$''']
