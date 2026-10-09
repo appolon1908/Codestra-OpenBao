@@ -44,6 +44,23 @@ class DependentServiceContractTests(unittest.TestCase):
             and item["serviceIdentity"] == identity
         )
 
+    def test_reviewed_monitoring_admission_decision_is_immutable(self) -> None:
+        mutated = copy.deepcopy(self.contract)
+        mutated["decisions"][0]["runtime_binding_authorized"] = True
+        self.reject(contract=mutated)
+
+        mutated = copy.deepcopy(self.contract)
+        mutated["decisions"][0]["id"] = "R7-unreviewed"
+        self.reject(contract=mutated)
+
+        mutated = copy.deepcopy(self.contract)
+        mutated["decisions"][0]["decision"] = "broaden identities"
+        self.reject(contract=mutated)
+
+        mutated = copy.deepcopy(self.contract)
+        mutated["decisions"].append(copy.deepcopy(mutated["decisions"][0]))
+        self.reject(contract=mutated)
+
     def test_canonical_contract_passes(self) -> None:
         VALIDATOR.validate(
             copy.deepcopy(self.contract),
@@ -53,27 +70,27 @@ class DependentServiceContractTests(unittest.TestCase):
 
     def test_unknown_identity_is_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/telnexa")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/telnexa")["access"][0][
             "identity"
         ] = "unknown-sms-adapter"
         self.reject(contract=contract)
 
     def test_prefix_drift_and_parent_broadening_are_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/klyrow.com")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/klyrow.com")["access"][0][
             "prefixes"
         ] = ["codestra/production/middleware/worker/email/other/"]
         self.reject(contract=contract)
 
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/klyrow.com")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/klyrow.com")["access"][0][
             "prefixes"
         ] = ["codestra/production/middleware/worker/email/"]
         self.reject(contract=contract)
 
     def test_cross_environment_prefix_is_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/telnexa")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/telnexa")["access"][0][
             "prefixes"
         ] = ["codestra/staging/middleware/worker/sms/telnexa/"]
         self.reject(contract=contract)
@@ -91,23 +108,23 @@ class DependentServiceContractTests(unittest.TestCase):
 
     def test_observability_provider_credentials_are_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/Codestra-Prometheus")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/Codestra-Prometheus")["access"][0][
             "prefixes"
         ] = ["codestra/production/middleware/worker/sms/telnexa/"]
         self.reject(contract=contract)
 
     def test_odoo_business_data_contract_is_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/Odoo")[
+        self.consumer(contract, "ingtrader21-spec/Odoo")[
             "constraint"
         ] = "credentials and business records"
         self.reject(contract=contract)
 
     def test_browser_facing_consumer_is_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/klyrow.com")[
+        self.consumer(contract, "ingtrader21-spec/klyrow.com")[
             "repo"
-        ] = "appolon1908-hue/Klyrow-frontend"
+        ] = "ingtrader21-spec/Klyrow-frontend"
         self.reject(contract=contract)
 
     def test_runtime_activation_and_business_effects_are_rejected(self) -> None:
@@ -125,7 +142,7 @@ class DependentServiceContractTests(unittest.TestCase):
         contract = copy.deepcopy(self.contract)
         contract["consumers"].append(
             {
-                "repo": "appolon1908-hue/Codestra-Grafana-",
+                "repo": "ingtrader21-spec/Codestra-Grafana-",
                 "access": [
                     {
                         "identity": "prometheus-openbao",
