@@ -53,27 +53,27 @@ class DependentServiceContractTests(unittest.TestCase):
 
     def test_unknown_identity_is_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/telnexa")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/telnexa")["access"][0][
             "identity"
         ] = "unknown-sms-adapter"
         self.reject(contract=contract)
 
     def test_prefix_drift_and_parent_broadening_are_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/klyrow.com")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/klyrow.com")["access"][0][
             "prefixes"
         ] = ["codestra/production/middleware/worker/email/other/"]
         self.reject(contract=contract)
 
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/klyrow.com")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/klyrow.com")["access"][0][
             "prefixes"
         ] = ["codestra/production/middleware/worker/email/"]
         self.reject(contract=contract)
 
     def test_cross_environment_prefix_is_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/telnexa")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/telnexa")["access"][0][
             "prefixes"
         ] = ["codestra/staging/middleware/worker/sms/telnexa/"]
         self.reject(contract=contract)
@@ -91,23 +91,23 @@ class DependentServiceContractTests(unittest.TestCase):
 
     def test_observability_provider_credentials_are_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/Codestra-Prometheus")["access"][0][
+        self.consumer(contract, "ingtrader21-spec/Codestra-Prometheus")["access"][0][
             "prefixes"
         ] = ["codestra/production/middleware/worker/sms/telnexa/"]
         self.reject(contract=contract)
 
     def test_odoo_business_data_contract_is_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/Odoo")[
+        self.consumer(contract, "ingtrader21-spec/Odoo")[
             "constraint"
         ] = "credentials and business records"
         self.reject(contract=contract)
 
     def test_browser_facing_consumer_is_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
-        self.consumer(contract, "appolon1908-hue/klyrow.com")[
+        self.consumer(contract, "ingtrader21-spec/klyrow.com")[
             "repo"
-        ] = "appolon1908-hue/Klyrow-frontend"
+        ] = "ingtrader21-spec/Klyrow-frontend"
         self.reject(contract=contract)
 
     def test_runtime_activation_and_business_effects_are_rejected(self) -> None:
@@ -125,7 +125,7 @@ class DependentServiceContractTests(unittest.TestCase):
         contract = copy.deepcopy(self.contract)
         contract["consumers"].append(
             {
-                "repo": "appolon1908-hue/Codestra-Grafana-",
+                "repo": "ingtrader21-spec/Codestra-Node-Exporter",
                 "access": [
                     {
                         "identity": "prometheus-openbao",
@@ -155,3 +155,12 @@ class DependentServiceContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+def test_v12_monitoring_decision_and_parent_scope_fail_closed():
+    contract = json.loads(VALIDATOR.CONTRACT_PATH.read_text(encoding="utf-8"))
+    authority_bytes = VALIDATOR.AUTHORITY_PATH.read_bytes()
+    authority = json.loads(authority_bytes)
+    contract["decisions"][0]["runtime_binding_authorized"] = True
+    with unittest.TestCase().assertRaisesRegex(SystemExit, "monitoring runtime binding|monitored workload decision"):
+        VALIDATOR.validate(contract, authority, VALIDATOR.git_blob_sha(authority_bytes))
