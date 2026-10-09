@@ -11,6 +11,7 @@ on:
       - "tests/test_prepare_openbao_source_build.py"
       - "tests/test_grpc_go_exact_image_gate.py"
       - "tests/test_source_image_xtext_gate.py"
+      - "tests/test_source_image_xnet060_gate.py"
       - "tests/test_source_image_go1269_security_gate.py"
       - "docs/security/GRPC-GO-CVE-2026-84304-PRODUCTION-GATE.md"
       - ".github/workflows/openbao-source-image-authority.yml"
@@ -25,6 +26,7 @@ on:
       - "tests/test_prepare_openbao_source_build.py"
       - "tests/test_grpc_go_exact_image_gate.py"
       - "tests/test_source_image_xtext_gate.py"
+      - "tests/test_source_image_xnet060_gate.py"
       - "tests/test_source_image_go1269_security_gate.py"
       - "docs/security/GRPC-GO-CVE-2026-84304-PRODUCTION-GATE.md"
       - ".github/workflows/openbao-source-image-authority.yml"
@@ -102,12 +104,14 @@ jobs:
             tests/test_prepare_openbao_source_build.py \
             tests/test_grpc_go_exact_image_gate.py \
             tests/test_source_image_xtext_gate.py \
-            tests/test_source_image_go1269_security_gate.py
+            tests/test_source_image_go1269_security_gate.py \
+            tests/test_source_image_xnet060_gate.py
           python3 scripts/validate_grpc_go_exact_image_gate.py
           python3 tests/test_prepare_openbao_source_build.py
           python3 tests/test_grpc_go_exact_image_gate.py
           python3 tests/test_source_image_xtext_gate.py
           python3 tests/test_source_image_go1269_security_gate.py
+          python3 tests/test_source_image_xnet060_gate.py
           git diff --check
 
       - name: Apply reviewed build-only archive-module patch
@@ -142,7 +146,9 @@ jobs:
             grep -Eq $'dep[[:space:]]+github.com/moby/go-archive[[:space:]]+v0\\.3\\.2([[:space:]]|$)' \
               "${RUNNER_TEMP}/bao-go-version.txt"
             # CVE-2026-56851: require patched x/text in the actual compiled binary.
-            grep -Eq $'dep[[:space:]]+golang.org/x/text[[:space:]]+v0\\.41\\.0([[:space:]]|$)' \
+            grep -Eq $'dep[[:space:]]+golang.org/x/text[[:space:]]+v0\\.42\\.0([[:space:]]|$)' \
+              "${RUNNER_TEMP}/bao-go-version.txt"
+            grep -Eq $'dep[[:space:]]+golang.org/x/net[[:space:]]+v0\\.60\\.0([[:space:]]|$)' \
               "${RUNNER_TEMP}/bao-go-version.txt"
             install -D -m 0555 bin/bao bin/amd64/bao
           )
@@ -264,6 +270,7 @@ jobs:
           python3 tests/test_grpc_go_exact_image_gate.py
           python3 tests/test_source_image_xtext_gate.py
           python3 tests/test_source_image_go1269_security_gate.py
+          python3 tests/test_source_image_xnet060_gate.py
           mkdir -p "${RUNNER_TEMP}/openbao-source-image"
           python3 scripts/prepare_openbao_source_build.py \
             --source-root upstream \
@@ -284,7 +291,9 @@ jobs:
           grep -Eq $'dep[[:space:]]+github.com/moby/go-archive[[:space:]]+v0\\.3\\.2([[:space:]]|$)' \
             "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
           # CVE-2026-56851: require patched x/text in the actual compiled binary.
-          grep -Eq $'dep[[:space:]]+golang.org/x/text[[:space:]]+v0\\.41\\.0([[:space:]]|$)' \
+          grep -Eq $'dep[[:space:]]+golang.org/x/text[[:space:]]+v0\\.42\\.0([[:space:]]|$)' \
+            "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
+          grep -Eq $'dep[[:space:]]+golang.org/x/net[[:space:]]+v0\\.60\\.0([[:space:]]|$)' \
             "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
           printf 'GRPC_VERSION=1.83.2\n' >> "$GITHUB_ENV"
           printf 'OVERLAY_SHA256=%s\n' \
