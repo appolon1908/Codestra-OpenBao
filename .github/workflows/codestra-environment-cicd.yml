@@ -31,23 +31,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json
-          import pathlib
-          import py_compile
-
-          root = pathlib.Path(".")
-          for path in root.rglob("*.json"):
-              if any(part in {".git", "node_modules", ".venv", "vendor"} for part in path.parts):
-                  continue
-              with path.open("r", encoding="utf-8") as handle:
-                  json.load(handle)
-
-          for path in root.rglob("*.py"):
-              if any(part in {".git", "node_modules", ".venv", "vendor"} for part in path.parts):
-                  continue
-              py_compile.compile(str(path), doraise=True)
-          PY
+          # Upstream TypeScript tsconfig files use JSONC comments by design.
+          # The validator permits JSONC only for those two pinned files.
+          python3 scripts/validate_environment_source_syntax.py
 
       - name: Record immutable candidate
         shell: bash
