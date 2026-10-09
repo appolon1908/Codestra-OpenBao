@@ -18,10 +18,10 @@ OVERLAY = ROOT / "scripts/prepare_openbao_source_build.py"
 class SourceImageXTextGateTests(unittest.TestCase):
     def test_source_build_requires_exact_patched_go_module_in_both_paths(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        module_pattern = r"golang.org/x/text[[:space:]]+v0\\.41\\.0"
+        module_pattern = r"golang.org/x/text[[:space:]]+v0\\.42\\.0"
         self.assertEqual(workflow.count(module_pattern), 2)
         self.assertEqual(workflow.count("python3 tests/test_source_image_xtext_gate.py"), 2)
-        self.assertIn('"golang.org/x/text": "v0.41.0"', OVERLAY.read_text())
+        self.assertIn('"golang.org/x/text": "v0.42.0"', OVERLAY.read_text())
 
     @staticmethod
     def _scan_script() -> str:
