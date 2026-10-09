@@ -11,6 +11,7 @@ on:
       - "tests/test_prepare_openbao_source_build.py"
       - "tests/test_grpc_go_exact_image_gate.py"
       - "tests/test_source_image_xtext_gate.py"
+      - "tests/test_source_image_go1269_security_gate.py"
       - "docs/security/GRPC-GO-CVE-2026-84304-PRODUCTION-GATE.md"
       - ".github/workflows/openbao-source-image-authority.yml"
   push:
@@ -24,6 +25,7 @@ on:
       - "tests/test_prepare_openbao_source_build.py"
       - "tests/test_grpc_go_exact_image_gate.py"
       - "tests/test_source_image_xtext_gate.py"
+      - "tests/test_source_image_go1269_security_gate.py"
       - "docs/security/GRPC-GO-CVE-2026-84304-PRODUCTION-GATE.md"
       - ".github/workflows/openbao-source-image-authority.yml"
   workflow_dispatch:
@@ -82,7 +84,9 @@ jobs:
       - name: Set up repository Go toolchain
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
-          go-version-file: upstream/.go-version
+          # Security-reviewed Go 1.26.9 (2026-10-08), build-only override.
+          # Preserve upstream/.go-version as immutable imported-source evidence.
+          go-version: '1.26.9'
           cache-dependency-path: |
             upstream/go.sum
             upstream/api/go.sum
@@ -98,10 +102,12 @@ jobs:
             tests/test_prepare_openbao_source_build.py \
             tests/test_grpc_go_exact_image_gate.py \
             tests/test_source_image_xtext_gate.py
+            tests/test_source_image_go1269_security_gate.py
           python3 scripts/validate_grpc_go_exact_image_gate.py
           python3 tests/test_prepare_openbao_source_build.py
           python3 tests/test_grpc_go_exact_image_gate.py
           python3 tests/test_source_image_xtext_gate.py
+          python3 tests/test_source_image_go1269_security_gate.py
           git diff --check
 
       - name: Apply reviewed build-only archive-module patch
@@ -127,6 +133,10 @@ jobs:
             CGO_ENABLED=0 BUILD_TAGS=openbao ./scripts/build.sh
             test -x bin/bao
             go version -m bin/bao > "${RUNNER_TEMP}/bao-go-version.txt"
+            # Require the built artifact to use the reviewed toolchain.
+            test "$(go env GOVERSION)" = "go1.26.9"
+            grep -Eq '^.+:[[:space:]]+go1\.26\.9[[:space:]]*$' \
+              "${RUNNER_TEMP}/bao-go-version.txt"
             grep -Eq $'dep[[:space:]]+google.golang.org/grpc[[:space:]]+v1\\.83\\.2([[:space:]]|$)' \
               "${RUNNER_TEMP}/bao-go-version.txt"
             grep -Eq $'dep[[:space:]]+github.com/moby/go-archive[[:space:]]+v0\\.3\\.2([[:space:]]|$)' \
@@ -238,7 +248,9 @@ jobs:
       - name: Set up repository Go toolchain
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
-          go-version-file: upstream/.go-version
+          # Security-reviewed Go 1.26.9 (2026-10-08), build-only override.
+          # Preserve upstream/.go-version as immutable imported-source evidence.
+          go-version: '1.26.9'
           cache-dependency-path: |
             upstream/go.sum
             upstream/api/go.sum
@@ -251,6 +263,7 @@ jobs:
           python3 tests/test_prepare_openbao_source_build.py
           python3 tests/test_grpc_go_exact_image_gate.py
           python3 tests/test_source_image_xtext_gate.py
+          python3 tests/test_source_image_go1269_security_gate.py
           mkdir -p "${RUNNER_TEMP}/openbao-source-image"
           python3 scripts/prepare_openbao_source_build.py \
             --source-root upstream \
@@ -261,6 +274,9 @@ jobs:
             test "$(go list -m -f '{{.Version}}' github.com/moby/go-archive)" = "v${ARCHIVE_VERSION}"
             CGO_ENABLED=0 BUILD_TAGS=openbao ./scripts/build.sh
             go version -m bin/bao > "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
+            test "$(go env GOVERSION)" = "go1.26.9"
+            grep -Eq '^.+:[[:space:]]+go1\.26\.9[[:space:]]*$' \
+              "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
             install -D -m 0555 bin/bao bin/amd64/bao
           )
           grep -Eq $'dep[[:space:]]+google.golang.org/grpc[[:space:]]+v1\\.83\\.2([[:space:]]|$)' \
