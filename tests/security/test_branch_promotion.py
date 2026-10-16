@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 
@@ -56,11 +59,14 @@ class BranchPromotionTests(unittest.TestCase):
         self.assertFalse(MODULE.promotion_allowed("feature", "remediation/x"))
 
     def test_section_subsection_review_cannot_promote_environments(self) -> None:
-        valid = "subsection/ob-15-cicd--environment-promotion-repair-v2"
+        valid = "subsection/ob-15-cicd--04-promotion"
         self.assertTrue(MODULE.promotion_allowed("ob-15-cicd", valid))
         MODULE.check_event("pull_request", "ob-15-cicd", valid, "")
         for invalid in (
             "subsection/ob-15-cicd--",
+            "subsection/ob-15-cicd--environment-promotion-repair-v2",
+            "subsection/ob-15-cicd--05-source-image-xtext",
+            "subsection/ob-15-cicd--99-unregistered",
             "subsection/ob-14-integrations--different-section",
             "subsection/ob-15-cicd/alternate",
             "ob-15-cicd",
@@ -74,6 +80,13 @@ class BranchPromotionTests(unittest.TestCase):
                     MODULE.check_event("pull_request", "ob-15-cicd", invalid, "")
         for target in ("testing", "test", "staging", "production", "main"):
             self.assertFalse(MODULE.promotion_allowed(target, valid))
+
+    def test_all_registered_section_lanes_are_admissible_only_to_section(self) -> None:
+        for suffix in ("01-policy-lint", "02-config-test", "03-security", "04-promotion"):
+            head = "subsection/ob-15-cicd--" + suffix
+            self.assertTrue(MODULE.promotion_allowed("ob-15-cicd", head))
+            for base in (*MODULE.PROTECTED, "ob-14-integrations", "section/ob-15-cicd"):
+                self.assertFalse(MODULE.promotion_allowed(base, head), (base, head))
 
     def test_push_only_to_protected_branches(self) -> None:
         for ref in MODULE.PROTECTED:
@@ -124,23 +137,37 @@ class BranchPromotionTests(unittest.TestCase):
         )
 
     def test_require_current_rejects_a_head_missing_development(self) -> None:
-        head = subprocess.run(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False
-        )
-        if head.returncode != 0:
-            self.skipTest("not a git checkout")
-        MODULE.require_current("HEAD", "HEAD")
-        parent = subprocess.run(
-            ["git", "rev-parse", "--verify", "--quiet", "HEAD~1"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if parent.returncode != 0:
-            self.skipTest("shallow checkout without a parent commit")
-        with self.assertRaisesRegex(SystemExit, "does not contain"):
-            MODULE.require_current(parent.stdout.strip(), "HEAD")
+        # Exercise real ancestry in a disposable repository. CI shallow clones
+        # and source snapshots must not silently skip this security check.
+        with tempfile.TemporaryDirectory(prefix="openbao-ancestry-") as directory:
+            repository = Path(directory)
+            environment = {
+                key: value for key, value in os.environ.items()
+                if not key.startswith("GIT_")
+            }
+            environment.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull)
+
+            def git(*arguments: str) -> str:
+                return subprocess.run(
+                    ["git", "-c", "core.hooksPath=" + os.devnull,
+                     "-c", "commit.gpgsign=false", "-c", "user.name=OpenBao Test",
+                     "-c", "user.email=openbao-test@example.invalid", *arguments],
+                    cwd=repository, env=environment, capture_output=True,
+                    text=True, check=True,
+                ).stdout.strip()
+
+            git("init", "--initial-branch=development")
+            git("commit", "--allow-empty", "-m", "shared ancestor")
+            stale_head = git("rev-parse", "HEAD")
+            git("commit", "--allow-empty", "-m", "development update")
+            development = git("rev-parse", "HEAD")
+            git("switch", "-c", "remediation/ancestry-test")
+            git("commit", "--allow-empty", "-m", "repair contains development")
+
+            with patch.object(MODULE, "ROOT", repository), patch.dict(os.environ, environment, clear=True):
+                MODULE.require_current("HEAD", development)
+                with self.assertRaisesRegex(SystemExit, "does not contain"):
+                    MODULE.require_current(stale_head, development)
 
 
 if __name__ == "__main__":
