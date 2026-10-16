@@ -139,21 +139,28 @@ class DependentServiceContractTests(unittest.TestCase):
         self.reject(authority=authority)
 
     def test_direct_roles_for_read_only_integrations_are_rejected(self) -> None:
-        contract = copy.deepcopy(self.contract)
-        contract["consumers"].append(
-            {
-                "repo": "ingtrader21-spec/Codestra-Grafana-",
-                "access": [
+        # Grafana is already admitted with exact access; Node Exporter must
+        # remain credential-free. Neither may acquire an extra direct role.
+        for repo in (
+            "ingtrader21-spec/Codestra-Grafana-",
+            "ingtrader21-spec/Codestra-Node-Exporter",
+        ):
+            with self.subTest(repo=repo):
+                contract = copy.deepcopy(self.contract)
+                contract["consumers"].append(
                     {
-                        "identity": "prometheus-openbao",
-                        "prefixes": [
-                            "codestra/production/observability/openbao/metrics-client/"
+                        "repo": repo,
+                        "access": [
+                            {
+                                "identity": "prometheus-openbao",
+                                "prefixes": [
+                                    "codestra/production/observability/openbao/metrics-client/"
+                                ],
+                            }
                         ],
                     }
-                ],
-            }
-        )
-        self.reject(contract=contract)
+                )
+                self.reject(contract=contract)
 
     def test_alternative_initializer_or_apply_path_is_rejected(self) -> None:
         contract = copy.deepcopy(self.contract)
