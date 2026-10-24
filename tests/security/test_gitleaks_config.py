@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -42,6 +44,27 @@ class GitleaksConfigTests(unittest.TestCase):
         self.assertIn(r"(^|/)\.codestra/validate-promotion\.py$", source)
         self.assertIn(r'^ob-13-control-api\",\"ob-14-integrations\"$', source)
         self.assertNotIn("disabledRules", source)
+
+
+    def test_historical_exception_cannot_exempt_other_rules_paths_or_matches(self) -> None:
+        config = tomllib.loads((ROOT / ".gitleaks.toml").read_text(encoding="utf-8"))
+        entry = config["allowlists"][-1]
+        self.assertEqual(entry["condition"], "AND")
+        self.assertEqual(entry.get("targetRules"), ["generic-api-key"])
+        self.assertEqual(entry["regexTarget"], "match")
+        self.assertEqual(len(entry["paths"]), 1)
+        self.assertEqual(len(entry["regexes"]), 1)
+        path = entry["paths"][0]
+        for allowed in (".codestra/validate-promotion.py", "repo/.codestra/validate-promotion.py"):
+            self.assertIsNotNone(re.search(path, allowed))
+        for denied in (".codestra/other.py", "scripts/validate-promotion.py", ".codestra/validate-promotion.py.bak"):
+            self.assertIsNone(re.search(path, denied))
+        quote = chr(34)
+        match = "ob-13-control-api" + quote + "," + quote + "ob-14-integrations" + quote
+        pattern = entry["regexes"][0]
+        self.assertIsNotNone(re.search(pattern, match))
+        for denied in ("prefix" + match, match + "suffix", match + " token=secret", match.replace("ob-14-integrations", "other-credential")):
+            self.assertIsNone(re.search(pattern, denied))
 
 
 if __name__ == "__main__":
