@@ -398,6 +398,105 @@ class ExecutionTests(KernelTestCase):
                                    readback=self.bao.readback)
         self.assertEqual(state, "RETRY")
 
+    def test_recover_before_first_dispatch_allows_retry(self) -> None:
+        change = self.approved()
+        stale = self.lease(ttl=60)
+        attempt = self.kernel.begin_attempt(change["change_id"], stale, SUBMITTER, "fp-1")
+        self.clock.advance(61)
+        fresh = self.lease("worker-b")
+        self.assertEqual(self.kernel.recover_interrupted(change["change_id"], fresh), "RETRY")
+        self.assertEqual(self.status(change), "RETRY")
+        recovered = self.store.one("SELECT outcome, finished_at FROM attempts WHERE attempt_id = ?",
+                                   (attempt.attempt_id,))
+        self.assertEqual(recovered["outcome"], "RETRY")
+        self.assertIsNotNone(recovered["finished_at"])
+        self.assertEqual(self.kernel.unknown_operations(change["change_id"]), [])
+        self.assertEqual(self.bao.calls, [])
+        self.assertEqual(self.run_actuator(change, fresh), "SUCCEEDED")
+
+    def test_recover_between_confirmed_operations_does_not_replay_them(self) -> None:
+        change = self.approved()
+        stale = self.lease(ttl=60)
+        attempt = self.kernel.begin_attempt(change["change_id"], stale, SUBMITTER, "fp-1")
+        first = attempt.operations[0]
+        intent = self.kernel.intend(attempt, first["operation_id"], stale)
+        self.kernel.resolve_intent(intent, "CONFIRMED", "readback_match")
+        self.clock.advance(61)
+        fresh = self.lease("worker-b")
+        self.assertEqual(self.kernel.recover_interrupted(change["change_id"], fresh), "RETRY")
+        self.assertEqual(self.bao.calls, [])
+        self.assertEqual(self.run_actuator(change, fresh), "SUCCEEDED")
+        self.assertNotIn(first["name"], [self.bao._name(call) for call in self.bao.calls])
+        self.assertEqual(len(self.bao.calls), len(attempt.operations) - 1)
+
+    def test_recover_after_all_confirmations_finishes_successfully(self) -> None:
+        change = self.approved()
+        stale = self.lease(ttl=60)
+        attempt = self.kernel.begin_attempt(change["change_id"], stale, SUBMITTER, "fp-1")
+        for operation in attempt.operations:
+            intent = self.kernel.intend(attempt, operation["operation_id"], stale)
+            self.kernel.resolve_intent(intent, "CONFIRMED", "readback_match")
+        self.clock.advance(61)
+        fresh = self.lease("worker-b")
+        self.assertEqual(self.kernel.recover_interrupted(change["change_id"], fresh), "SUCCEEDED")
+        self.assertEqual(self.status(change), "SUCCEEDED")
+        self.assertEqual(self.store.one("SELECT outcome FROM attempts WHERE attempt_id = ?",
+                                        (attempt.attempt_id,))["outcome"], "SUCCEEDED")
+        topics = [row["topic"] for row in self.store.all("SELECT topic FROM outbox")]
+        self.assertIn("openbao.change.succeeded", topics)
+        self.assertEqual(self.bao.calls, [])
+
+    def test_recover_after_known_failure_allows_retry(self) -> None:
+        change = self.approved()
+        stale = self.lease(ttl=60)
+        attempt = self.kernel.begin_attempt(change["change_id"], stale, SUBMITTER, "fp-1")
+        intent = self.kernel.intend(attempt, attempt.operations[0]["operation_id"], stale)
+        self.kernel.resolve_intent(intent, "FAILED", "readback_absent exit=2")
+        self.clock.advance(61)
+        fresh = self.lease("worker-b")
+        self.assertEqual(self.kernel.recover_interrupted(change["change_id"], fresh), "RETRY")
+        self.assertEqual(self.kernel.unknown_operations(change["change_id"]), [])
+        self.assertEqual(self.run_actuator(change, fresh), "SUCCEEDED")
+
+    def test_recover_without_unknown_dispatch_respects_exhausted_retry_budget(self) -> None:
+        change = self.approved()
+        stale = self.lease(ttl=60)
+        self.bao.apply_effect, self.bao.exit_code = False, 2
+        for _ in range(2):
+            self.assertEqual(self.run_actuator(change, stale), "RETRY")
+        attempt = self.kernel.begin_attempt(change["change_id"], stale, SUBMITTER, "fp-1")
+        self.clock.advance(61)
+        fresh = self.lease("worker-b")
+        calls_before = len(self.bao.calls)
+        self.assertEqual(self.kernel.recover_interrupted(change["change_id"], fresh), "DEAD_LETTER")
+        self.assertEqual(self.status(change), "DEAD_LETTER")
+        self.assertEqual(self.store.one("SELECT outcome FROM attempts WHERE attempt_id = ?",
+                                        (attempt.attempt_id,))["outcome"], "DEAD_LETTER")
+        with self.assertRaises(KernelError) as caught:
+            self.run_actuator(change, fresh)
+        self.assertEqual(caught.exception.code, "CHANGE_NOT_EXECUTABLE")
+        self.assertEqual(len(self.bao.calls), calls_before)
+
+    def test_recover_unknown_dispatch_requires_readback_even_when_attempts_exhausted(self) -> None:
+        change = self.approved()
+        stale = self.lease(ttl=60)
+        self.bao.apply_effect, self.bao.exit_code = False, 2
+        for _ in range(2):
+            self.assertEqual(self.run_actuator(change, stale), "RETRY")
+        attempt = self.kernel.begin_attempt(change["change_id"], stale, SUBMITTER, "fp-1")
+        self.kernel.intend(attempt, attempt.operations[0]["operation_id"], stale)
+        self.clock.advance(61)
+        fresh = self.lease("worker-b")
+        calls_before = len(self.bao.calls)
+        self.assertEqual(self.kernel.recover_interrupted(change["change_id"], fresh), "RECONCILIATION_REQUIRED")
+        self.assertEqual(len(self.kernel.unknown_operations(change["change_id"])), 1)
+        with self.assertRaises(KernelError) as caught:
+            self.run_actuator(change, fresh)
+        self.assertEqual(caught.exception.code, "CHANGE_NOT_EXECUTABLE")
+        self.assertEqual(actuator.reconcile(self.kernel, change["change_id"], fresh, "readback-run-4",
+                                           readback=self.bao.readback), "DEAD_LETTER")
+        self.assertEqual(len(self.bao.calls), calls_before)
+
     def test_every_transition_is_audited_without_payloads(self) -> None:
         change = self.approved()
         self.run_actuator(change, self.lease())

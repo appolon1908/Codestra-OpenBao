@@ -542,7 +542,7 @@ class ChangeKernel:
     # --- recovery ----------------------------------------------------------------------
 
     def recover_interrupted(self, change_id: str, lease: Lease) -> str:
-        """A newer lease holder converts an abandoned EXECUTING attempt into UNKNOWN outcomes."""
+        """Recover an abandoned attempt; only unresolved dispatches need readback."""
         now = self._now()
         with self.store.transaction():
             change = self._change(change_id, lock=True)
@@ -561,13 +561,27 @@ class ChangeKernel:
                 "UPDATE operations SET status = 'UNKNOWN', updated_at = ? WHERE operation_id IN "
                 "(SELECT operation_id FROM dispatch_intents WHERE attempt_id = ? AND status = 'UNKNOWN')",
                 (utc(now), attempt["attempt_id"]))
+            statuses = [row["status"] for row in self.store.all(
+                "SELECT status FROM operations WHERE plan_id = ?", (change["plan_id"],))]
+            unresolved = self.store.one(
+                "SELECT COUNT(*) AS n FROM dispatch_intents WHERE change_id = ? AND status IN (?, ?)",
+                (change_id, *UNRESOLVED_INTENTS))
+            if "UNKNOWN" in statuses or (unresolved and int(unresolved["n"])):
+                status = "RECONCILIATION_REQUIRED"
+            elif all(item == "CONFIRMED" for item in statuses):
+                status = "SUCCEEDED"
+            elif int(change["attempt_count"]) < int(change["max_attempts"]):
+                status = "RETRY"
+            else:
+                status = "DEAD_LETTER"
             self.store.execute(
-                "UPDATE attempts SET outcome = 'RECONCILIATION_REQUIRED', finished_at = ?, detail = ? "
-                "WHERE attempt_id = ?", (utc(now), "holder_lost_lease", attempt["attempt_id"]))
-            self._set_status(change, "RECONCILIATION_REQUIRED", "interrupted attempt", now)
+                "UPDATE attempts SET outcome = ?, finished_at = ?, detail = ? WHERE attempt_id = ?",
+                (status, utc(now), "holder_lost_lease", attempt["attempt_id"]))
+            self._set_status(change, status, "interrupted attempt", now)
             self._event("ATTEMPT_ABANDONED", change, lease.holder,
-                        {"attempt": attempt["attempt_number"], "stale_fence_token": attempt["fence_token"]}, now)
-        return "RECONCILIATION_REQUIRED"
+                        {"attempt": attempt["attempt_number"], "stale_fence_token": attempt["fence_token"],
+                         "result": status}, now)
+        return status
 
     def unknown_operations(self, change_id: str) -> list[dict[str, Any]]:
         change = self._change(change_id)

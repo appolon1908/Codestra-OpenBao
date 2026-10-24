@@ -21,6 +21,9 @@ class InitializationFixture:
         self.temp = tempfile.TemporaryDirectory(dir=ROOT.parent)
         self.addCleanup(self.temp.cleanup)
         self.work = Path(self.temp.name)
+        # Clear an inherited setgid bit on this disposable fixture, so its
+        # custody and simulated RAM directories have the intended private mode.
+        self.work.chmod(0o700)
         self.parent = self.work / "custody"
         self.parent.mkdir(mode=0o700)
         self.keys = []

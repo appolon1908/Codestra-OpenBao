@@ -63,6 +63,51 @@ class KernelCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 4)
         self.assertIn("LEASE_FENCE_DENIED", result.stderr)
 
+    def test_live_fingerprint_ignores_response_metadata_and_json_formatting(self) -> None:
+        live = self.work / "live"
+        (live / "jwt-roles").mkdir(parents=True)
+        resources = {
+            "codestra-config.json": {"max_versions": 10, "cas_required": True},
+            "jwt-config.json": {"bound_issuer": "https://issuer.example.invalid", "default_role": "reader"},
+            "jwt-roles/reader.json": {"bound_audiences": ["codestra"], "request_id": "resource-setting"},
+        }
+        for name, data in resources.items():
+            (live / name).write_text(json.dumps({
+                "request_id": "planning-read", "lease_id": "", "renewable": False,
+                "lease_duration": 0, "data": data, "wrap_info": None,
+                "warnings": None, "auth": None, "mount_type": "kv",
+            }, indent=2))
+        before = self.cli("live-fingerprint", "--live-dir", str(live))
+        self.assertEqual(before.returncode, 0, before.stderr)
+        for name, data in resources.items():
+            (live / name).write_text(json.dumps({
+                "auth": None, "warnings": [], "data": dict(reversed(list(data.items()))),
+                "request_id": "applying-read", "lease_duration": 30,
+                "lease_id": "", "renewable": False, "wrap_info": None, "mount_type": "kv",
+            }))
+        after = self.cli("live-fingerprint", "--live-dir", str(live))
+        self.assertEqual(after.returncode, 0, after.stderr)
+        self.assertEqual(json.loads(before.stdout), json.loads(after.stdout))
+
+    def test_live_fingerprint_preserves_resource_drift_and_policy_bytes(self) -> None:
+        live = self.work / "live"
+        (live / "policies").mkdir(parents=True)
+        config = live / "jwt-config.json"
+        config.write_text(json.dumps({"request_id": "read-1", "data": {"bound_issuer": "issuer-a"}}))
+        policy = live / "policies/reader.hcl"
+        policy.write_text('path "codestra/metadata/app" { capabilities = ["read"] }\n')
+        before = self.cli("live-fingerprint", "--live-dir", str(live))
+        self.assertEqual(before.returncode, 0, before.stderr)
+        config.write_text(json.dumps({"request_id": "read-1", "data": {"bound_issuer": "issuer-b"}}))
+        resource_changed = self.cli("live-fingerprint", "--live-dir", str(live))
+        self.assertEqual(resource_changed.returncode, 0, resource_changed.stderr)
+        self.assertNotEqual(json.loads(before.stdout), json.loads(resource_changed.stdout))
+        config.write_text(json.dumps({"request_id": "read-1", "data": {"bound_issuer": "issuer-a"}}))
+        policy.write_text('path "codestra/metadata/app" { capabilities = ["read", "list"] }\n')
+        policy_changed = self.cli("live-fingerprint", "--live-dir", str(live))
+        self.assertEqual(policy_changed.returncode, 0, policy_changed.stderr)
+        self.assertNotEqual(json.loads(before.stdout), json.loads(policy_changed.stdout))
+
     def test_submit_refuses_a_checksum_file_naming_another_plan(self) -> None:
         live = self.work / "live"
         (live / "policies").mkdir(parents=True)

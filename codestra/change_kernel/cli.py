@@ -77,10 +77,18 @@ def _principal(args: argparse.Namespace, roles: set[str]) -> Principal:
 
 
 def live_fingerprint(live_dir: Path) -> str:
-    """Digest of the sanitized live-state files that `scripts/plan.sh` collects."""
+    """Bind resource data, excluding response metadata, and exact non-JSON bytes."""
     entries = {}
     for path in sorted(item for item in live_dir.rglob("*") if item.is_file()):
-        entries[path.relative_to(live_dir).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+        if path.suffix == ".json":
+            value = json.loads(path.read_text(encoding="utf-8"))
+            # Match build_plan.data(): bao read wraps resource data in a secret
+            # envelope whose request_id and lease metadata change on every read.
+            resource = value.get("data", value) if isinstance(value, dict) else value
+            fingerprint = digest(resource)
+        else:
+            fingerprint = hashlib.sha256(path.read_bytes()).hexdigest()
+        entries[path.relative_to(live_dir).as_posix()] = fingerprint
     if not entries:
         raise KernelError("LIVE_STATE_EMPTY", 400)
     return digest(entries)
