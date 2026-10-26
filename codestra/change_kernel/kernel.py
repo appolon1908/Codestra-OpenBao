@@ -462,6 +462,8 @@ class ChangeKernel:
         now = self._now()
         with self.store.transaction():
             change = self._change(attempt.change_id, lock=True)
+            if lease.exclusion_key != change["exclusion_key"]:
+                raise KernelError("LEASE_WRONG_TARGET", 409)
             self._check_fence(lease, now)
             if lease.fence_token != attempt.fence_token:
                 raise KernelError("LEASE_FENCE_DENIED", 409, "attempt_fence_mismatch")
@@ -546,6 +548,8 @@ class ChangeKernel:
         now = self._now()
         with self.store.transaction():
             change = self._change(change_id, lock=True)
+            if lease.exclusion_key != change["exclusion_key"]:
+                raise KernelError("LEASE_WRONG_TARGET", 409)
             self._check_fence(lease, now)
             if change["status"] != "EXECUTING":
                 raise KernelError("CHANGE_NOT_EXECUTING", 409, change["status"])
@@ -604,6 +608,8 @@ class ChangeKernel:
         now = self._now()
         with self.store.transaction():
             change = self._change(change_id, lock=True)
+            if lease.exclusion_key != change["exclusion_key"]:
+                raise KernelError("LEASE_WRONG_TARGET", 409)
             self._check_fence(lease, now)
             if change["status"] != "RECONCILIATION_REQUIRED":
                 raise KernelError("CHANGE_NOT_IN_RECONCILIATION", 409, change["status"])

@@ -6,6 +6,7 @@ import json
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -288,6 +289,31 @@ class LockTests(KernelTestCase):
 
 
 class ExecutionTests(KernelTestCase):
+    def test_dispatch_rejects_same_fence_from_a_different_cluster(self) -> None:
+        change = self.approved()
+        lease = self.lease()
+        attempt = self.kernel.begin_attempt(change["change_id"], lease, SUBMITTER, "fp-1")
+        wrong = self.lease("other-cluster", environment="staging")
+        self.assertEqual(lease.fence_token, wrong.fence_token)
+        operation_id = attempt.operations[0]["operation_id"]
+        events_before = self.store.one("SELECT COUNT(*) AS n FROM events")["n"]
+        for confirm in (False, True):
+            with self.subTest(confirm=confirm):
+                with self.assertRaises(KernelError) as caught:
+                    if confirm:
+                        self.kernel.confirm_without_dispatch(attempt, operation_id, wrong, "test-readback")
+                    else:
+                        self.kernel.intend(attempt, operation_id, wrong)
+                self.assertEqual(caught.exception.code, "LEASE_WRONG_TARGET")
+                self.assertEqual(self.store.one("SELECT COUNT(*) AS n FROM dispatch_intents")["n"], 0)
+                self.assertEqual(self.store.one("SELECT COUNT(*) AS n FROM events")["n"], events_before)
+                self.assertNotEqual(self.store.one(
+                    "SELECT status FROM operations WHERE operation_id = ?", (operation_id,))["status"],
+                    "CONFIRMED")
+        self.kernel.confirm_without_dispatch(attempt, operation_id, lease, "test-readback")
+        self.assertEqual(self.store.one(
+            "SELECT status FROM operations WHERE operation_id = ?", (operation_id,))["status"], "CONFIRMED")
+
     def test_approved_change_executes_and_reads_back_every_operation(self) -> None:
         change = self.approved()
         result = self.run_actuator(change, self.lease())
@@ -496,6 +522,89 @@ class ExecutionTests(KernelTestCase):
         self.assertEqual(actuator.reconcile(self.kernel, change["change_id"], fresh, "readback-run-4",
                                            readback=self.bao.readback), "DEAD_LETTER")
         self.assertEqual(len(self.bao.calls), calls_before)
+
+    def test_recovery_rejects_a_current_lease_for_a_different_cluster(self) -> None:
+        change = self.approved()
+        stale = self.lease(ttl=60)
+        attempt = self.kernel.begin_attempt(change["change_id"], stale, SUBMITTER, "fp-1")
+        self.clock.advance(61)
+        self.lease("other-cluster", environment="staging")
+        wrong = self.lease("other-cluster", environment="staging")
+        self.assertGreater(wrong.fence_token, stale.fence_token)
+        before = self.store.all("SELECT event_type FROM events")
+        with self.assertRaises(KernelError) as caught:
+            self.kernel.recover_interrupted(change["change_id"], wrong)
+        self.assertEqual(caught.exception.code, "LEASE_WRONG_TARGET")
+        self.assertEqual(self.status(change), "EXECUTING")
+        self.assertEqual(self.store.one("SELECT outcome FROM attempts WHERE attempt_id = ?",
+                                        (attempt.attempt_id,))["outcome"], "STARTED")
+        self.assertEqual(self.store.all("SELECT event_type FROM events"), before)
+        self.assertEqual(self.kernel.recover_interrupted(change["change_id"], self.lease("worker-b")), "RETRY")
+
+    def test_reconciliation_rejects_a_current_lease_for_a_different_cluster(self) -> None:
+        change = self.approved()
+        lease = self.lease()
+        attempt = self.kernel.begin_attempt(change["change_id"], lease, SUBMITTER, "fp-1")
+        intent = self.kernel.intend(attempt, attempt.operations[0]["operation_id"], lease)
+        self.kernel.resolve_intent(intent, "UNKNOWN", "call_interrupted")
+        self.assertEqual(self.kernel.finish_attempt(attempt), "RECONCILIATION_REQUIRED")
+        wrong = self.lease("other-cluster", environment="staging")
+        before = self.store.all("SELECT topic FROM outbox")
+        with self.assertRaises(KernelError) as caught:
+            self.kernel.reconcile_unknown(change["change_id"], wrong,
+                                          {attempt.operations[0]["operation_id"]: True}, "readback-run")
+        self.assertEqual(caught.exception.code, "LEASE_WRONG_TARGET")
+        self.assertEqual(self.status(change), "RECONCILIATION_REQUIRED")
+        self.assertEqual(len(self.kernel.unknown_operations(change["change_id"])), 1)
+        self.assertEqual(self.store.all("SELECT topic FROM outbox"), before)
+
+    def test_unavailable_readback_before_dispatch_issues_no_mutation(self) -> None:
+        change = self.approved()
+        failed = subprocess.CompletedProcess(["bao"], 2, "", "permission denied")
+        with patch("subprocess.run", return_value=failed):
+            result = actuator.execute(self.kernel, change["change_id"], self.lease(), SUBMITTER, "fp-1",
+                                      runner=self.bao.runner)
+        self.assertEqual(result, "RETRY")
+        self.assertEqual(self.bao.calls, [])
+        self.assertEqual(self.store.one("SELECT COUNT(*) AS n FROM dispatch_intents")["n"], 0)
+
+    def test_unavailable_readback_after_dispatch_requires_reconciliation_for_either_exit(self) -> None:
+        for code in (0, 2):
+            with self.subTest(exit_code=code):
+                change = self.approved(key="post-read-" + str(code))
+                self.bao.exit_code = code
+                reads = iter((False, KernelError("READBACK_UNAVAILABLE", 503)))
+
+                def readback(operation):
+                    value = next(reads)
+                    if isinstance(value, KernelError):
+                        raise value
+                    return value
+
+                try:
+                    result = actuator.execute(self.kernel, change["change_id"], self.lease(), SUBMITTER,
+                                              "fp-1", runner=self.bao.runner, readback=readback)
+                except KernelError as error:
+                    result = error.code
+                self.assertEqual(result, "RECONCILIATION_REQUIRED")
+                self.assertEqual(len(self.kernel.unknown_operations(change["change_id"])), 1)
+
+    def test_unavailable_readback_during_reconciliation_preserves_unknown(self) -> None:
+        change = self.approved()
+        self.bao.raise_on.add("codestra-jwt-replay")
+        lease = self.lease()
+        self.assertEqual(self.run_actuator(change, lease), "RECONCILIATION_REQUIRED")
+        before = self.kernel.unknown_operations(change["change_id"])
+        calls = len(self.bao.calls)
+        failed = subprocess.CompletedProcess(["bao"], 2, "", "permission denied")
+        with patch("subprocess.run", return_value=failed):
+            with self.assertRaises(Exception) as caught:
+                actuator.reconcile(self.kernel, change["change_id"], lease, "readback-unavailable")
+        self.assertIsInstance(caught.exception, KernelError)
+        self.assertEqual(caught.exception.code, "READBACK_UNAVAILABLE")
+        self.assertEqual(self.kernel.unknown_operations(change["change_id"]), before)
+        self.assertEqual(self.status(change), "RECONCILIATION_REQUIRED")
+        self.assertEqual(len(self.bao.calls), calls)
 
     def test_every_transition_is_audited_without_payloads(self) -> None:
         change = self.approved()
