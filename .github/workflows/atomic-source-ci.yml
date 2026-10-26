@@ -1,0 +1,71 @@
+name: OpenBao atomic source CI
+
+on:
+  push:
+    branches: [atomic/ob-15-cicd--04-promotion--pr109-reconcile-20261016]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openbao-atomic-source-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  validate:
+    name: OpenBao atomic / validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify exact source
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Install pinned parser
+        run: python -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
+      - name: Run source, configuration and regression checks
+        run: scripts/validate.sh
+
+  integration:
+    name: OpenBao atomic / isolated integration
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify exact source
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Run integration against an isolated test container
+        run: scripts/integration_test.sh
+
+  security:
+    name: OpenBao atomic / source security
+    needs: integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify exact source
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Install checksum-verified scanner
+        run: scripts/install_ci_tools.sh gitleaks
+      - name: Run source, history, stored vulnerability and checksum checks
+        run: scripts/security.sh
