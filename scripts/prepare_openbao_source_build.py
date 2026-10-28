@@ -51,14 +51,14 @@ REVIEWED_TRANSITIVE_VERSIONS = {
 }
 REVIEWED_GRPC_GRAPH_VERSIONS = {
     "cel.dev/expr": "v0.25.2",
-    "golang.org/x/crypto": "v0.57.0",
+    "golang.org/x/crypto": "v0.58.0",
     "golang.org/x/mod": "v0.41.0",
-    "golang.org/x/net": "v0.60.0",
-    "golang.org/x/sync": "v0.23.0",
-    "golang.org/x/sys": "v0.48.0",
-    "golang.org/x/term": "v0.46.0",
-    "golang.org/x/text": "v0.42.0",
-    "golang.org/x/tools": "v0.49.0",
+    "golang.org/x/net": "v0.62.0",
+    "golang.org/x/sync": "v0.24.0",
+    "golang.org/x/sys": "v0.49.0",
+    "golang.org/x/term": "v0.47.0",
+    "golang.org/x/text": "v0.43.0",
+    "golang.org/x/tools": "v0.51.0",
     "google.golang.org/genproto/googleapis/api": "v0.0.0-20260526163538-3dc84a4a5aaa",
     "google.golang.org/genproto/googleapis/rpc": "v0.0.0-20260526163538-3dc84a4a5aaa",
     "google.golang.org/grpc": "v1.83.2",
@@ -69,50 +69,61 @@ BUILD_GO_DIRECTIVE = "1.26.0"
 # This is a build-only transformation: imported upstream source stays byte-identical.
 SECURITY_GRAPH_UPGRADES = {
     JOSE_MODULE: ("v4.1.4", "v4.1.6"),
-    "golang.org/x/crypto": ("v0.55.0", "v0.57.0"),
+    "golang.org/x/crypto": ("v0.55.0", "v0.58.0"),
     "golang.org/x/mod": ("v0.38.0", "v0.41.0"),
-    "golang.org/x/net": ("v0.58.0", "v0.60.0"),
-    "golang.org/x/sync": ("v0.22.0", "v0.23.0"),
-    "golang.org/x/sys": ("v0.47.0", "v0.48.0"),
-    "golang.org/x/term": ("v0.45.0", "v0.46.0"),
-    "golang.org/x/text": ("v0.41.0", "v0.42.0"),
-    "golang.org/x/tools": ("v0.48.0", "v0.49.0"),
+    "golang.org/x/net": ("v0.58.0", "v0.62.0"),
+    "golang.org/x/sync": ("v0.22.0", "v0.24.0"),
+    "golang.org/x/sys": ("v0.47.0", "v0.49.0"),
+    "golang.org/x/term": ("v0.45.0", "v0.47.0"),
+    "golang.org/x/text": ("v0.41.0", "v0.43.0"),
+    "golang.org/x/tools": ("v0.48.0", "v0.51.0"),
 }
 REVIEWED_SECURITY_SUM_LINES = {
     JOSE_MODULE: JOSE_NEW_SUM_LINES,
     "golang.org/x/crypto": (
-        "golang.org/x/crypto v0.57.0 h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M=",
-        "golang.org/x/crypto v0.57.0/go.mod h1:Fdz0i5U6CoizGwLda9DttjSk6qlZo25zYNtR+ycvuZA=",
+        "golang.org/x/crypto v0.58.0 h1:COkYLr4k7nDI4r6QtMML2AfzeIswWHAJthLS6K/M/54=",
+        "golang.org/x/crypto v0.58.0/go.mod h1:Xh+kl5A+M0gMiWDytH2Hhr5Z7WbNCpv/eB/EFgfSk+w=",
     ),
     "golang.org/x/mod": (
         "golang.org/x/mod v0.41.0 h1:qJmnOUb4YB+FsEuM3HcWucdZASCPGhsX6uljO6pog0c=",
         "golang.org/x/mod v0.41.0/go.mod h1:Ek9pY8RKWXwsWvd3rQiHYtMqkjSUV+s1Rj7j4H5Ur6o=",
     ),
     "golang.org/x/net": (
-        "golang.org/x/net v0.60.0 h1:79p50tfZlm0J9YfoDsSi639qSXNGVwEzOPLCxM2FsYU=",
-        "golang.org/x/net v0.60.0/go.mod h1:2DA/G1UfVbCpQPeWTmMPGY7Cs2PkBkwu743bVX5PIVg=",
+        "golang.org/x/net v0.62.0 h1:18ELalfM5+XNRwzM2nYqXsZQ9ByS1uhj2O/U7+5jqRY=",
+        "golang.org/x/net v0.62.0/go.mod h1:WgDCOTH8iwtB66T4/GfI94AHo/hhdb7Hah9NDseQfiI=",
     ),
     "golang.org/x/sync": (
-        "golang.org/x/sync v0.23.0 h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk=",
-        "golang.org/x/sync v0.23.0/go.mod h1:sUUOizhqBxiL6pEWpqNLUiaJn1ShEbZ6BBqskPbjZm0=",
+        "golang.org/x/sync v0.24.0 h1:iqiDrGoDgyuvAKrhLQthUEzU/R378N78gXbBjxed7oA=",
+        "golang.org/x/sync v0.24.0/go.mod h1:sUUOizhqBxiL6pEWpqNLUiaJn1ShEbZ6BBqskPbjZm0=",
     ),
     "golang.org/x/sys": (
-        "golang.org/x/sys v0.48.0 h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo=",
-        "golang.org/x/sys v0.48.0/go.mod h1:hNLxWAXmnKAxqDtdwIYC4bM9oQPEecfsnNMuSxOs3og=",
+        "golang.org/x/sys v0.49.0 h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA=",
+        "golang.org/x/sys v0.49.0/go.mod h1:hNLxWAXmnKAxqDtdwIYC4bM9oQPEecfsnNMuSxOs3og=",
     ),
     "golang.org/x/term": (
-        "golang.org/x/term v0.46.0 h1:3+OXuTbaKDgwk8jTi3aSLHRlmWqHEUDUtxnbFigO4YE=",
-        "golang.org/x/term v0.46.0/go.mod h1:+K02xbkittuwc0Am4abfA3Fc+XRGXkvBXNO88NCXPoc=",
+        "golang.org/x/term v0.47.0 h1:cpyOwQkr2Nzxe2p6KnrTG7Ei2wtzjsuSjhpXXepZ/BM=",
+        "golang.org/x/term v0.47.0/go.mod h1:efAfAuG6RKABvg1ArGebRkvX6LXul14SM67o2e4mUCY=",
     ),
     "golang.org/x/text": (
-        "golang.org/x/text v0.42.0 h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI=",
-        "golang.org/x/text v0.42.0/go.mod h1:ojzP1Z+2QtioaF8DTtO8K5q7JWVVYwZKenzujK0Zd0E=",
+        "golang.org/x/text v0.43.0 h1:1QivrlhwAsnMOcqgOdl9my7s9OyZl8O5/UGUTJVXoWc=",
+        "golang.org/x/text v0.43.0/go.mod h1:hbSIYA/amXcRXTFSZqh8tWHEoqRvvbKPJ2uz/KU+a+s=",
     ),
     "golang.org/x/tools": (
-        "golang.org/x/tools v0.49.0 h1:3NI7VXzL9+1WZD52Dx2ttoPwD5DWrFGpl9mFZDlmisI=",
-        "golang.org/x/tools v0.49.0/go.mod h1:SJNXV9DBKT0UbdttsQjbfJlAE/q+y36++zo3uL3N0Oo=",
+        "golang.org/x/tools v0.51.0 h1:k4Xc/1Om9jwkBJBo4NVLMSARBoWtK10mx+W5BnXCeAI=",
+        "golang.org/x/tools v0.51.0/go.mod h1:9eEncMayCV6zRMGhR5eZEC2iBx98qWcF1HZ9Z7wJOoA=",
     ),
 }
+
+REVIEWED_OPTIONAL_GRAPH_VERSIONS = {
+    "golang.org/x/telemetry": "v0.0.0-20260924152758-ed294f943157",
+}
+REVIEWED_OPTIONAL_SUM_LINES = {
+    "golang.org/x/telemetry": (
+        "golang.org/x/telemetry v0.0.0-20260924152758-ed294f943157 h1:DftxASHKl6JolFPqoN+2WrFO53JvkHwRXvFqf8gsivA=",
+        "golang.org/x/telemetry v0.0.0-20260924152758-ed294f943157/go.mod h1:i+ivNqjDnTF3WTElsdk5g9V5DTSBYgdNo7xTU9SDwYA=",
+    ),
+}
+
 
 REVIEWED_TRANSITIVE_SUM_LINES = {
     "github.com/moby/patternmatcher": (
@@ -142,6 +153,7 @@ REVIEWED_TIDY_MODULES = frozenset(
         "github.com/sirupsen/logrus",
         *REVIEWED_GRPC_GRAPH_VERSIONS.keys(),
         *REVIEWED_JOSE_GRAPH_VERSIONS.keys(),
+        *REVIEWED_OPTIONAL_GRAPH_VERSIONS.keys(),
     }
 )
 MODULE_VERSION_RE = re.compile(r"^\s*([^\s]+)\s+(v[^\s]+)(?:\s+//\s+indirect)?\s*$")
@@ -221,6 +233,7 @@ def validate_tidy_result(
         **REVIEWED_TRANSITIVE_VERSIONS,
         **REVIEWED_GRPC_GRAPH_VERSIONS,
         **REVIEWED_JOSE_GRAPH_VERSIONS,
+        **REVIEWED_OPTIONAL_GRAPH_VERSIONS,
     }.items():
         if module in original_versions or module in final_versions:
             if final_versions.get(module) != version:
@@ -235,6 +248,18 @@ def validate_tidy_result(
     missing_sums = [line for line in required_sums if line not in final_sum_lines]
     if missing_sums:
         fail("tidied go.sum is missing reviewed checksums: " + ",".join(missing_sums))
+
+    # x/tools selects this exact telemetry module. Lazy loading may retain
+    # only its go.mod checksum; a selected package also requires its ZIP sum.
+    final_records = sum_records(final_sum)
+    for module, reviewed in REVIEWED_OPTIONAL_SUM_LINES.items():
+        observed = final_records.get(module, set())
+        selected = module in final_versions
+        if not observed and not selected:
+            continue
+        if (observed - set(reviewed) or reviewed[1] not in observed
+                or (selected and reviewed[0] not in observed)):
+            fail(f"tidied go.sum has unreviewed or incomplete optional checksums: {module}")
 
     return {
         "go_mod_changed_modules": sorted(changed_mod_modules),
@@ -344,6 +369,7 @@ def apply(
         "go_version": go_directive(original_mod),
         "build_go_directive": BUILD_GO_DIRECTIVE,
         "reviewed_security_module_versions": {module: version for module, (_, version) in SECURITY_GRAPH_UPGRADES.items()},
+        "reviewed_optional_module_versions": REVIEWED_OPTIONAL_GRAPH_VERSIONS,
         "go_mod_sha256_before": hashlib.sha256(original_mod.encode()).hexdigest(),
         "go_mod_sha256_after_overlay": overlay_mod_sha256,
         "go_mod_sha256_after": sha256(go_mod),

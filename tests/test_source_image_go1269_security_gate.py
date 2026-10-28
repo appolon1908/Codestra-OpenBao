@@ -11,13 +11,13 @@ WORKFLOW = ROOT / ".github/workflows/openbao-source-image-authority.yml"
 UPSTREAM_TOOLCHAIN = ROOT / "upstream/.go-version"
 
 
-class Go1269SourceImageGateTests(unittest.TestCase):
+class GoToolchainSourceImageGateTests(unittest.TestCase):
     def test_both_source_image_builds_pin_security_toolchain(self):
         source = WORKFLOW.read_text()
-        self.assertEqual(source.count("go-version: '1.26.9'"), 2)
+        self.assertEqual(source.count("go-version: '1.26.10'"), 2)
         self.assertNotIn("go-version-file: upstream/.go-version", source)
-        self.assertEqual(source.count('test "$(go env GOVERSION)" = "go1.26.9"'), 2)
-        self.assertEqual(source.count(r"go1\.26\.9[[:space:]]*$"), 2)
+        self.assertEqual(source.count('test "$(go env GOVERSION)" = "go1.26.10"'), 2)
+        self.assertEqual(source.count(r"go1\.26\.10[[:space:]]*$"), 2)
         self.assertEqual(source.count("python3 tests/test_source_image_go1269_security_gate.py"), 2)
         self.assertEqual(source.count("tests/test_source_image_go1269_security_gate.py"), 5)
         self.assertNotIn("go-version: '1.26.x'", source)
@@ -33,11 +33,11 @@ class Go1269SourceImageGateTests(unittest.TestCase):
         self.assertIn('{"HIGH", "CRITICAL", "UNKNOWN"}', source)
 
     def test_binary_go_version_match_is_strict(self):
-        expression = r"^.+:\s+go1\.26\.9\s*$"
-        self.assertIsNotNone(re.match(expression, "bin/bao: go1.26.9"))
+        expression = r"^.+:\s+go1\.26\.10\s*$"
+        self.assertIsNotNone(re.match(expression, "bin/bao: go1.26.10"))
         self.assertIsNone(re.match(expression, "bin/bao: go1.26.6"))
         self.assertIsNone(re.match(expression, "bin/bao: go1.27.2"))
-        self.assertIsNone(re.match(expression, "bin/bao: go1.26.90"))
+        self.assertIsNone(re.match(expression, "bin/bao: go1.26.100"))
 
 
 if __name__ == "__main__":

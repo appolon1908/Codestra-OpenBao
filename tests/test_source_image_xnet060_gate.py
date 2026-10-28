@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed, build-only Go x/net v0.60.0 source-image review contract."""
+"""Fail-closed, build-only Go x/net v0.62.0 source-image review contract."""
 from __future__ import annotations
 
 import importlib.util
@@ -16,18 +16,18 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
 
-class Net060SourceImageGateTests(unittest.TestCase):
+class NetworkSourceImageGateTests(unittest.TestCase):
     def test_security_module_graph_is_complete_and_exact(self):
         graph = {
             "github.com/go-jose/go-jose/v4": ("v4.1.4", "v4.1.6"),
-            "golang.org/x/crypto": ("v0.55.0", "v0.57.0"),
+            "golang.org/x/crypto": ("v0.55.0", "v0.58.0"),
             "golang.org/x/mod": ("v0.38.0", "v0.41.0"),
-            "golang.org/x/net": ("v0.58.0", "v0.60.0"),
-            "golang.org/x/sync": ("v0.22.0", "v0.23.0"),
-            "golang.org/x/sys": ("v0.47.0", "v0.48.0"),
-            "golang.org/x/term": ("v0.45.0", "v0.46.0"),
-            "golang.org/x/text": ("v0.41.0", "v0.42.0"),
-            "golang.org/x/tools": ("v0.48.0", "v0.49.0"),
+            "golang.org/x/net": ("v0.58.0", "v0.62.0"),
+            "golang.org/x/sync": ("v0.22.0", "v0.24.0"),
+            "golang.org/x/sys": ("v0.47.0", "v0.49.0"),
+            "golang.org/x/term": ("v0.45.0", "v0.47.0"),
+            "golang.org/x/text": ("v0.41.0", "v0.43.0"),
+            "golang.org/x/tools": ("v0.48.0", "v0.51.0"),
         }
         self.assertEqual(MODULE.SECURITY_GRAPH_UPGRADES, graph)
         self.assertEqual(MODULE.SOURCE_GO_DIRECTIVE, "1.25.8")
@@ -41,11 +41,11 @@ class Net060SourceImageGateTests(unittest.TestCase):
 
     def test_both_image_paths_check_net_and_text_from_binary(self):
         source = WORKFLOW.read_text()
-        self.assertEqual(source.count(r"golang.org/x/net[[:space:]]+v0\\.60\\.0"), 2)
-        self.assertEqual(source.count(r"golang.org/x/text[[:space:]]+v0\\.42\\.0"), 2)
+        self.assertEqual(source.count(r"golang.org/x/net[[:space:]]+v0\\.62\\.0"), 2)
+        self.assertEqual(source.count(r"golang.org/x/text[[:space:]]+v0\\.43\\.0"), 2)
         self.assertEqual(source.count("python3 tests/test_source_image_xnet060_gate.py"), 2)
         self.assertEqual(source.count("tests/test_source_image_xnet060_gate.py"), 5)
-        self.assertEqual(source.count("go-version: '1.26.9'"), 2)
+        self.assertEqual(source.count("go-version: '1.26.10'"), 2)
         self.assertIn("CVE-2026-56851", source)
         self.assertIn('{"HIGH", "CRITICAL", "UNKNOWN"}', source)
 

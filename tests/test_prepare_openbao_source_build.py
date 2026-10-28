@@ -184,5 +184,21 @@ require (
             )
 
 
+    def test_optional_telemetry_metadata_is_exact_and_selected_package_requires_zip_sum(self) -> None:
+        original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
+        module = "golang.org/x/telemetry"
+        version = "v0.0.0-20260924152758-ed294f943157"
+        zip_sum = module + " " + version + " h1:DftxASHKl6JolFPqoN+2WrFO53JvkHwRXvFqf8gsivA="
+        mod_sum = module + " " + version + "/go.mod h1:i+ivNqjDnTF3WTElsdk5g9V5DTSBYgdNo7xTU9SDwYA="
+        MODULE.validate_tidy_result(original_mod, original_sum, final_mod, final_sum + mod_sum + "\n")
+        selected = final_mod.replace(")\n", "\t" + module + " " + version + " // indirect\n)\n")
+        with self.assertRaises(SystemExit):
+            MODULE.validate_tidy_result(original_mod, original_sum, selected, final_sum + mod_sum + "\n")
+        MODULE.validate_tidy_result(original_mod, original_sum, selected, final_sum + zip_sum + "\n" + mod_sum + "\n")
+        for bad in (mod_sum.replace("h1:i+", "h1:bad"), mod_sum.replace(version, "v0.0.0-20260101000000-aaaaaaaaaaaa")):
+            with self.subTest(checksum=bad), self.assertRaises(SystemExit):
+                MODULE.validate_tidy_result(original_mod, original_sum, final_mod, final_sum + bad + "\n")
+
+
 if __name__ == "__main__":
     unittest.main()
