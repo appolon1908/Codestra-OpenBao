@@ -22,9 +22,11 @@ source_root="$work/source"
 cp -a upstream "$source_root"
 python3 scripts/prepare_openbao_test_fixtures.py --source-root "$source_root" \
   --report "$EVIDENCE_DIR/test-fixture-overlay.json"
-mkdir -p "$source_root/codestra/plugins" "$source_root/codestra/security/josev3"
+mkdir -p "$source_root/codestra/plugins" "$source_root/codestra/security/josev3" "$source_root/codestra/security/celotel"
 cp -a plugins/codestra-jwt-replay "$source_root/codestra/plugins/"
 cp tests/go/josev3security/security_test.go "$source_root/codestra/security/josev3/"
+cp tests/go/celotelsecurity/security_test.go "$source_root/codestra/security/celotel/"
+cp tests/go/celotelsecurity/openbao_test.go.fixture "$source_root/codestra/security/celotel/openbao_test.go"
 python3 scripts/prepare_openbao_source_build.py --source-root "$source_root" \
   --report "$EVIDENCE_DIR/dependency-overlay.json"
 (
@@ -47,8 +49,13 @@ commit_date="$(git show --no-show-signature -s --format=%cI HEAD)"
 (
   cd "$source_root"
   if ! go test -count=1 -v ./codestra/security/josev3 github.com/go-jose/go-jose/v3 \
-    ./builtin/credential/jwt ./codestra/plugins/codestra-jwt-replay \
+    ./builtin/credential/jwt ./codestra/plugins/codestra-jwt-replay ./codestra/security/celotel \
     >"$EVIDENCE_DIR/consumer-tests.log" 2>&1; then
+    tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"
+    exit 1
+  fi
+  if ! go test -count=1 -v -run '^TestDiagnoseOtelResults$' ./vault/diagnose \
+    >>"$EVIDENCE_DIR/consumer-tests.log" 2>&1; then
     tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"
     exit 1
   fi

@@ -1,0 +1,54 @@
+// Copyright (c) 2026 Codestra
+// SPDX-License-Identifier: MPL-2.0
+package celotelsecurity
+
+import (
+	"context"
+	"testing"
+
+	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/common/types"
+	celhelper "github.com/openbao/openbao/sdk/v2/helper/cel"
+)
+
+func TestOpenBaoCELVariablesJSONAndMixedAuthorizationResult(t *testing.T) {
+	config := &celhelper.EvalConfig{WithExtLib: true, WithEmail: true, WithJSON: true,
+		CustomOptions: []cel.EnvOption{cel.Variable("claims", cel.MapType(cel.StringType, cel.DynType))}}
+	program := &celhelper.Program{
+		Variables:  []celhelper.Variable{{Name: "allowed", Expression: "check_valid_email(claims.sub) && claims.aud == 'codestra'"}},
+		Expression: "allowed ? decode_json(encode_json({'sub': claims.sub}))['sub'] : false",
+	}
+	if err := program.Validate(config); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, sub, aud string
+		allowed        bool
+	}{
+		{"allow", "builder@example.invalid", "codestra", true},
+		{"wrong-audience", "builder@example.invalid", "other", false},
+		{"invalid-email", "not-an-email", "codestra", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			value, err := program.Evaluate(context.Background(), config, map[string]interface{}{
+				"claims": map[string]interface{}{"sub": tc.sub, "aud": tc.aud}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.allowed {
+				if value != types.String(tc.sub) {
+					t.Fatalf("allowed claim changed: %v", value)
+				}
+			} else if value != types.False {
+				t.Fatalf("invalid claims granted: %v", value)
+			}
+		})
+	}
+	if _, err := program.Evaluate(context.Background(), config, map[string]interface{}{"claims": map[string]interface{}{"sub": "builder@example.invalid"}}); err == nil {
+		t.Fatal("missing audience must fail evaluation")
+	}
+	malformed := &celhelper.Program{Expression: "decode_json('{')"}
+	if value, err := malformed.Evaluate(context.Background(), config, nil); err != nil || value != types.False {
+		t.Fatalf("malformed JSON must retain false denial result: %v %v", value, err)
+	}
+}

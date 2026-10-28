@@ -5,7 +5,7 @@ The imported upstream tree remains byte-for-byte provenance evidence. Builds use
 small, source-controlled transform to replace the vulnerable indirect archive module.
 The transform fails unless the exact reviewed old module and checksum records exist.
 When the command-line build path is used, Go may reconcile only the reviewed archive,
-grpc-go and go-jose module families; unrelated module or Go-directive changes fail closed.
+grpc-go, go-jose, CEL and OpenTelemetry module families; unrelated module or Go-directive changes fail closed.
 """
 
 from __future__ import annotations
@@ -68,6 +68,13 @@ BUILD_GO_DIRECTIVE = "1.26.0"
 # Exact reviewed MVS dependency graph from the Go module checksum database.
 # This is a build-only transformation: imported upstream source stays byte-identical.
 SECURITY_GRAPH_UPGRADES = {
+    'github.com/google/cel-go': ('v0.28.1', 'v0.30.0'),
+    'github.com/go-logr/logr': ('v1.4.3', 'v1.4.4'),
+    'go.opentelemetry.io/otel': ('v1.44.0', 'v1.45.0'),
+    'go.opentelemetry.io/otel/sdk': ('v1.44.0', 'v1.45.0'),
+    'go.opentelemetry.io/otel/trace': ('v1.44.0', 'v1.45.0'),
+    'go.opentelemetry.io/otel/metric': ('v1.44.0', 'v1.45.0'),
+
     JOSE_MODULE: ("v4.1.4", "v4.1.6"),
     "golang.org/x/crypto": ("v0.55.0", "v0.58.0"),
     "golang.org/x/mod": ("v0.38.0", "v0.41.0"),
@@ -78,7 +85,68 @@ SECURITY_GRAPH_UPGRADES = {
     "golang.org/x/text": ("v0.41.0", "v0.43.0"),
     "golang.org/x/tools": ("v0.48.0", "v0.51.0"),
 }
+REVIEWED_CEL_OTEL_GRAPH_VERSIONS = {
+    "github.com/google/cel-go": "v0.30.0",
+    "github.com/go-logr/logr": "v1.4.4",
+    "go.opentelemetry.io/otel": "v1.45.0",
+    "go.opentelemetry.io/otel/sdk": "v1.45.0",
+    "go.opentelemetry.io/otel/trace": "v1.45.0",
+    "go.opentelemetry.io/otel/metric": "v1.45.0",
+}
+
+CEL_OTEL_OLD_SUM_LINES = {
+    "github.com/google/cel-go": (
+        "github.com/google/cel-go v0.28.1 h1:YWIwi77J4xIsYUwAF/iIuS6haffzIHS8yWI8glSbLWM=",
+        "github.com/google/cel-go v0.28.1/go.mod h1:X0bD6iVNR8pkROSOoHVdgTkzmRcosof7WQqCD6wcMc8=",
+    ),
+    "github.com/go-logr/logr": (
+        "github.com/go-logr/logr v1.4.3 h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=",
+        "github.com/go-logr/logr v1.4.3/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=",
+    ),
+    "go.opentelemetry.io/otel": (
+        "go.opentelemetry.io/otel v1.44.0 h1:JjwHmHpA4iZ3wBxluu2fbbE7j4kqlE8jXyAyPXH7HqU=",
+        "go.opentelemetry.io/otel v1.44.0/go.mod h1:BMgjTHL9WPRlRjL2oZCBTL4whCGtXch2H4BhOPIAyYc=",
+    ),
+    "go.opentelemetry.io/otel/sdk": (
+        "go.opentelemetry.io/otel/sdk v1.44.0 h1:nHYwb9lK+fJPU/dnT6s7W7Z8itMWyqrnVfbheVYrZ58=",
+        "go.opentelemetry.io/otel/sdk v1.44.0/go.mod h1:Osuydd3Se74nqjAKxid74N5eC+jfEqfTegHRnq58oK0=",
+    ),
+    "go.opentelemetry.io/otel/trace": (
+        "go.opentelemetry.io/otel/trace v1.44.0 h1:jxF5CsGYCe74MCRx2X4g7WsY/VBKRqqpNvXlX/6gtIk=",
+        "go.opentelemetry.io/otel/trace v1.44.0/go.mod h1:oLl1jrMQAVo6v3GAggN+1VH9VIz9iUSvW53sW1Q8PIE=",
+    ),
+    "go.opentelemetry.io/otel/metric": (
+        "go.opentelemetry.io/otel/metric v1.44.0 h1:1w0gILTcHdr3YI+ixLyjemwrVnsMURbTZFrSYCdDdmc=",
+        "go.opentelemetry.io/otel/metric v1.44.0/go.mod h1:8O7hanEPBNgEMmybD3s2VBKcgWOCsA6tzHBPODAiquo=",
+    ),
+}
+
 REVIEWED_SECURITY_SUM_LINES = {
+    "github.com/google/cel-go": (
+        "github.com/google/cel-go v0.30.0 h1:ll54AkzKunWkBn9wSoiUXbFZXYZTkdJGNXTBXUoolGo=",
+        "github.com/google/cel-go v0.30.0/go.mod h1:X0bD6iVNR8pkROSOoHVdgTkzmRcosof7WQqCD6wcMc8=",
+    ),
+    "github.com/go-logr/logr": (
+        "github.com/go-logr/logr v1.4.4 h1:tG4xh9yMsRCAiodLVTxyrkzSZ9+o0L1Kg/+cPVcbP/8=",
+        "github.com/go-logr/logr v1.4.4/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=",
+    ),
+    "go.opentelemetry.io/otel": (
+        "go.opentelemetry.io/otel v1.45.0 h1:pdrWmLHofpubmArBv1LgFSv1Z0Ie/ppdZzu+kUN5EeU=",
+        "go.opentelemetry.io/otel v1.45.0/go.mod h1:XZxIqPapzEYnhNSScF5DIqXhm/rYi0FzCe2XddAwZfQ=",
+    ),
+    "go.opentelemetry.io/otel/sdk": (
+        "go.opentelemetry.io/otel/sdk v1.45.0 h1:4VVSMgQ83dUgW2aoX5f6JgLvHwIvzcuLnF9lUdCSpCw=",
+        "go.opentelemetry.io/otel/sdk v1.45.0/go.mod h1:Sr40LgXV7DsKMMJMKOhUWOgMWTfAaqvm2kF0g7ilwuA=",
+    ),
+    "go.opentelemetry.io/otel/trace": (
+        "go.opentelemetry.io/otel/trace v1.45.0 h1:l/mP6Uv7oNO7/TblbhpbgMidxhq1uO/rPsikOyVhxag=",
+        "go.opentelemetry.io/otel/trace v1.45.0/go.mod h1:qoJJA2xNMnxRrdISU/kLtfUH2wNeQbiv+jhs/CxI8bc=",
+    ),
+    "go.opentelemetry.io/otel/metric": (
+        "go.opentelemetry.io/otel/metric v1.45.0 h1:7Eg1uH7CJ5cXv9is6tnBe1FI6rj1nwUdbFypRm3br/M=",
+        "go.opentelemetry.io/otel/metric v1.45.0/go.mod h1:HAPbm1nd3p1PmFH7v2dR+6BjXxw+Lq4a2+pndMAm08s=",
+    ),
+
     JOSE_MODULE: JOSE_NEW_SUM_LINES,
     "golang.org/x/crypto": (
         "golang.org/x/crypto v0.58.0 h1:COkYLr4k7nDI4r6QtMML2AfzeIswWHAJthLS6K/M/54=",
@@ -115,9 +183,15 @@ REVIEWED_SECURITY_SUM_LINES = {
 }
 
 REVIEWED_OPTIONAL_GRAPH_VERSIONS = {
+    'go.opentelemetry.io/otel/sdk/metric': 'v1.45.0',
+    'go.opentelemetry.io/otel/metric/x': 'v0.67.0',
+
     "golang.org/x/telemetry": "v0.0.0-20260924152758-ed294f943157",
 }
 REVIEWED_OPTIONAL_SUM_LINES = {
+    'go.opentelemetry.io/otel/sdk/metric': ('go.opentelemetry.io/otel/sdk/metric v1.45.0 h1:oVFszMfyj1Am6s24Vtc7wBb8BKLcwepJjNEYILuiE3o=', 'go.opentelemetry.io/otel/sdk/metric v1.45.0/go.mod h1:vUWUxDZvu1WVRj8JA8S0AdhsPrZoDpA2DdZauIh4mDA='),
+    'go.opentelemetry.io/otel/metric/x': ('go.opentelemetry.io/otel/metric/x v0.67.0 h1:PcicCNZFkZ4bXfSooXdo3WN7RBOVOtjVdo1wD358Uns=', 'go.opentelemetry.io/otel/metric/x v0.67.0/go.mod h1:FBjCWZe6wgcqxcMtjdGiClDKXb2YxxXii0CXftE4QtI='),
+
     "golang.org/x/telemetry": (
         "golang.org/x/telemetry v0.0.0-20260924152758-ed294f943157 h1:DftxASHKl6JolFPqoN+2WrFO53JvkHwRXvFqf8gsivA=",
         "golang.org/x/telemetry v0.0.0-20260924152758-ed294f943157/go.mod h1:i+ivNqjDnTF3WTElsdk5g9V5DTSBYgdNo7xTU9SDwYA=",
@@ -153,6 +227,7 @@ REVIEWED_TIDY_MODULES = frozenset(
         "github.com/sirupsen/logrus",
         *REVIEWED_GRPC_GRAPH_VERSIONS.keys(),
         *REVIEWED_JOSE_GRAPH_VERSIONS.keys(),
+        *REVIEWED_CEL_OTEL_GRAPH_VERSIONS.keys(),
         *REVIEWED_OPTIONAL_GRAPH_VERSIONS.keys(),
     }
 )
@@ -233,6 +308,7 @@ def validate_tidy_result(
         **REVIEWED_TRANSITIVE_VERSIONS,
         **REVIEWED_GRPC_GRAPH_VERSIONS,
         **REVIEWED_JOSE_GRAPH_VERSIONS,
+        **REVIEWED_CEL_OTEL_GRAPH_VERSIONS,
         **REVIEWED_OPTIONAL_GRAPH_VERSIONS,
     }.items():
         if module in original_versions or module in final_versions:
@@ -319,6 +395,11 @@ def apply(
     # dependency. This exact v4-only replacement makes no v3 safety claim.
     for old, new in zip(JOSE_OLD_SUM_LINES, JOSE_NEW_SUM_LINES, strict=True):
         updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum go-jose checksum")
+
+    # Verify every reviewed CEL/SDK baseline checksum before writing either file.
+    for module, old_lines in CEL_OTEL_OLD_SUM_LINES.items():
+        for old, new in zip(old_lines, REVIEWED_SECURITY_SUM_LINES[module], strict=True):
+            updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum CEL/SDK checksum")
 
     if go_directive(updated_mod) != SOURCE_GO_DIRECTIVE:
         fail("source go directive did not match reviewed imported OpenBao version")

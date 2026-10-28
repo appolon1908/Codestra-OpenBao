@@ -16,7 +16,15 @@ from write_openbao_source_image_evidence import vulnerability_counts
 
 SHA = re.compile(r"^[0-9a-f]{40}$")
 DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
-BLOCKED = {"CVE-2026-84304", "CVE-2026-84445", "CVE-2026-56851"}
+BLOCKED = {"CVE-2026-84304", "CVE-2026-84445", "CVE-2026-56851",
+           "GHSA-gcjh-h69q-9w9g", "CVE-2026-81870"}
+FIXED_CEL_OTEL_MODULES = {
+    "github.com/google/cel-go": "v0.30.0",
+    "github.com/go-logr/logr": "v1.4.4",
+    "go.opentelemetry.io/otel": "v1.45.0",
+    "go.opentelemetry.io/otel/metric": "v1.45.0",
+    "go.opentelemetry.io/otel/trace": "v1.45.0",
+}
 
 def sha(path):
     h = hashlib.sha256()
@@ -155,13 +163,16 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
     for name in ("bao","plugin"):
         version = (root/(name+"-go-version.txt")).read_text()
         require(re.search(r":\s+go1\.26\.10\s*$",version,re.M) is not None, "wrong compiled toolchain")
-        for module, version_pin in {"github.com/go-jose/go-jose/v3":"v3.0.5",
+        required={**FIXED_CEL_OTEL_MODULES,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="bao" else {})}
+        for module, version_pin in {**required,"github.com/go-jose/go-jose/v3":"v3.0.5",
                                     "github.com/go-jose/go-jose/v4":"v4.1.6",
                                     "golang.org/x/net":"v0.62.0",
                                     "golang.org/x/text":"v0.43.0",
                                     "google.golang.org/grpc":"v1.83.2"}.items():
             require(re.search(r"dep\s+"+re.escape(module)+r"\s+"+re.escape(version_pin)+r"(\s|$)",version),
                     "compiled dependency mismatch: "+module)
+        sdk_versions=re.findall(r"dep\s+go\.opentelemetry\.io/otel/sdk\s+(\S+)",version)
+        require(not sdk_versions or set(sdk_versions)=={"v1.45.0"}, "compiled optional SDK dependency mismatch")
     tools = load(root/"tool-versions.json")
     require(tools["trivy"]["Version"]=="0.74.0" and tools["syft"]["version"]=="1.51.1",
             "unexpected scanner/SBOM tool version")
@@ -209,10 +220,13 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
         versions = {}
         for package in inventory:
             versions.setdefault(package.get("name"),set()).add(package.get("versionInfo") if name=="image" else package.get("version"))
-        for module,version in {"github.com/go-jose/go-jose/v3":"v3.0.5","github.com/go-jose/go-jose/v4":"v4.1.6",
+        required={**FIXED_CEL_OTEL_MODULES,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="image" else {})}
+        for module,version in {**required,"github.com/go-jose/go-jose/v3":"v3.0.5","github.com/go-jose/go-jose/v4":"v4.1.6",
                                "golang.org/x/net":"v0.62.0","golang.org/x/text":"v0.43.0",
                                "google.golang.org/grpc":"v1.83.2","stdlib":"go1.26.10"}.items():
             require(versions.get(module)=={version}, "SBOM dependency identity mismatch: "+module)
+        require("go.opentelemetry.io/otel/sdk" not in versions or
+                versions["go.opentelemetry.io/otel/sdk"]=={"v1.45.0"}, "SBOM optional SDK dependency mismatch")
         findings = [v for result in report["Results"] for v in result.get("Vulnerabilities") or []]
         known = sorted({v["VulnerabilityID"] for v in findings if v["VulnerabilityID"] in BLOCKED})
         subjects[name] = {"critical":critical,"high":high,"unknown":unknown,

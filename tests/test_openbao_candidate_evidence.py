@@ -69,6 +69,11 @@ class CandidateEvidenceTests(unittest.TestCase):
                  ("github.com/go-jose/go-jose/v3","v3.0.5"),("github.com/go-jose/go-jose/v4","v4.1.6"),
                  ("golang.org/x/net","v0.62.0"),("golang.org/x/text","v0.43.0"),
                  ("google.golang.org/grpc","v1.83.2")))+"\n")
+        fixed_pins={'github.com/google/cel-go': 'v0.30.0', 'github.com/go-logr/logr': 'v1.4.4', 'go.opentelemetry.io/otel': 'v1.45.0', 'go.opentelemetry.io/otel/metric': 'v1.45.0', 'go.opentelemetry.io/otel/trace': 'v1.45.0'}
+        for name in ("bao","plugin"):
+            path=root/(name+"-go-version.txt")
+            pins={**fixed_pins,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="bao" else {})}
+            path.write_text(path.read_text()+"".join(" dep "+m+" "+v+"\n" for m,v in pins.items()))
         write(root,"tool-versions.json",{"trivy":{"Version":"0.74.0"},"syft":{"version":"1.51.1"}})
         write(root,"trivy-version.json",{"Version":"0.74.0"})
         write(root,"syft-version.json",{"version":"1.51.1"})
@@ -85,8 +90,9 @@ class CandidateEvidenceTests(unittest.TestCase):
         inventory={"github.com/go-jose/go-jose/v3":"v3.0.5","github.com/go-jose/go-jose/v4":"v4.1.6",
                    "golang.org/x/net":"v0.62.0","golang.org/x/text":"v0.43.0",
                    "google.golang.org/grpc":"v1.83.2","stdlib":"go1.26.10"}
+        inventory.update(fixed_pins)
         write(root,"image-sbom.json",{"spdxVersion":"SPDX-2.3",
-            "packages":[{"name":name,"versionInfo":version} for name,version in inventory.items()]})
+            "packages":[{"name":name,"versionInfo":version} for name,version in {**inventory,"go.opentelemetry.io/otel/sdk":"v1.45.0"}.items()]})
         write(root,"plugin-sbom.json",{"bomFormat":"CycloneDX","specVersion":"1.7","components":[{"name":name,"version":version} for name,version in inventory.items()],
             "metadata":{"component":{"name":"codestra-jwt-replay","version":"sha256:"+MODULE.sha(root/"plugin-root/codestra-jwt-replay")},
                         "tools":{"components":[{"name":"syft","version":"1.51.1"}]}}})
@@ -176,6 +182,59 @@ class CandidateEvidenceTests(unittest.TestCase):
             change(root,"image-inspect.json",lambda d:d.update(Id="sha256:"+"0"*64))
             with self.assertRaisesRegex(ValueError,"configuration"):
                 MODULE.snapshot_image(archive,root)
+
+    def test_fixed_cel_and_sdk_artifact_identities_cannot_drift(self):
+        for subject,module,current in (("bao","github.com/google/cel-go","v0.30.0"),
+                                       ("plugin","github.com/google/cel-go","v0.30.0"),
+                                       ("bao","go.opentelemetry.io/otel/sdk","v1.45.0"),
+                                       ("plugin","go.opentelemetry.io/otel/trace","v1.45.0")):
+            for target in ("metadata","sbom"):
+                with self.subTest(subject=subject,module=module,target=target),tempfile.TemporaryDirectory() as tmp:
+                    root=Path(tmp);self.fixture(root)
+                    if target=="metadata":
+                        path=root/(subject+"-go-version.txt")
+                        path.write_text(path.read_text().replace(module+" "+current,module+" v0.0.1"))
+                    else:
+                        name="image" if subject=="bao" else "plugin"
+                        key,version_key=("packages","versionInfo") if name=="image" else ("components","version")
+                        def mutate(document):
+                            for item in document[key]:
+                                if item["name"]==module: item[version_key]="v0.0.1"
+                        change(root,name+"-sbom.json",mutate)
+                    with self.assertRaisesRegex(ValueError,"dependency"):
+                        self.evaluate(root)
+
+    def test_repaired_cel_and_sdk_advisories_cannot_pass_at_low_severity(self):
+        for subject in ("image","plugin"):
+            for advisory in ("GHSA-gcjh-h69q-9w9g","CVE-2026-81870"):
+                with self.subTest(subject=subject,advisory=advisory),tempfile.TemporaryDirectory() as tmp:
+                    root=Path(tmp);self.fixture(root)
+                    change(root,subject+"-trivy.json",lambda d:d["Results"][0]["Vulnerabilities"].append(
+                        {"VulnerabilityID":advisory,"PkgName":"fixture","Severity":"LOW"}))
+                    self.assertEqual(self.evaluate(root)["status"],"FAIL")
+
+    def test_plugin_need_not_materialize_unused_trace_sdk_package(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);self.fixture(root)
+            self.assertNotIn("go.opentelemetry.io/otel/sdk ",(root/"plugin-go-version.txt").read_text())
+            self.assertEqual(self.evaluate(root)["status"],"PASS")
+
+    def test_optional_plugin_sdk_must_be_fixed_when_present(self):
+        for version in ("v1.45.0","v1.44.0"):
+            for target in ("metadata","sbom"):
+                with self.subTest(version=version,target=target),tempfile.TemporaryDirectory() as tmp:
+                    root=Path(tmp);self.fixture(root)
+                    if target=="metadata":
+                        path=root/"plugin-go-version.txt"
+                        path.write_text(path.read_text()+" dep go.opentelemetry.io/otel/sdk "+version+"\n")
+                    else:
+                        change(root,"plugin-sbom.json",lambda d:d["components"].append(
+                            {"name":"go.opentelemetry.io/otel/sdk","version":version}))
+                    if version=="v1.45.0":
+                        self.assertEqual(self.evaluate(root)["status"],"PASS")
+                    else:
+                        with self.assertRaisesRegex(ValueError,"SDK"):
+                            self.evaluate(root)
 
 if __name__=="__main__":
     unittest.main()
