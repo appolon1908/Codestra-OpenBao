@@ -1,0 +1,103 @@
+--- a/jwe.go
++++ b/jwe.go
+@@ -154,9 +153,0 @@
+-	// Note: this must be called _after_ we parse the protected header,
+-	// otherwise fields from the protected header will not get picked up.
+-	var err error
+-	mergedHeaders := obj.mergedHeaders(nil)
+-	obj.Header, err = mergedHeaders.sanitized()
+-	if err != nil {
+-		return nil, fmt.Errorf("go-jose/go-jose: cannot sanitize merged headers: %v (%v)", err, mergedHeaders)
+-	}
+-
+@@ -192,0 +184,9 @@
++	}
++
++	// Note: this must be called _after_ we parse the protected header,
++	// otherwise fields from the protected header will not get picked up.
++	var err error
++	mergedHeaders := obj.mergedHeaders(nil)
++	obj.Header, err = mergedHeaders.sanitized()
++	if err != nil {
++		return nil, fmt.Errorf("go-jose/go-jose: cannot sanitize merged headers: %w", err)
+--- a/jwk.go
++++ b/jwk.go
+@@ -178 +178,7 @@
+-func (k *JSONWebKey) UnmarshalJSON(data []byte) (err error) {
++func (k *JSONWebKey) UnmarshalJSON(data []byte) error {
++	return k.unmarshalJSON(data, true)
++}
++
++// unmarshalJSON rejects private material in untrusted JOSE headers before
++// certificate parsing or private-key validation.
++func (k *JSONWebKey) unmarshalJSON(data []byte, allowPrivate bool) (err error) {
+@@ -182,0 +189,6 @@
++	}
++
++	if !allowPrivate &&
++		(raw.K != nil || raw.D != nil || raw.P != nil || raw.Q != nil ||
++			raw.Dp != nil || raw.Dq != nil || raw.Qi != nil) {
++		return errors.New("go-jose/go-jose: JWK contains private parameters")
+@@ -483,0 +496,4 @@
++// Bound untrusted RSA work as in the maintainer's v4.1.6 security fix.
++// This build backport deliberately provides no mutable process-wide escape hatch.
++const maxRSAModulusBits = 4096
++
+@@ -488,0 +505,5 @@
++	n := key.N.bigInt()
++	if n.BitLen() > maxRSAModulusBits {
++		return nil, fmt.Errorf("go-jose/go-jose: invalid RSA key, modulus too large")
++	}
++
+@@ -490 +511 @@
+-		N: key.N.bigInt(),
++		N: n,
+@@ -630,0 +652,9 @@
++	n := key.N.bigInt()
++	if n.BitLen() > maxRSAModulusBits {
++		return nil, fmt.Errorf("go-jose/go-jose: invalid RSA key, modulus too large")
++	}
++	p, q := key.P.bigInt(), key.Q.bigInt()
++	if p.BitLen()+q.BitLen() > n.BitLen()+1 || new(big.Int).Mul(p, q).Cmp(n) != 0 {
++		return nil, errors.New("go-jose/go-jose: invalid RSA private key, p * q != n")
++	}
++
+@@ -632,4 +662 @@
+-		PublicKey: rsa.PublicKey{
+-			N: key.N.bigInt(),
+-			E: key.E.toInt(),
+-		},
++		PublicKey: rsa.PublicKey{N: n, E: key.E.toInt()},
+@@ -637,4 +664 @@
+-		Primes: []*big.Int{
+-			key.P.bigInt(),
+-			key.Q.bigInt(),
+-		},
++		Primes: []*big.Int{p, q},
+--- a/jws.go
++++ b/jws.go
+@@ -237,0 +238 @@
++		obj.Signatures[i].header = sig.Header
+@@ -269 +269,0 @@
+-		obj.Signatures[i].header = sig.Header
+--- a/shared.go
++++ b/shared.go
+@@ -285,2 +285,2 @@
+-	var epk *JSONWebKey
+-	err := json.Unmarshal(*v, &epk)
++	epk := new(JSONWebKey)
++	err := epk.unmarshalJSON(*v, false)
+@@ -319,2 +319,2 @@
+-	var jwk *JSONWebKey
+-	err := json.Unmarshal(*v, &jwk)
++	jwk := new(JSONWebKey)
++	err := jwk.unmarshalJSON(*v, false)
+@@ -386,4 +386,4 @@
+-			var jwk *JSONWebKey
+-			err = json.Unmarshal(*v, &jwk)
+-			if err != nil {
+-				err = fmt.Errorf("failed to unmarshal JWK: %v: %#v", err, string(*v))
++			jwk := new(JSONWebKey)
++			err = jwk.unmarshalJSON(*v, false)
++			if err != nil {
++				err = fmt.Errorf("failed to unmarshal JWK: %w", err)

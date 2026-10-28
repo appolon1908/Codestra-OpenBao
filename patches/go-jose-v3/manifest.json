@@ -1,0 +1,33 @@
+{
+  "advisory": "https://github.com/go-jose/go-jose/security/advisories/GHSA-mgcc-cww5-fp2q",
+  "baseline_commit": "be2f6548701d4ba561cd61c7d4a2f1289b66c273",
+  "differences_from_v4_fix": [
+    "v3 API has no algorithm-allowlist parsing parameter; keep its API unchanged",
+    "Use a fixed 4096-bit ceiling, without the new mutable v4 escape hatch",
+    "Retain the unexported getJWK helper with public-only parsing"
+  ],
+  "files": {
+    "jwe.go": {
+      "after": "63bf71b42b40ce2cb01bedbc254a0efc4986a7b6c0908633dd83f419684cabe7",
+      "before": "904beb59428b5bd472debed7bc9c799b7cffeb426fc4395ee78973b88597f8a8"
+    },
+    "jwk.go": {
+      "after": "383227c798b1c6da82c607b678c7f526d8c640cbca8bbdf1c316089b4f82acd7",
+      "before": "79f510a4b97fa2e34ec37932cab57e64dfdc9fa6c314654d1ccc2dd93898a532"
+    },
+    "jws.go": {
+      "after": "14366d14c763a15ce8814b405c7f948bb8561019d0df20200ac53b2036563244",
+      "before": "6cc24876cea42cf11503f87ac68456d9169d5e6fec757efaf9e4fd46bc74fb0b"
+    },
+    "shared.go": {
+      "after": "d90c9e6e74a2d1325f36596c849f13d4d559dfb2a9e5b271b57efa20bd45bd13",
+      "before": "3802ca5b8f811f72d33eb662cbbdf53d3b7aa4bcbb6b6c6ddd7695a54e3a3d40"
+    }
+  },
+  "module": "github.com/go-jose/go-jose/v3",
+  "module_version": "v3.0.5",
+  "patch_sha256": "19521c3f3036c57f2245dafe485ac02a4895d9c49eaade7361618c7ebfa35f08",
+  "schema_version": 1,
+  "upstream_fix": "a0111f82742fa92bceec9ede40845e73319e6230",
+  "vulnerability_acceptance": false
+}
