@@ -29,7 +29,7 @@ class SourceBuildPatchTests(unittest.TestCase):
         )
         source.joinpath("go.sum").write_text(
             "unrelated.example/module v1.0.0 h1:example=\n"
-            + "\n".join((*MODULE.OLD_SUM_LINES, *MODULE.JOSE_OLD_SUM_LINES,
+            + "\n".join((*MODULE.OLD_SUM_LINES, *MODULE.JOSE_OLD_SUM_LINES, *MODULE.CAP_OLD_SUM_LINES,
                          *(line for lines in MODULE.CEL_OTEL_OLD_SUM_LINES.values() for line in lines)))
             + "\n",
             encoding="utf-8",

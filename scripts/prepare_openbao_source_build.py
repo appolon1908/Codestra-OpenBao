@@ -42,7 +42,16 @@ JOSE_NEW_SUM_LINES = (
     JOSE_MODULE + " v4.1.6 h1:sNRkftxFJxwsILiQukqp5z83QBSmntVwmgRY7AqBDO4=",
     JOSE_MODULE + " v4.1.6/go.mod h1:x4oUasVrzR7071A4TnHLGSPpNOm2a21K9Kf04k1rs08=",
 )
-REVIEWED_JOSE_GRAPH_VERSIONS = {JOSE_MODULE: "v4.1.6"}
+CAP_MODULE = "github.com/hashicorp/cap"
+CAP_OLD_SUM_LINES = (
+    CAP_MODULE + " v0.13.0 h1:bzLS1er9am6hOiw//TEjmwZ3t975iFfRfvXY6VRLKEw=",
+    CAP_MODULE + " v0.13.0/go.mod h1:Kbu5owAOJzQ/HH4Ba/76wsIXN2tRiJgToJKBO2MAEFE=",
+)
+CAP_NEW_SUM_LINES = (
+    CAP_MODULE + " v0.14.0 h1:IPWX/ewgw8tQPl0qpnCuNf6BFXOCz7ijSM5ikX27cNg=",
+    CAP_MODULE + " v0.14.0/go.mod h1:Kbu5owAOJzQ/HH4Ba/76wsIXN2tRiJgToJKBO2MAEFE=",
+)
+REVIEWED_JOSE_GRAPH_VERSIONS = {JOSE_MODULE: "v4.1.6", CAP_MODULE: "v0.14.0"}
 
 REVIEWED_TRANSITIVE_VERSIONS = {
     "github.com/moby/patternmatcher": "v0.6.1",
@@ -68,6 +77,7 @@ BUILD_GO_DIRECTIVE = "1.26.0"
 # Exact reviewed MVS dependency graph from the Go module checksum database.
 # This is a build-only transformation: imported upstream source stays byte-identical.
 SECURITY_GRAPH_UPGRADES = {
+    CAP_MODULE: ("v0.13.0", "v0.14.0"),
     'github.com/google/cel-go': ('v0.28.1', 'v0.30.0'),
     'github.com/go-logr/logr': ('v1.4.3', 'v1.4.4'),
     'go.opentelemetry.io/otel': ('v1.44.0', 'v1.45.0'),
@@ -122,6 +132,7 @@ CEL_OTEL_OLD_SUM_LINES = {
 }
 
 REVIEWED_SECURITY_SUM_LINES = {
+    CAP_MODULE: CAP_NEW_SUM_LINES,
     "github.com/google/cel-go": (
         "github.com/google/cel-go v0.30.0 h1:ll54AkzKunWkBn9wSoiUXbFZXYZTkdJGNXTBXUoolGo=",
         "github.com/google/cel-go v0.30.0/go.mod h1:X0bD6iVNR8pkROSOoHVdgTkzmRcosof7WQqCD6wcMc8=",
@@ -395,6 +406,10 @@ def apply(
     # dependency. This exact v4-only replacement makes no v3 safety claim.
     for old, new in zip(JOSE_OLD_SUM_LINES, JOSE_NEW_SUM_LINES, strict=True):
         updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum go-jose checksum")
+
+    # CAP0.14 rejects aliases of registered claims; retain its honest dependency identity.
+    for old, new in zip(CAP_OLD_SUM_LINES, CAP_NEW_SUM_LINES, strict=True):
+        updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum CAP checksum")
 
     # Verify every reviewed CEL/SDK baseline checksum before writing either file.
     for module, old_lines in CEL_OTEL_OLD_SUM_LINES.items():

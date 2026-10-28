@@ -24,7 +24,10 @@ python3 scripts/prepare_openbao_test_fixtures.py --source-root "$source_root" \
   --report "$EVIDENCE_DIR/test-fixture-overlay.json"
 mkdir -p "$source_root/codestra/plugins" "$source_root/codestra/security/josev3" "$source_root/codestra/security/celotel"
 cp -a plugins/codestra-jwt-replay "$source_root/codestra/plugins/"
-cp tests/go/josev3security/security_test.go "$source_root/codestra/security/josev3/"
+cp tests/go/josev3security/security_test.go tests/go/josev3security/cap_claims_test.go \
+  "$source_root/codestra/security/josev3/"
+cp tests/go/capclaims/kubernetes_test.go.fixture \
+  "$source_root/builtin/credential/kubernetes/codestra_cap_claims_test.go"
 cp tests/go/celotelsecurity/security_test.go "$source_root/codestra/security/celotel/"
 cp tests/go/celotelsecurity/openbao_test.go.fixture "$source_root/codestra/security/celotel/openbao_test.go"
 python3 scripts/prepare_openbao_source_build.py --source-root "$source_root" \
@@ -56,6 +59,12 @@ commit_date="$(git show --no-show-signature -s --format=%cI HEAD)"
   fi
   if ! go test -count=1 -v -run '^TestDiagnoseOtelResults$' ./vault/diagnose \
     >>"$EVIDENCE_DIR/consumer-tests.log" 2>&1; then
+    tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"
+    exit 1
+  fi
+  if ! go test -count=1 -v \
+    -run '^(TestLogin|TestLogin_ContextError|TestLogin_ECDSA_PEM|TestLoginIssValidation|TestLoginProjectedToken|TestCAPKubernetesAudienceAndAliasValidation)$' \
+    ./builtin/credential/kubernetes >>"$EVIDENCE_DIR/consumer-tests.log" 2>&1; then
     tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"
     exit 1
   fi

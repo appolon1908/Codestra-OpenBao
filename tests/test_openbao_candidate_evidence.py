@@ -69,7 +69,7 @@ class CandidateEvidenceTests(unittest.TestCase):
                  ("github.com/go-jose/go-jose/v3","v3.0.5"),("github.com/go-jose/go-jose/v4","v4.1.6"),
                  ("golang.org/x/net","v0.62.0"),("golang.org/x/text","v0.43.0"),
                  ("google.golang.org/grpc","v1.83.2")))+"\n")
-        fixed_pins={'github.com/google/cel-go': 'v0.30.0', 'github.com/go-logr/logr': 'v1.4.4', 'go.opentelemetry.io/otel': 'v1.45.0', 'go.opentelemetry.io/otel/metric': 'v1.45.0', 'go.opentelemetry.io/otel/trace': 'v1.45.0'}
+        fixed_pins={"github.com/hashicorp/cap":"v0.14.0",'github.com/google/cel-go': 'v0.30.0', 'github.com/go-logr/logr': 'v1.4.4', 'go.opentelemetry.io/otel': 'v1.45.0', 'go.opentelemetry.io/otel/metric': 'v1.45.0', 'go.opentelemetry.io/otel/trace': 'v1.45.0'}
         for name in ("bao","plugin"):
             path=root/(name+"-go-version.txt")
             pins={**fixed_pins,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="bao" else {})}
@@ -235,6 +235,23 @@ class CandidateEvidenceTests(unittest.TestCase):
                     else:
                         with self.assertRaisesRegex(ValueError,"SDK"):
                             self.evaluate(root)
+
+    def test_cap_compiled_and_sbom_versions_cannot_drift(self):
+        for subject in ("image","plugin"):
+            for target in ("metadata","sbom"):
+                with self.subTest(subject=subject,target=target),tempfile.TemporaryDirectory() as tmp:
+                    root=Path(tmp);self.fixture(root)
+                    if target=="metadata":
+                        path=root/(("bao" if subject=="image" else "plugin")+"-go-version.txt")
+                        path.write_text(path.read_text().replace("github.com/hashicorp/cap v0.14.0","github.com/hashicorp/cap v0.13.0"))
+                    else:
+                        def mutate(document):
+                            for entry in document["packages" if subject=="image" else "components"]:
+                                if entry["name"]=="github.com/hashicorp/cap":
+                                    entry["versionInfo" if subject=="image" else "version"]="v0.13.0"
+                        change(root,subject+"-sbom.json",mutate)
+                    with self.assertRaisesRegex(ValueError,"dependency"):
+                        self.evaluate(root)
 
 if __name__=="__main__":
     unittest.main()

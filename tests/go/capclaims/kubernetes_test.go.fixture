@@ -1,0 +1,86 @@
+// Copyright (c) 2026 Codestra
+// SPDX-License-Identifier: MPL-2.0
+package kubeauth
+
+import (
+	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"encoding/json"
+	"strings"
+	"testing"
+	"time"
+
+	jose "github.com/go-jose/go-jose/v4"
+)
+
+func TestCAPKubernetesAudienceAndAliasValidation(t *testing.T) {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wrong, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	backend := &kubeAuthBackend{}
+	role := &roleStorageEntry{ServiceAccountNames: []string{"*"}, ServiceAccountNamespaces: []string{"*"}, Audience: "codestra"}
+	config := &kubeConfig{Issuer: "kubernetes/serviceaccount", PublicKeys: []crypto.PublicKey{&key.PublicKey}}
+	for _, name := range []string{"canonical", "wrong-audience", "uppercase-audience", "homoglyph-subject", "wrong-issuer", "expired", "wrong-signature"} {
+		t.Run(name, func(t *testing.T) {
+			now := time.Now().Unix()
+			claims := map[string]interface{}{"iss": "kubernetes/serviceaccount", "sub": "system:serviceaccount:default:builder",
+				"aud": []string{"codestra"}, "iat": now, "nbf": now - 10, "exp": now + 3600,
+				"kubernetes.io/serviceaccount/service-account.name": "builder",
+				"kubernetes.io/serviceaccount/namespace":            "default",
+				"kubernetes.io/serviceaccount/service-account.uid":  "test-service-account"}
+			signingKey := key
+			switch name {
+			case "wrong-audience":
+				claims["aud"] = []string{"other"}
+			case "uppercase-audience":
+				claims["AUD"] = claims["aud"]
+				delete(claims, "aud")
+			case "homoglyph-subject":
+				claims["\u017fub"] = claims["sub"]
+			case "wrong-issuer":
+				claims["iss"] = "untrusted-issuer"
+			case "expired":
+				claims["exp"] = now - 3600
+			case "wrong-signature":
+				signingKey = wrong
+			}
+			signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.ES256, Key: signingKey}, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body, err := json.Marshal(claims)
+			if err != nil {
+				t.Fatal(err)
+			}
+			signed, err := signer.Sign(body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			token, err := signed.CompactSerialize()
+			if err != nil {
+				t.Fatal(err)
+			}
+			account, err := backend.parseAndValidateJWT(context.Background(), nil, token, role, config)
+			if name == "canonical" {
+				if err != nil || account == nil || account.Name != "builder" || account.Namespace != "default" {
+					t.Fatalf("valid service account changed: %v %v", account, err)
+				}
+			} else {
+				if err == nil {
+					t.Fatalf("%s JWT accepted", name)
+				}
+				if (name == "uppercase-audience" || name == "homoglyph-subject") && !strings.Contains(err.Error(), "ambiguous claim") {
+					t.Fatalf("alias failed for unexpected reason: %v", err)
+				}
+			}
+		})
+	}
+}
