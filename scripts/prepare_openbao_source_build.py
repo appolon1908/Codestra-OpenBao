@@ -4,8 +4,8 @@
 The imported upstream tree remains byte-for-byte provenance evidence. Builds use this
 small, source-controlled transform to replace the vulnerable indirect archive module.
 The transform fails unless the exact reviewed old module and checksum records exist.
-When the command-line build path is used, Go may reconcile only the reviewed archive
-and grpc-go module families; any unrelated module or Go-directive change fails closed.
+When the command-line build path is used, Go may reconcile only the reviewed archive,
+grpc-go and go-jose module families; unrelated module or Go-directive changes fail closed.
 """
 
 from __future__ import annotations
@@ -33,6 +33,17 @@ NEW_SUM_LINES = (
     f"{MODULE} {NEW_VERSION}/go.mod h1:Npdv43fFqlhZW7Xo8fbm3ZMYFvAGNviUPqX21VERbcE=",
 )
 
+JOSE_MODULE = "github.com/go-jose/go-jose/v4"
+JOSE_OLD_SUM_LINES = (
+    JOSE_MODULE + " v4.1.4 h1:moDMcTHmvE6Groj34emNPLs/qtYXRVcd6S7NHbHz3kA=",
+    JOSE_MODULE + " v4.1.4/go.mod h1:x4oUasVrzR7071A4TnHLGSPpNOm2a21K9Kf04k1rs08=",
+)
+JOSE_NEW_SUM_LINES = (
+    JOSE_MODULE + " v4.1.6 h1:sNRkftxFJxwsILiQukqp5z83QBSmntVwmgRY7AqBDO4=",
+    JOSE_MODULE + " v4.1.6/go.mod h1:x4oUasVrzR7071A4TnHLGSPpNOm2a21K9Kf04k1rs08=",
+)
+REVIEWED_JOSE_GRAPH_VERSIONS = {JOSE_MODULE: "v4.1.6"}
+
 REVIEWED_TRANSITIVE_VERSIONS = {
     "github.com/moby/patternmatcher": "v0.6.1",
     "github.com/moby/sys/sequential": "v0.7.0",
@@ -57,6 +68,7 @@ BUILD_GO_DIRECTIVE = "1.26.0"
 # Exact reviewed MVS dependency graph from the Go module checksum database.
 # This is a build-only transformation: imported upstream source stays byte-identical.
 SECURITY_GRAPH_UPGRADES = {
+    JOSE_MODULE: ("v4.1.4", "v4.1.6"),
     "golang.org/x/crypto": ("v0.55.0", "v0.57.0"),
     "golang.org/x/mod": ("v0.38.0", "v0.41.0"),
     "golang.org/x/net": ("v0.58.0", "v0.60.0"),
@@ -67,6 +79,7 @@ SECURITY_GRAPH_UPGRADES = {
     "golang.org/x/tools": ("v0.48.0", "v0.49.0"),
 }
 REVIEWED_SECURITY_SUM_LINES = {
+    JOSE_MODULE: JOSE_NEW_SUM_LINES,
     "golang.org/x/crypto": (
         "golang.org/x/crypto v0.57.0 h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M=",
         "golang.org/x/crypto v0.57.0/go.mod h1:Fdz0i5U6CoizGwLda9DttjSk6qlZo25zYNtR+ycvuZA=",
@@ -128,6 +141,7 @@ REVIEWED_TIDY_MODULES = frozenset(
         "github.com/moby/sys/userns",
         "github.com/sirupsen/logrus",
         *REVIEWED_GRPC_GRAPH_VERSIONS.keys(),
+        *REVIEWED_JOSE_GRAPH_VERSIONS.keys(),
     }
 )
 MODULE_VERSION_RE = re.compile(r"^\s*([^\s]+)\s+(v[^\s]+)(?:\s+//\s+indirect)?\s*$")
@@ -206,6 +220,7 @@ def validate_tidy_result(
     for module, version in {
         **REVIEWED_TRANSITIVE_VERSIONS,
         **REVIEWED_GRPC_GRAPH_VERSIONS,
+        **REVIEWED_JOSE_GRAPH_VERSIONS,
     }.items():
         if module in original_versions or module in final_versions:
             if final_versions.get(module) != version:
@@ -274,6 +289,11 @@ def apply(
     updated_sum = original_sum
     for old, new in zip(OLD_SUM_LINES, NEW_SUM_LINES, strict=True):
         updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum archive checksum")
+
+    # The same advisory affects v3, which remains an unresolved upstream
+    # dependency. This exact v4-only replacement makes no v3 safety claim.
+    for old, new in zip(JOSE_OLD_SUM_LINES, JOSE_NEW_SUM_LINES, strict=True):
+        updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum go-jose checksum")
 
     if go_directive(updated_mod) != SOURCE_GO_DIRECTIVE:
         fail("source go directive did not match reviewed imported OpenBao version")
