@@ -48,12 +48,14 @@ class CandidateEvidenceTests(unittest.TestCase):
         files={"jwk.go":{"before":"0"*64,"after":"1"*64}}
         write(root,"backport-manifest.json",{"upstream_fix":"a0111f82742fa92bceec9ede40845e73319e6230",
               "patch_sha256":MODULE.sha(root/"security.patch"),"files":files})
+        write(root,"test-fixture-overlay.json",{"test_only":True,"assertions_removed":False,
+                                               "reusable_private_key_material_stored":False})
         write(root,"build.json",{"source_sha":SOURCE,"source_tree":TREE,"run_id":1,"run_attempt":1,
             "go_version":"go1.26.10","runtime_authorized":False,"local_image":"candidate:test",
             "plugin_scan_root":"/fixture/plugin-root","vendor_tree_sha256":"d"*64,
             "repository":"appolon1908/Codestra-OpenBao","upstream":"dd9c19c37a878cf4a81b18efb8d6f0599c7da923",
             "go_mod_sha256":MODULE.sha(root/"prepared-go.mod"),"go_sum_sha256":MODULE.sha(root/"prepared-go.sum"),
-            "plugin_manifest_sha256":MODULE.sha(root/"accepted-plugin-manifest.json"),"plugin_source_tree_sha256":"1"*64,
+            "plugin_manifest_sha256":MODULE.sha(root/"accepted-plugin-manifest.json"),"plugin_source_tree_sha256":"1"*64,"test_fixture_overlay_sha256":MODULE.sha(root/"test-fixture-overlay.json"),
             "backport_patch_sha256":MODULE.sha(root/"security.patch"),"binaries":{n:MODULE.sha(root/n) for n in ("bao","plugin-root/codestra-jwt-replay")}})
         write(root,"jose-v3-backport.json",{"module_version":"v3.0.5","vulnerability_acceptance":False,
             "requires_go_mod_flag":"-mod=vendor","patch_sha256":MODULE.sha(root/"security.patch"),"vendor_tree_sha256":"d"*64,
@@ -121,6 +123,7 @@ class CandidateEvidenceTests(unittest.TestCase):
             ("build.json",lambda d:d.update(source_sha="c"*40)),
             ("build.json",lambda d:d.update(source_tree="c"*40)),
             ("build.json",lambda d:d.update(run_id=2)),
+            ("test-fixture-overlay.json",lambda d:d.update(assertions_removed=True)),
             ("build.json",lambda d:d.pop("plugin_source_tree_sha256")),
             ("dependency-overlay.json",lambda d:d.update(go_mod_sha256_after="0"*64)),
             ("backport-manifest.json",lambda d:d.update(upstream_fix="0"*40)),

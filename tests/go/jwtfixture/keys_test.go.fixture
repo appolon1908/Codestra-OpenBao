@@ -1,0 +1,74 @@
+// Copyright (c) 2026 Codestra
+// SPDX-License-Identifier: MPL-2.0
+package jwtauth
+
+import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/pem"
+	"testing"
+)
+
+// Sanitized imports deliberately contain no reusable private test key.
+// Generate matching signing/verification fixtures once per test process.
+// The negative signer is a separate key; wrong-signature tests stay negative.
+func codestraGeneratedJWTFixtureKeys() (string, string, string) {
+	generate := func() (*ecdsa.PrivateKey, string) {
+		key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			panic(err)
+		}
+		encoded, err := x509.MarshalECPrivateKey(key)
+		if err != nil {
+			panic(err)
+		}
+		return key, string(pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: encoded}))
+	}
+	key, private := generate()
+	_, bad := generate()
+	public, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	if err != nil {
+		panic(err)
+	}
+	return private, string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: public})), bad
+}
+
+func TestCodestraGeneratedJWTFixtureKeysMatchAndWrongSignerFails(t *testing.T) {
+	parse := func(encoded string) *ecdsa.PrivateKey {
+		block, _ := pem.Decode([]byte(encoded))
+		if block == nil {
+			t.Fatal("missing generated test key")
+		}
+		key, err := x509.ParseECPrivateKey(block.Bytes)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return key
+	}
+	good, bad := parse(ecdsaPrivKey), parse(badPrivKey)
+	block, _ := pem.Decode([]byte(ecdsaPubKey))
+	public, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := public.(*ecdsa.PublicKey)
+	if !good.PublicKey.Equal(expected) || bad.PublicKey.Equal(expected) {
+		t.Fatal("incorrect fixture key relationship")
+	}
+	digest := sha256.Sum256([]byte("fixture signature assertion"))
+	for _, tc := range []struct {
+		key   *ecdsa.PrivateKey
+		valid bool
+	}{{good, true}, {bad, false}} {
+		signature, err := ecdsa.SignASN1(rand.Reader, tc.key, digest[:])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ecdsa.VerifyASN1(expected, digest[:], signature) != tc.valid {
+			t.Fatal("wrong signer acceptance changed")
+		}
+	}
+}

@@ -91,6 +91,8 @@ class AtomicSourceCiTests(unittest.TestCase):
 
     def test_artifact_builder_vendors_before_backport_and_scans_both_before_gate(self):
         script=(ROOT/"scripts/validate_source_artifacts.sh").read_text()
+        self.assertIn("scripts/prepare_openbao_test_fixtures.py",script)
+        self.assertIn('tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"',script)
         self.assertLess(script.index("cp -a plugins/codestra-jwt-replay"),script.index("go mod vendor"))
         self.assertLess(script.index("go mod vendor"),script.index("scripts/patch_jose_v3_vendor.py"))
         self.assertLess(script.index("scripts/patch_jose_v3_vendor.py"),script.index("go test -count=1"))

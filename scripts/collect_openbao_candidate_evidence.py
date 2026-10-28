@@ -98,11 +98,15 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
     require(build.get("repository")=="appolon1908/Codestra-OpenBao", "wrong source repository")
     require(build.get("upstream")=="dd9c19c37a878cf4a81b18efb8d6f0599c7da923", "wrong imported upstream identity")
     for field in ("go_mod_sha256","go_sum_sha256","plugin_manifest_sha256","plugin_source_tree_sha256",
-                  "vendor_tree_sha256","backport_patch_sha256"):
+                  "vendor_tree_sha256","backport_patch_sha256","test_fixture_overlay_sha256"):
         require(isinstance(build.get(field),str) and bool(re.fullmatch(r"[0-9a-f]{64}",build[field])),
                 "missing provenance digest: "+field)
     require(build.get("go_version")=="go1.26.10", "wrong candidate Go toolchain")
     require(build.get("runtime_authorized") is False, "candidate cannot authorize runtime")
+    fixtures = load(root/"test-fixture-overlay.json")
+    require(sha(root/"test-fixture-overlay.json")==build["test_fixture_overlay_sha256"] and
+            fixtures.get("test_only") is True and fixtures.get("assertions_removed") is False and
+            fixtures.get("reusable_private_key_material_stored") is False, "invalid test fixture provenance")
     inspect = load(root/"image-inspect.json")
     config_id = inspect["Id"]
     require(bool(DIGEST.fullmatch(config_id)), "invalid image configuration ID")

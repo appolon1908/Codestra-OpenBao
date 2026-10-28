@@ -20,6 +20,8 @@ work="$(mktemp -d "${RUNNER_TEMP:?}/openbao-candidate.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 source_root="$work/source"
 cp -a upstream "$source_root"
+python3 scripts/prepare_openbao_test_fixtures.py --source-root "$source_root" \
+  --report "$EVIDENCE_DIR/test-fixture-overlay.json"
 mkdir -p "$source_root/codestra/plugins" "$source_root/codestra/security/josev3"
 cp -a plugins/codestra-jwt-replay "$source_root/codestra/plugins/"
 cp tests/go/josev3security/security_test.go "$source_root/codestra/security/josev3/"
@@ -44,9 +46,12 @@ export GOFLAGS='-mod=vendor -p=2'
 commit_date="$(git show --no-show-signature -s --format=%cI HEAD)"
 (
   cd "$source_root"
-  go test -count=1 -v ./codestra/security/josev3 github.com/go-jose/go-jose/v3 \
+  if ! go test -count=1 -v ./codestra/security/josev3 github.com/go-jose/go-jose/v3 \
     ./builtin/credential/jwt ./codestra/plugins/codestra-jwt-replay \
-    >"$EVIDENCE_DIR/consumer-tests.log" 2>&1
+    >"$EVIDENCE_DIR/consumer-tests.log" 2>&1; then
+    tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"
+    exit 1
+  fi
   go build -trimpath -buildvcs=false -tags=openbao \
     -ldflags="-buildid= -X github.com/openbao/openbao/version.GitCommit=${EXPECTED_SHA} -X github.com/openbao/openbao/version.CommitDate=${commit_date}" \
     -o "$EVIDENCE_DIR/bao" .
@@ -93,6 +98,7 @@ build={
  "go_mod_sha256":sha(source/"go.mod"),"go_sum_sha256":sha(source/"go.sum"),
  "vendor_tree_sha256":backport["vendor_tree_sha256"],
  "backport_patch_sha256":backport["patch_sha256"],
+ "test_fixture_overlay_sha256":sha(root/"test-fixture-overlay.json"),
  "plugin_manifest_sha256":sha(Path("plugins/codestra-jwt-replay/plugin.v1.json")),
  "plugin_source_tree_sha256":tree_hash(Path("plugins/codestra-jwt-replay")),
  "upstream":json.loads(Path("CODESTRA_UPSTREAM.json").read_text())["upstream_ref"],

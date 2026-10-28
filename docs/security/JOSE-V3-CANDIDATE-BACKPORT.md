@@ -25,6 +25,13 @@ prepared module/patch provenance, image configuration and a separately construct
 local OCI manifest survive policy failure via an always-running artifact upload.
 A configuration ID or Docker-save checksum is never described as a registry digest.
 
+The imported JWT tests contain deliberately removed signing keys and a sanitized
+client-secret request with its old expected literal. A separate checksum-locked,
+test-only transform restores a matching random P256 pair and a distinct wrong
+signer in memory, and aligns the expected placeholder. Test bodies/assertions
+remain intact. No reusable private key is stored. The transform's hashes are
+bound into candidate evidence; credential-gated external tests retain their skips.
+
 The candidate retains module identity v3.0.5. Version-based scanners may continue
 reporting its advisory; findings remain visible and HIGH/CRITICAL/UNKNOWN findings
 fail the gate. These artifacts do not constitute VEX, risk acceptance, signatures,
