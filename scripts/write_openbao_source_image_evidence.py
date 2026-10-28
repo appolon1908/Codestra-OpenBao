@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import hashlib
 import json
 import re
@@ -24,31 +25,72 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def vulnerability_counts(path: Path) -> tuple[int, int, bool]:
-    document = load_json(path)
-    if not isinstance(document, dict):
-        raise ValueError("Trivy report must contain an object")
-    critical = 0
-    high = 0
-    cve_present = False
-    results = document.get("Results") or []
+KNOWN_SEVERITIES = {"LOW", "MEDIUM", "HIGH", "CRITICAL", "UNKNOWN"}
+MAX_SCAN_AGE = dt.timedelta(days=30)
+MAX_CLOCK_SKEW = dt.timedelta(minutes=10)
+
+
+def vulnerability_counts(document: Any) -> tuple[int, int, int, bool]:
+    if not isinstance(document, dict) or type(document.get("SchemaVersion")) is not int or document["SchemaVersion"] != 2:
+        raise ValueError("Trivy report must be a schema 2 object")
+    results = document.get("Results")
     if not isinstance(results, list):
         raise ValueError("Trivy Results must be a list")
+    counts = {"CRITICAL": 0, "HIGH": 0, "UNKNOWN": 0}
+    cve_present = False
     for result in results:
         if not isinstance(result, dict):
+            raise ValueError("Trivy result must be an object")
+        if not isinstance(result.get("Target"), str) or not result["Target"].strip():
+            raise ValueError("Trivy result target is missing")
+        if not isinstance(result.get("Type"), str) or not result["Type"].strip():
+            raise ValueError("Trivy result type is missing")
+        vulnerabilities = result.get("Vulnerabilities")
+        if vulnerabilities is None:
             continue
-        vulnerabilities = result.get("Vulnerabilities") or []
         if not isinstance(vulnerabilities, list):
-            raise ValueError("Trivy Vulnerabilities must be a list")
+            raise ValueError("Trivy Vulnerabilities must be a list or null")
         for vulnerability in vulnerabilities:
             if not isinstance(vulnerability, dict):
-                continue
-            vulnerability_id = str(vulnerability.get("VulnerabilityID", ""))
-            severity = str(vulnerability.get("Severity", "")).upper()
+                raise ValueError("Trivy finding must be an object")
+            vulnerability_id = vulnerability.get("VulnerabilityID")
+            package = vulnerability.get("PkgName")
+            severity = vulnerability.get("Severity")
+            if not isinstance(vulnerability_id, str) or not vulnerability_id.strip():
+                raise ValueError("Trivy vulnerability identifier is missing")
+            if not isinstance(package, str) or not package.strip():
+                raise ValueError("Trivy vulnerability package is missing")
+            if not isinstance(severity, str) or severity not in KNOWN_SEVERITIES:
+                raise ValueError("Trivy vulnerability severity is missing or invalid")
             cve_present = cve_present or vulnerability_id in BLOCKED_GRPC_CVES
-            critical += severity == "CRITICAL"
-            high += severity == "HIGH"
-    return critical, high, cve_present
+            if severity in counts:
+                counts[severity] += 1
+    return counts["CRITICAL"], counts["HIGH"], counts["UNKNOWN"], cve_present
+
+
+def require_current_image_report(document: dict, image_reference: str) -> None:
+    if document.get("ArtifactType") != "container_image":
+        raise ValueError("Trivy report must describe a container image")
+    metadata = document.get("Metadata")
+    if not isinstance(metadata, dict) or not isinstance(metadata.get("RepoDigests"), list):
+        raise ValueError("Trivy image digest metadata is missing")
+    if image_reference not in metadata["RepoDigests"]:
+        raise ValueError("Trivy report does not bind the exact image digest")
+    scanner = document.get("Trivy")
+    if not isinstance(scanner, dict) or scanner.get("Version") != "0.74.0":
+        raise ValueError("Trivy report must use the reviewed scanner 0.74.0")
+    created_at = document.get("CreatedAt")
+    if not isinstance(created_at, str):
+        raise ValueError("Trivy scan creation time is missing")
+    created = dt.datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    if created.tzinfo is None:
+        raise ValueError("Trivy scan creation time must be timezone aware")
+    now = dt.datetime.now(dt.timezone.utc)
+    if created > now + MAX_CLOCK_SKEW or now - created > MAX_SCAN_AGE:
+        raise ValueError("Trivy scan is stale or dated in the future")
+    if not any(result["Type"] == "gobinary" and Path(result["Target"]).name == "bao"
+               for result in document["Results"]):
+        raise ValueError("Trivy report did not scan the OpenBao binary")
 
 
 def main() -> int:
@@ -85,15 +127,17 @@ def main() -> int:
     if overlay.get("module") != ARCHIVE_MODULE or overlay.get("new_version") != "0.3.2":
         raise SystemExit("dependency overlay does not bind reviewed archive module")
 
-    critical, high, cve_present = vulnerability_counts(args.scan)
+    report = load_json(args.scan)
+    critical, high, unknown, cve_present = vulnerability_counts(report)
     image_repository = "ghcr.io/ingtrader21-spec/codestra-openbao"
+    require_current_image_report(report, f"{image_repository}@{args.image_digest}")
     identity = (
         "https://github.com/ingtrader21-spec/Codestra-OpenBao/"
         ".github/workflows/openbao-source-image-authority.yml@refs/heads/production"
     )
     evidence = {
         "schema_version": 1,
-        "status": "PASS" if not cve_present and critical == 0 and high == 0 else "FAIL",
+        "status": "PASS" if not cve_present and critical == high == unknown == 0 else "FAIL",
         "source_sha": args.source_sha,
         "source_tree": args.source_tree,
         "source_dependency_version": args.grpc_version,
@@ -117,6 +161,10 @@ def main() -> int:
             "cve_present": cve_present,
             "critical_count": critical,
             "high_count": high,
+            "unknown_count": unknown,
+            "scanned_at": report["CreatedAt"],
+            "scanner_version": report["Trivy"]["Version"],
+            "image_digest": args.image_digest,
         },
         "signature": {
             "reference": f"artifact://openbao-source-image-{args.source_sha}/signature-verification.json",
@@ -146,6 +194,7 @@ def main() -> int:
     print(f"OPENBAO_IMAGE_EVIDENCE_STATUS={evidence['status']}")
     print(f"OPENBAO_IMAGE_CRITICAL_COUNT={critical}")
     print(f"OPENBAO_IMAGE_HIGH_COUNT={high}")
+    print(f"OPENBAO_IMAGE_UNKNOWN_COUNT={unknown}")
     print(f"OPENBAO_IMAGE_BLOCKED_GRPC_CVE_PRESENT={'YES' if cve_present else 'NO'}")
     return 0 if evidence["status"] == "PASS" else 1
 
