@@ -1,0 +1,34 @@
+{
+  "schema": "codestra.openbao.mission-control.reader.v1",
+  "environment": "staging",
+  "runtime_apply_authorized": false,
+  "production_go": false,
+  "external_effects_enabled": false,
+  "secret_path": "codestra/data/staging/mission-control/database/reader",
+  "secret_reference": "openbao://codestra/staging/mission-control/database/reader",
+  "secret_field": "CODESTRA_CONTROL_READ_DSN",
+  "policy_file": "config/staging/policies/mission-control-dashboard-reader.hcl",
+  "identity": {
+    "service_name": "mission-control-readonly",
+    "audience": "openbao-mission-control-staging",
+    "namespace": "codestra-staging",
+    "token_ttl_seconds": 900,
+    "token_max_ttl_seconds": 900,
+    "allow_dynamic_secret_issue": false
+  },
+  "database_access": {
+    "read_only_transaction": true,
+    "permissions": ["CONNECT", "SELECT"],
+    "forbidden_permissions": ["CREATE", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "SUPERUSER"],
+    "tables": ["products", "workstations", "sections", "atomic_tasks"],
+    "statement_timeout_ms": 5000
+  },
+  "activation": {
+    "requires_approval": true,
+    "requires_exact_sha_security_scan": true,
+    "requires_unsealed_healthy_vault": true,
+    "requires_certified_keycloak_and_gateway": true,
+    "staging_go": false,
+    "production_go": false
+  }
+}

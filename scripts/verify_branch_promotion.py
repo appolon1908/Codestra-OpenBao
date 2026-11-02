@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Enforce the reviewed promotion path: development -> test -> staging -> production -> main.
 
-Reviewed implementation heads may target development; protected environment branches
-may only move forward through the promotion chain. With --require-current, a local
+Only remediation/* and sync/openbao-upstream-* heads may target development.
+Protected environment branches may only move forward through the promotion chain. With --require-current, a local
 head must also contain the given development ref, so stale work is rejected before
-a pull request is opened. The ob-15-cicd section also accepts strictly named
+a pull request is opened. The ob-15-cicd section accepts only its registered
 subsection heads for review, without changing environment promotions.
 """
 
@@ -12,24 +12,21 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTECTED = ("development", "test", "staging", "production", "main")
-DEVELOPMENT_HEAD_PREFIXES = (
-    "remediation/",
-    "sync/openbao-upstream-",
-    "feat/",
-    "feature/",
-    "fix/",
-    "chore/",
-    "docs/",
-    "refactor/",
-    "ci/",
-)
+DEVELOPMENT_HEAD_PREFIXES = ("remediation/", "sync/openbao-upstream-")
+# Registered in the verified OpenBao control-plane product manifest.
+# Additional lanes require a reviewed registration before admission.
+SECTION_REVIEW_HEADS = frozenset({
+    "subsection/ob-15-cicd--01-policy-lint",
+    "subsection/ob-15-cicd--02-config-test",
+    "subsection/ob-15-cicd--03-security",
+    "subsection/ob-15-cicd--04-promotion",
+})
 PROMOTIONS = {
     "test": "development",
     "staging": "test",
@@ -52,10 +49,10 @@ def admissible_development_head(head: str) -> bool:
 def promotion_allowed(base: str, head: str) -> bool:
     if base == "development":
         return admissible_development_head(head)
-    # A section review can accept only its own strictly named subsection;
+    # A section review can accept only its registered subsection;
     # it does not grant promotion into testing, staging, or production.
     if base == "ob-15-cicd":
-        return re.fullmatch(r"subsection/ob-15-cicd--[a-z0-9]+(?:-[a-z0-9]+)*", head) is not None
+        return head in SECTION_REVIEW_HEADS
     return base in PROMOTIONS and head == PROMOTIONS[base]
 
 

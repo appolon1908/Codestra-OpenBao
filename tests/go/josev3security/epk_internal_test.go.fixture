@@ -1,0 +1,18 @@
+package jose
+
+import (
+ "strings"
+ "testing"
+ "github.com/go-jose/go-jose/v3/json"
+)
+
+func TestCodestraPrivateEPKRejectedBeforeKeyValidation(t *testing.T) {
+ for _, field := range []string{"d","p","q","dp","dq","qi","k"} {
+  raw := json.RawMessage(`{"kty":"RSA","n":"AQAB","e":"AQAB","` + field + `":"AQ"}`)
+  header := rawHeader{headerEPK:&raw}
+  _,err := header.getEPK()
+  if err == nil || !strings.Contains(err.Error(),"JWK contains private parameters") {
+   t.Fatalf("%s: expected private parameter guard, got %v",field,err)
+  }
+ }
+}

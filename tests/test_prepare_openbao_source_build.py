@@ -20,12 +20,17 @@ class SourceBuildPatchTests(unittest.TestCase):
         source.joinpath("go.mod").write_text(
             "module example.test/openbao\n\ngo 1.25.8\n\nrequire (\n"
             + MODULE.OLD_MOD_LINE
+            + "\n" + "\n".join(
+                f"\t{module} {old_version}"
+                for module, (old_version, _) in MODULE.SECURITY_GRAPH_UPGRADES.items()
+            )
             + "\n)\n",
             encoding="utf-8",
         )
         source.joinpath("go.sum").write_text(
             "unrelated.example/module v1.0.0 h1:example=\n"
-            + "\n".join(MODULE.OLD_SUM_LINES)
+            + "\n".join((*MODULE.OLD_SUM_LINES, *MODULE.JOSE_OLD_SUM_LINES, *MODULE.CAP_OLD_SUM_LINES,
+                         *(line for lines in MODULE.CEL_OTEL_OLD_SUM_LINES.values() for line in lines)))
             + "\n",
             encoding="utf-8",
         )
@@ -38,8 +43,14 @@ class SourceBuildPatchTests(unittest.TestCase):
             self.assertEqual(evidence["status"], "PASS")
             self.assertEqual(evidence["new_version"], "0.3.2")
             self.assertFalse(evidence["go_mod_tidy_performed"])
+            self.assertEqual(evidence["build_go_directive"], "1.26.0")
             go_mod = source.joinpath("go.mod").read_text(encoding="utf-8")
             go_sum = source.joinpath("go.sum").read_text(encoding="utf-8")
+            self.assertIn("go 1.26.0\n", go_mod)
+            self.assertNotIn("go 1.25.8\n", go_mod)
+            for module, (old, new) in MODULE.SECURITY_GRAPH_UPGRADES.items():
+                self.assertIn(f"\t{module} {new}\n", go_mod)
+                self.assertNotIn(f"\t{module} {old}\n", go_mod)
             self.assertIn(MODULE.NEW_MOD_LINE, go_mod)
             self.assertNotIn(MODULE.OLD_MOD_LINE, go_mod)
             for line in MODULE.NEW_SUM_LINES:
@@ -54,6 +65,14 @@ class SourceBuildPatchTests(unittest.TestCase):
                 source.joinpath("go.mod").read_text().replace("v0.2.0", "v0.2.1"),
                 encoding="utf-8",
             )
+            with self.assertRaises(SystemExit):
+                MODULE.apply(source)
+
+    def test_unreviewed_security_graph_baseline_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = self.create_source(directory)
+            mod = source.joinpath("go.mod")
+            mod.write_text(mod.read_text().replace("golang.org/x/net v0.58.0", "golang.org/x/net v0.59.0"))
             with self.assertRaises(SystemExit):
                 MODULE.apply(source)
 
@@ -90,7 +109,7 @@ require (
 """
         final_mod = """module example.test/openbao
 
-go 1.25.8
+go 1.26.0
 
 require (
 \tgithub.com/moby/go-archive v0.3.2 // indirect
@@ -103,6 +122,8 @@ require (
         original_sum = "\n".join(MODULE.OLD_SUM_LINES) + "\n"
         final_lines = [*MODULE.NEW_SUM_LINES]
         for lines in MODULE.REVIEWED_TRANSITIVE_SUM_LINES.values():
+            final_lines.extend(lines)
+        for lines in MODULE.REVIEWED_SECURITY_SUM_LINES.values():
             final_lines.extend(lines)
         final_sum = "\n".join(final_lines) + "\n"
         return original_mod, original_sum, final_mod, final_sum
@@ -138,11 +159,19 @@ require (
 
     def test_tidy_validation_rejects_go_directive_drift(self) -> None:
         original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
-        final_mod = final_mod.replace("go 1.25.8", "go 1.26.0")
+        final_mod = final_mod.replace("go 1.26.0", "go 1.26.1")
         with self.assertRaises(SystemExit):
             MODULE.validate_tidy_result(
                 original_mod, original_sum, final_mod, final_sum
             )
+
+    def test_missing_reviewed_xnet_checksum_is_rejected(self) -> None:
+        original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
+        xnet_sum = MODULE.REVIEWED_SECURITY_SUM_LINES["golang.org/x/net"][0]
+        self.assertIn(xnet_sum, final_sum)
+        final_sum = final_sum.replace(xnet_sum + "\n", "")
+        with self.assertRaises(SystemExit):
+            MODULE.validate_tidy_result(original_mod, original_sum, final_mod, final_sum)
 
     def test_tidy_validation_rejects_reviewed_graph_version_drift(self) -> None:
         original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
@@ -154,6 +183,22 @@ require (
             MODULE.validate_tidy_result(
                 original_mod, original_sum, final_mod, final_sum
             )
+
+
+    def test_optional_telemetry_metadata_is_exact_and_selected_package_requires_zip_sum(self) -> None:
+        original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
+        module = "golang.org/x/telemetry"
+        version = "v0.0.0-20260924152758-ed294f943157"
+        zip_sum = module + " " + version + " h1:DftxASHKl6JolFPqoN+2WrFO53JvkHwRXvFqf8gsivA="
+        mod_sum = module + " " + version + "/go.mod h1:i+ivNqjDnTF3WTElsdk5g9V5DTSBYgdNo7xTU9SDwYA="
+        MODULE.validate_tidy_result(original_mod, original_sum, final_mod, final_sum + mod_sum + "\n")
+        selected = final_mod.replace(")\n", "\t" + module + " " + version + " // indirect\n)\n")
+        with self.assertRaises(SystemExit):
+            MODULE.validate_tidy_result(original_mod, original_sum, selected, final_sum + mod_sum + "\n")
+        MODULE.validate_tidy_result(original_mod, original_sum, selected, final_sum + zip_sum + "\n" + mod_sum + "\n")
+        for bad in (mod_sum.replace("h1:i+", "h1:bad"), mod_sum.replace(version, "v0.0.0-20260101000000-aaaaaaaaaaaa")):
+            with self.subTest(checksum=bad), self.assertRaises(SystemExit):
+                MODULE.validate_tidy_result(original_mod, original_sum, final_mod, final_sum + bad + "\n")
 
 
 if __name__ == "__main__":

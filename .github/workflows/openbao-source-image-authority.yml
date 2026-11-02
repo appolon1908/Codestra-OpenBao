@@ -11,6 +11,8 @@ on:
       - "tests/test_prepare_openbao_source_build.py"
       - "tests/test_grpc_go_exact_image_gate.py"
       - "tests/test_source_image_xtext_gate.py"
+      - "tests/test_source_image_xnet060_gate.py"
+      - "tests/test_source_image_go1269_security_gate.py"
       - "docs/security/GRPC-GO-CVE-2026-84304-PRODUCTION-GATE.md"
       - ".github/workflows/openbao-source-image-authority.yml"
   push:
@@ -24,6 +26,8 @@ on:
       - "tests/test_prepare_openbao_source_build.py"
       - "tests/test_grpc_go_exact_image_gate.py"
       - "tests/test_source_image_xtext_gate.py"
+      - "tests/test_source_image_xnet060_gate.py"
+      - "tests/test_source_image_go1269_security_gate.py"
       - "docs/security/GRPC-GO-CVE-2026-84304-PRODUCTION-GATE.md"
       - ".github/workflows/openbao-source-image-authority.yml"
   workflow_dispatch:
@@ -82,7 +86,9 @@ jobs:
       - name: Set up repository Go toolchain
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
-          go-version-file: upstream/.go-version
+          # CVE-2026-111943: pin Go 1.26.10 for the build only.
+          # Preserve upstream/.go-version as immutable imported-source evidence.
+          go-version: '1.26.10'
           cache-dependency-path: |
             upstream/go.sum
             upstream/api/go.sum
@@ -97,11 +103,15 @@ jobs:
             scripts/write_openbao_source_image_evidence.py \
             tests/test_prepare_openbao_source_build.py \
             tests/test_grpc_go_exact_image_gate.py \
-            tests/test_source_image_xtext_gate.py
+            tests/test_source_image_xtext_gate.py \
+            tests/test_source_image_go1269_security_gate.py \
+            tests/test_source_image_xnet060_gate.py
           python3 scripts/validate_grpc_go_exact_image_gate.py
           python3 tests/test_prepare_openbao_source_build.py
           python3 tests/test_grpc_go_exact_image_gate.py
           python3 tests/test_source_image_xtext_gate.py
+          python3 tests/test_source_image_go1269_security_gate.py
+          python3 tests/test_source_image_xnet060_gate.py
           git diff --check
 
       - name: Apply reviewed build-only archive-module patch
@@ -127,12 +137,20 @@ jobs:
             CGO_ENABLED=0 BUILD_TAGS=openbao ./scripts/build.sh
             test -x bin/bao
             go version -m bin/bao > "${RUNNER_TEMP}/bao-go-version.txt"
+            # Require the built artifact to use the reviewed toolchain.
+            test "$(go env GOVERSION)" = "go1.26.10"
+            grep -Eq '^.+:[[:space:]]+go1\.26\.10[[:space:]]*$' \
+              "${RUNNER_TEMP}/bao-go-version.txt"
             grep -Eq $'dep[[:space:]]+google.golang.org/grpc[[:space:]]+v1\\.83\\.2([[:space:]]|$)' \
               "${RUNNER_TEMP}/bao-go-version.txt"
             grep -Eq $'dep[[:space:]]+github.com/moby/go-archive[[:space:]]+v0\\.3\\.2([[:space:]]|$)' \
               "${RUNNER_TEMP}/bao-go-version.txt"
             # CVE-2026-56851: require patched x/text in the actual compiled binary.
-            grep -Eq $'dep[[:space:]]+golang.org/x/text[[:space:]]+v0\\.41\\.0([[:space:]]|$)' \
+            grep -Eq $'dep[[:space:]]+golang.org/x/text[[:space:]]+v0\\.43\\.0([[:space:]]|$)' \
+              "${RUNNER_TEMP}/bao-go-version.txt"
+            grep -Eq $'dep[[:space:]]+golang.org/x/net[[:space:]]+v0\\.62\\.0([[:space:]]|$)' \
+              "${RUNNER_TEMP}/bao-go-version.txt"
+            grep -Eq $'dep[[:space:]]+github.com/go-jose/go-jose/v4[[:space:]]+v4\\.1\\.6([[:space:]]|$)' \
               "${RUNNER_TEMP}/bao-go-version.txt"
             install -D -m 0555 bin/bao bin/amd64/bao
           )
@@ -172,19 +190,25 @@ jobs:
         run: |
           set -Eeuo pipefail
           syft scan "docker:${LOCAL_IMAGE}" -o "spdx-json=${RUNNER_TEMP}/openbao.spdx.json" >/dev/null
-          trivy image --scanners vuln --ignore-unfixed --format json \
+          trivy image --scanners vuln --format json \
             --output "${RUNNER_TEMP}/trivy.json" "${LOCAL_IMAGE}"
           python3 - "${RUNNER_TEMP}/trivy.json" <<'PY'
-          import json, sys
+          import json, os, sys
           from pathlib import Path
+          from scripts.write_openbao_source_image_evidence import vulnerability_counts
           report = json.loads(Path(sys.argv[1]).read_text())
-          vulnerabilities = [v for r in report.get("Results") or [] for v in r.get("Vulnerabilities") or []]
-          known_cves = {"CVE-2026-84304", "CVE-2026-56851"}
+          critical, high, unknown, _ = vulnerability_counts(report)
+          if report.get("ArtifactType") != "container_image" or report.get("ArtifactName") != os.environ["LOCAL_IMAGE"]:
+              raise SystemExit("scan does not describe the exact local candidate")
+          if not any(r["Type"] == "gobinary" and Path(r["Target"]).name == "bao" for r in report["Results"]):
+              raise SystemExit("scan did not observe the OpenBao binary")
+          vulnerabilities = [v for r in report["Results"] for v in r.get("Vulnerabilities") or []]
+          known_cves = {"CVE-2026-84304", "CVE-2026-84445", "CVE-2026-56851"}
           cve = [v for v in vulnerabilities if v.get("VulnerabilityID") in known_cves]
-          blocked = [v for v in vulnerabilities if str(v.get("Severity", "")).upper() in {"HIGH", "CRITICAL", "UNKNOWN"}]
+          blocked = [v for v in vulnerabilities if v["Severity"] in {"HIGH", "CRITICAL", "UNKNOWN"}]
           if cve:
               raise SystemExit("known remediated CVE remains in the exact source image: " + str(sorted({v.get("VulnerabilityID") for v in cve})))
-          if blocked:
+          if critical or high or unknown:
               raise SystemExit("unresolved high/critical findings: " + str(sorted({f"{v.get('VulnerabilityID')}:{v.get('PkgName')}" for v in blocked})))
           print("OPENBAO_LOCAL_SOURCE_IMAGE_VULNERABILITY_GATE=PASS")
           PY
@@ -238,7 +262,9 @@ jobs:
       - name: Set up repository Go toolchain
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
-          go-version-file: upstream/.go-version
+          # CVE-2026-111943: pin Go 1.26.10 for the build only.
+          # Preserve upstream/.go-version as immutable imported-source evidence.
+          go-version: '1.26.10'
           cache-dependency-path: |
             upstream/go.sum
             upstream/api/go.sum
@@ -251,6 +277,8 @@ jobs:
           python3 tests/test_prepare_openbao_source_build.py
           python3 tests/test_grpc_go_exact_image_gate.py
           python3 tests/test_source_image_xtext_gate.py
+          python3 tests/test_source_image_go1269_security_gate.py
+          python3 tests/test_source_image_xnet060_gate.py
           mkdir -p "${RUNNER_TEMP}/openbao-source-image"
           python3 scripts/prepare_openbao_source_build.py \
             --source-root upstream \
@@ -261,6 +289,9 @@ jobs:
             test "$(go list -m -f '{{.Version}}' github.com/moby/go-archive)" = "v${ARCHIVE_VERSION}"
             CGO_ENABLED=0 BUILD_TAGS=openbao ./scripts/build.sh
             go version -m bin/bao > "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
+            test "$(go env GOVERSION)" = "go1.26.10"
+            grep -Eq '^.+:[[:space:]]+go1\.26\.10[[:space:]]*$' \
+              "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
             install -D -m 0555 bin/bao bin/amd64/bao
           )
           grep -Eq $'dep[[:space:]]+google.golang.org/grpc[[:space:]]+v1\\.83\\.2([[:space:]]|$)' \
@@ -268,7 +299,11 @@ jobs:
           grep -Eq $'dep[[:space:]]+github.com/moby/go-archive[[:space:]]+v0\\.3\\.2([[:space:]]|$)' \
             "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
           # CVE-2026-56851: require patched x/text in the actual compiled binary.
-          grep -Eq $'dep[[:space:]]+golang.org/x/text[[:space:]]+v0\\.41\\.0([[:space:]]|$)' \
+          grep -Eq $'dep[[:space:]]+golang.org/x/text[[:space:]]+v0\\.43\\.0([[:space:]]|$)' \
+            "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
+          grep -Eq $'dep[[:space:]]+golang.org/x/net[[:space:]]+v0\\.62\\.0([[:space:]]|$)' \
+            "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
+          grep -Eq $'dep[[:space:]]+github.com/go-jose/go-jose/v4[[:space:]]+v4\\.1\\.6([[:space:]]|$)' \
             "${RUNNER_TEMP}/openbao-source-image/bao-go-version.txt"
           printf 'GRPC_VERSION=1.83.2\n' >> "$GITHUB_ENV"
           printf 'OVERLAY_SHA256=%s\n' \
@@ -316,7 +351,7 @@ jobs:
           set -Eeuo pipefail
           syft scan "registry:${IMAGE_REFERENCE}" \
             -o "spdx-json=${RUNNER_TEMP}/openbao-source-image/openbao.spdx.json" >/dev/null
-          trivy image --scanners vuln --ignore-unfixed --format json \
+          trivy image --scanners vuln --format json \
             --output "${RUNNER_TEMP}/openbao-source-image/trivy.json" "${IMAGE_REFERENCE}"
 
       - name: Install pinned Sigstore client

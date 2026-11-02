@@ -54,14 +54,5 @@
   "negativeClaimTests": "PASS",
   "agentStandardLoginForcedThroughCel": true,
   "agentStandardLoginReplayTest": "PASS",
-  "runtimeApplyAuthorized": false,
-  "moduleOnlyAdvisoryControls": [
-    {
-      "vulnerabilityId": "GO-2026-5932",
-      "module": "golang.org/x/crypto",
-      "prohibitedPackagePrefix": "golang.org/x/crypto/openpgp",
-      "disposition": "not_affected_when_prohibited_package_absent",
-      "source": "https://pkg.go.dev/vuln/GO-2026-5932"
-    }
-  ]
+  "runtimeApplyAuthorized": false
 }
