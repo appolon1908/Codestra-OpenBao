@@ -1,29 +1,41 @@
-name: agent-governance
+name: OpenBao governance source
+
 on:
   pull_request:
     branches: [main]
   push:
-    branches:
-      - governance/single-active-lane-20260926
-  workflow_dispatch:
+    branches: [main]
+
 permissions:
   contents: read
+
+env:
+  EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+
 jobs:
-  single-lane-guard:
-    runs-on: ubuntu-latest
+  native-source:
+    name: OpenBao governance / source validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
+          ref: ${{ env.EXPECTED_SHA }}
           fetch-depth: 0
-      - name: Verify governance v1 package
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Install pinned YAML parser
+        run: python -m pip install --disable-pip-version-check --no-cache-dir PyYAML==6.0.3
+      - name: Verify exact source, committed changes and safety metadata
+        run: python scripts/validate_native_source.py --base-sha "$BASE_SHA" --head-sha "$EXPECTED_SHA"
+      - name: Validate offline secrets contract and generated policies
         run: |
-          test -f .governance/repository.yaml
-          test -f .governance/workstation-policy.yaml
-          python3 -m json.tool .governance/authority.json >/dev/null
-          test -x scripts/agent_preflight.sh
-          test -x scripts/agent_finish.sh
-          test -x scripts/certify.sh
-          test -x scripts/reconcile.sh
-          test -x scripts/worktree_guard.sh
-      - name: Enforce Codestra monitoring lane
-        run: bash scripts/agent_preflight.sh --ci governance/single-active-lane-20260926 --certify
+          python scripts/mcr_contract.py validate
+          python scripts/mcr_contract.py check-generated
+      - name: Execute source and secrets-contract regressions
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m unittest discover -s tests -p 'test_*.py' -v

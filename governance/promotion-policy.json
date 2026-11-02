@@ -30,13 +30,18 @@
     "production"
   ],
   "required_status_contexts": [
-    "promotion-guard",
-    "control-plane-certification",
-    "promotion-gate"
+    "OpenBao governance / source validation"
   ],
   "production_defaults": {
     "PRODUCTION_GO": "NO",
     "LIVE_CAPABILITIES_ENABLED": "NO",
     "EXTERNAL_EFFECTS": "false"
+  },
+  "source_admission": {
+    "authority": "GitHub Actions and effective repository protections",
+    "scope": "governance-only main tree",
+    "signed_commits_required": true,
+    "independent_review_required": true,
+    "production_approval": "separate; never implied by source checks"
   }
 }

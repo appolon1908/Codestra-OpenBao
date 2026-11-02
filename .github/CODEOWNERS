@@ -1,0 +1,8 @@
+# Native source governance requires the repository's existing independent reviewer or owner.
+/.github/ @kazan555 @appolon1908
+/governance/ @kazan555 @appolon1908
+/.governance/ @kazan555 @appolon1908
+/AGENTS.md @kazan555 @appolon1908
+/scripts/validate_native_source.py @kazan555 @appolon1908
+/scripts/inspect_upstream_source.py @kazan555 @appolon1908
+/tests/test_native_source.py @kazan555 @appolon1908

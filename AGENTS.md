@@ -1,71 +1,18 @@
-# Codestra Agent Governance Standard
+# OpenBao source contribution contract
 
-<!-- CODESTRA_AGENT_GOVERNANCE_V1 -->
+GitHub exact commits, Actions results, independent reviews and effective repository protections are the source admission authority. Source repairs use an assigned isolated branch and protected pull request. All introduced commits must have verified signatures; approvals and check results must bind the current candidate. No installed controller status or workstation certification substitutes for these requirements.
 
-This root contract is authoritative for agent-driven development. Repository-specific rules may add constraints but may not weaken these rules.
+Before editing, read repository mission records, the active Linear issue and linked Notion architecture, then inspect the exact local/remote branch, base, dirty state, PR and CI. Preserve unknown work. One assigned Builder owns each worktree; independent reviewers remain read-only. Never reset, clean, stash, rewrite or force-push unknown work, and never push directly to protected branches.
 
-1. Every task is Product -> Section -> Subsection -> Atomic Task. Implement only in the assigned subsection worktree. Promotion is only: subsection/* -> section -> development -> test -> staging -> production -> main.
-2. One implementation owner per subsection. Review/test agents may inspect but do not modify the lane unless reassigned. Claim a lease before editing.
-3. Pre-work: fetch/prune, verify branch/parent, record SHA, require clean tree, know ahead/behind, safely sync parent, run preflight, require dependencies CERTIFIED, validate environment, keep production effects off. Unknown local work or divergence means BLOCKED.
-4. Atomic tasks include implementation, tests, error handling, contract/docs/migration/observability/security changes when applicable. Do not mix unrelated changes.
-5. No placeholders, TODO-as-implementation, dead/duplicate code, bypasses, broad exception swallowing, hard-coded credentials, production secrets, unexplained suppressions, disabled tests/security checks or temporary production flags.
-6. Before push run applicable format/lint/type/unit/integration/contract/migration/security/secret checks and git diff --check. Do not knowingly push broken code.
-7. After each valid atomic checkpoint commit, push, verify remote SHA and record evidence. Do not leave completed work only on a workstation.
-8. Commits are one understandable unit with descriptive messages such as feat(area), fix(area), test(area), refactor(area).
-9. Before merge fetch parent, integrate current parent safely, resolve intentionally, rerun gates, push exact branch and require CI on the new SHA. Old CI never certifies a changed SHA.
-10. Do not directly develop on main, development, test, staging or production. Force pushes to protected branches are prohibited.
-11. Defaults: PRODUCTION_GO=NO, LIVE_CAPABILITIES_ENABLED=NO, EXTERNAL_EFFECTS=false. Implementation must not silently enable external/production effects.
-12. COMPLETE requires final branch/SHA, parent SHA, changed files, tests, security, migration/API evidence where applicable, dependency changes, limitations/TODOs, CI and reviewer state.
-13. COMPLETE requires implementation, applicable tests/contracts/security/docs/migrations, pushed clean tree, local/remote SHA match and no blockers.
-14. CERTIFIED additionally requires exact-SHA CI, independent review, parent integration/regression/security/performance evidence as applicable, no unresolved critical/high defects, and stored completion evidence. Only CERTIFIED promotes.
-15. After integration archive evidence and safely clean stale worktrees/locks/refs; never delete unmerged work.
-16. Fail closed. If safety cannot be proven, stop and mark BLOCKED. Never guess around secrets, migrations, authorization, ancestry, production effects, destructive operations or incomplete CI evidence.
+The historical workstation snapshots in `.governance/`, `.codestra/active-lane`, and `.codestra-mission/ACTIVE-LANE.env` preserve the September monitoring lane. They are reconciliation evidence, not current source admission or a restriction to that old workstation. Record the current assigned branch, base, owner, tests and review state in the mission checkpoint. Existing local helper scripts remain historical tools, not GitHub admission jobs.
 
+Planned environment promotion remains subsection -> section -> development -> test -> staging -> production -> main. Native-reviewed source repairs may target protected branches under their effective GitHub rules. Source integration never grants runtime authority.
 
-## Repository-specific additions
-<!-- CODESTRA_AGENT_PROTOCOL_V1 -->
-## Codestra continuation contract
+Production defaults remain `PRODUCTION_GO=NO`, `LIVE_CAPABILITIES_ENABLED=NO`, `EXTERNAL_EFFECTS=false`. Initialization, unseal, secrets access, runtime changes, provider effects and production activation require their separate explicit approvals and evidence. Never store or expose secret values, root/unseal material or private keys in source, artifacts or logs. Independent production environment approval remains mandatory.
 
-Canonical protocol:
-https://github.com/appolon1908/codestra/blob/main/docs/AGENT-CONTINUATION-PROTOCOL.md
+The governance-only main tree runs real syntax, safety metadata, committed-change and offline secrets-contract checks. Product-bearing branches require their actual product and security jobs; this source check is not product or runtime certification. Upstream inspection records identity only; source import and integration require a separately reviewed signed PR.
 
-Quick start:
-https://github.com/appolon1908/codestra/blob/main/docs/AGENT-QUICKSTART.md
+Before publication run affected tests and whitespace checks, obtain independent source review, and compare the current remote head/base. Recheck signatures, exact tree and remote SHA after publication. New source requires fresh CI and review. Update GitHub, Linear, Notion and the mission checkpoint before handoff; report unresolved failures honestly. Never weaken gates, fabricate status or claim runtime readiness from source-only checks.
 
-Before changing code:
-1. Read `.codestra-mission/*` when present.
-2. Read the active Linear issue and linked Notion architecture.
-3. Inspect exact Git branch/HEAD/dirty/worktree/upstream/PR/CI state.
-4. Preserve all existing local work.
-5. If acting as Builder, verify exclusive issue ownership and use a dedicated worktree.
-6. Do not invent or self-assign the next task.
-7. Update GitHub + Linear + Notion + the mission checkpoint before handoff.
-8. Do not cross the live-production approval boundary.
-
-The canonical protocol's no-loss, one-writer, protected-merge, checkpoint, and production-boundary rules are mandatory.
-
-<!-- CODESTRA_SINGLE_LANE_GOVERNANCE_V1 -->
-# Monitoring Single-Lane Agent Contract
-
-Mandatory entry: scripts/agent_preflight.sh
-
-Repository: Codestra-OpenBao
-Canonical active worktree: /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao
-Canonical branch: governance/single-active-lane-20260926
-Recorded base: main at f2befac098b5468495ac182af6240c75afd2caa0
-
-One-line continuation:
-cd /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao && ./scripts/agent_preflight.sh
-
-Rules:
-- Work only in the canonical active worktree and active branch above.
-- Never edit protected main, detached HEAD, a dirty start, or a branch with the wrong upstream.
-- .codestra-mission/ACTIVE-LANE.env is authority; stale base SHA or wrong origin fails closed.
-- Preserve old lanes as read-only reconciliation evidence. Never reset, stash, discard, rewrite, force-push, or blindly delete history.
-- Never add public /metrics or /internal exposure, wildcard CORS, alternate public monitoring ports, or auth/correlation/audit-header bypasses.
-- Never add production-effect commands on this lane. Monitoring work remains read-only/no-effect.
-- Before publication run scripts/agent_preflight.sh --certify and perform a fresh remote-head compare-and-swap.
-
-## CODESTRA GLOBAL DEVELOPMENT GOVERNANCE v1.0
-Before editing, run scripts/agent_preflight.sh. The .governance authority files are machine authority. Preserve unknown or dirty historical work. Never reset, stash, force-push, develop on main/master, or enable production effects. Finish with scripts/agent_finish.sh. Certification uses scripts/certify.sh plus repository-specific deterministic gates. Publication is Appolon-only and requires explicit remote-SHA compare-and-swap verification.
-<!-- /CODESTRA_SINGLE_LANE_GOVERNANCE_V1 -->
+Canonical continuation protocol: https://github.com/appolon1908/codestra/blob/main/docs/AGENT-CONTINUATION-PROTOCOL.md
+Quick start: https://github.com/appolon1908/codestra/blob/main/docs/AGENT-QUICKSTART.md
