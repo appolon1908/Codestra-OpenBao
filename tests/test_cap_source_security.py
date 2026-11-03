@@ -20,7 +20,7 @@ CAP = "github.com/hashicorp/cap"
 
 class CapSourceSecurityTests(unittest.TestCase):
     def source(self, root):
-        for name in ("go.mod", "go.sum", "vault/login_mfa.go"):
+        for name in ("go.mod", "go.sum", "vault/login_mfa.go", "vault/workflow_store.go"):
             (root / name).parent.mkdir(parents=True, exist_ok=True)
             (root / name).write_bytes((ROOT / "upstream" / name).read_bytes())
         return root

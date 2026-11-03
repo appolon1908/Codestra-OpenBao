@@ -17,7 +17,7 @@ PINS = {"github.com/google/cel-go":"v0.30.0", "github.com/go-logr/logr":"v1.4.4"
 
 class CelOtelSourceSecurityTests(unittest.TestCase):
     def source(self, root):
-        for name in ("go.mod","go.sum","vault/login_mfa.go"):
+        for name in ("go.mod","go.sum","vault/login_mfa.go","vault/workflow_store.go"):
             (root/name).parent.mkdir(parents=True,exist_ok=True)
             (root/name).write_bytes((ROOT/"upstream"/name).read_bytes())
         return root

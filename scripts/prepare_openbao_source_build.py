@@ -220,6 +220,7 @@ OKTA_OLD_SUM_LINES = (
     OKTA_OLD_MODULE + " v2.20.0/go.mod h1:FMy5hN5G8Rd/VoS0XrfyPPhIfOVo78ZK7lvwiQRS2+U=",
 )
 OKTA_MFA_SOURCE_SHA256 = "76c2811dac10c2afacd24132d5c4073bb2d0904efd39db8d5fbee015fc63416c"
+WORKFLOW_SOURCE_SHA256 = "9aeecd9af952adbb970669a50c6bacf86f4f4dfbd55c3ce42cd24c5d76fa731e"
 
 # Exact removals observed at signed94ab8d8 in hosted run41553692632.
 # These modules are deliberately NOT in the general tidy-change allowlist.
@@ -465,6 +466,23 @@ def prepare_okta_mfa(source_root: Path) -> tuple[str, dict[str, str]]:
     }
 
 
+def prepare_go126_workflow(source_root: Path) -> tuple[str, dict[str, str]]:
+    path = source_root / "vault/workflow_store.go"
+    if not path.is_file() or sha256(path) != WORKFLOW_SOURCE_SHA256:
+        fail("workflow source does not match the reviewed imported baseline")
+    original = path.read_text()
+    # Go 1.26 vet restricts integer %q arguments to rune/byte. This argument
+    # is len(values), a count; retain the separate quoted namespace header.
+    old = 'fmt.Errorf("have %q values for %q header; expected only 1", len(values), consts.NamespaceHeaderName)'
+    new = old.replace("have %q values", "have %d values")
+    updated = replace_exactly_once(original, old, new, "workflow integer-count diagnostic")
+    return updated, {
+        "source_sha256_before": WORKFLOW_SOURCE_SHA256,
+        "source_sha256_after": hashlib.sha256(updated.encode()).hexdigest(),
+        "repair": "format namespace header count as decimal while preserving quoted header",
+    }
+
+
 def apply(
     source_root: Path,
     report: Path | None = None,
@@ -480,6 +498,8 @@ def apply(
     original_sum = go_sum.read_text(encoding="utf-8")
     okta_source = None
     okta_proof = None
+    workflow_source = None
+    workflow_proof = None
     if NEW_MOD_LINE in original_mod or any(line in original_sum for line in NEW_SUM_LINES):
         fail("build overlay appears to have been applied already")
 
@@ -545,11 +565,14 @@ def apply(
         for old, new in zip(OKTA_OLD_SUM_LINES, REVIEWED_OPTIONAL_SUM_LINES[OKTA_MODULE], strict=True):
             updated_sum = replace_exactly_once(updated_sum, old, new, "Okta SDK checksum")
         okta_source, okta_proof = prepare_okta_mfa(source_root)
+        workflow_source, workflow_proof = prepare_go126_workflow(source_root)
 
     go_mod.write_text(updated_mod, encoding="utf-8")
     go_sum.write_text(updated_sum, encoding="utf-8")
     if okta_source is not None:
         source_root.joinpath("vault/login_mfa.go").write_text(okta_source, encoding="utf-8")
+    if workflow_source is not None:
+        source_root.joinpath("vault/workflow_store.go").write_text(workflow_source, encoding="utf-8")
 
     if updated_mod.count(NEW_MOD_LINE) != 1:
         fail("updated go.mod does not contain the exact security-fixed requirement")
@@ -592,6 +615,8 @@ def apply(
     }
     if okta_proof is not None:
         evidence["okta_mfa_overlay"] = okta_proof
+    if workflow_proof is not None:
+        evidence["workflow_go126_overlay"] = workflow_proof
     if report is not None:
         report.parent.mkdir(parents=True, exist_ok=True)
         report.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")

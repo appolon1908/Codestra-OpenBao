@@ -27,7 +27,7 @@ NEW_SUMS = (
 class JoseSourceImageSecurityTests(unittest.TestCase):
     def source_copy(self, directory):
         source = Path(directory)
-        for name in ("go.mod", "go.sum", "vault/login_mfa.go"):
+        for name in ("go.mod", "go.sum", "vault/login_mfa.go", "vault/workflow_store.go"):
             (source / name).parent.mkdir(parents=True, exist_ok=True)
             (source / name).write_bytes((ROOT / "upstream" / name).read_bytes())
         return source

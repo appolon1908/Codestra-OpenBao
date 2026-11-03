@@ -42,6 +42,15 @@ The validator permits precisely those version/checksum transitions only during
 the exact Okta v2.20.0 to v6.1.7 migration. New records, other versions or
 additional removals remain rejected; neither module receives a general allowance.
 
+The real `vault` test package also reaches an imported workflow diagnostic that
+prints `len(values)` with `%q`. The Go 1.26 printf analyzer restricts integer
+`%q` operands to rune/byte; this value is an integer count. The build overlay
+binds `vault/workflow_store.go` to SHA256
+`9aeecd9af952adbb970669a50c6bacf86f4f4dfbd55c3ce42cd24c5d76fa731e`
+and changes only that count verb to `%d`, preserving the separately quoted header
+and all authorization behavior. Missing or changed source fails before any file
+is written. Imported bytes and vet remain unchanged/enabled respectively.
+
 Offline transform/provenance tests and Go syntax checks are source evidence.
 Actual Go 1.26.10 compilation, consumer execution and fresh scans of both
 subjects remain mandatory. No severity/freshness/VEX rules, accepted runtime
@@ -53,3 +62,4 @@ Primary sources:
 - [Typed factor API](https://github.com/okta/okta-sdk-golang/blob/v6.1.7/okta/api_user_factor.go)
 - [Official SDK checksums](https://sum.golang.org/lookup/github.com/okta/okta-sdk-golang/v6@v6.1.7)
 - [Retired SDK module](https://github.com/okta/okta-sdk-golang/blob/v2.20.0/go.mod)
+- [Go 1.26 printf analyzer](https://github.com/golang/go/blob/go1.26.10/src/cmd/vendor/golang.org/x/tools/go/analysis/passes/printf/printf.go#L832-L837)

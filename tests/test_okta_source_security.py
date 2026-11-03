@@ -15,7 +15,7 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 OLD = "github.com/okta/okta-sdk-golang/v2"
 NEW = "github.com/okta/okta-sdk-golang/v6"
-FILES = ("go.mod", "go.sum", "vault/login_mfa.go")
+FILES = ("go.mod", "go.sum", "vault/login_mfa.go", "vault/workflow_store.go")
 
 
 class OktaSourceSecurityTests(unittest.TestCase):
@@ -45,6 +45,36 @@ class OktaSourceSecurityTests(unittest.TestCase):
             self.assertEqual(original.split(marker, 1)[1], transformed.split(marker, 1)[1])
         self.assertEqual(before, {name: (ROOT / "upstream" / name).read_bytes() for name in FILES})
 
+    def test_go126_workflow_diagnostic_changes_only_integer_count_verb(self):
+        original = (ROOT / "upstream/vault/workflow_store.go").read_text()
+        old = 'fmt.Errorf("have %q values for %q header; expected only 1", len(values), consts.NamespaceHeaderName)'
+        new = old.replace('have %q values', 'have %d values')
+        self.assertEqual(original.count(old), 1)
+        with tempfile.TemporaryDirectory() as temp:
+            source = self.source(Path(temp))
+            proof = MODULE.apply(source)
+            actual = (source / "vault/workflow_store.go").read_text()
+            self.assertEqual(actual, original.replace(old, new, 1))
+            self.assertEqual(proof["workflow_go126_overlay"]["source_sha256_after"],
+                             hashlib.sha256(actual.encode()).hexdigest())
+        self.assertEqual((ROOT / "upstream/vault/workflow_store.go").read_text(), original)
+
+    def test_changed_or_missing_workflow_baseline_is_rejected_before_any_write(self):
+        for missing in (False, True):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as temp:
+                source = self.source(Path(temp))
+                path = source / "vault/workflow_store.go"
+                if missing:
+                    path.unlink()
+                else:
+                    path.write_text(path.read_text().replace('len(values) > 1', 'len(values) > 2'))
+                before = {name: (source / name).read_bytes() for name in FILES if (source / name).exists()}
+                with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                    MODULE.apply(source)
+                self.assertEqual(before, {name: (source / name).read_bytes() for name in before})
+                if missing:
+                    self.assertFalse(path.exists())
+
     def test_changed_mfa_or_dependency_baseline_is_rejected_before_any_write(self):
         for name in FILES:
             with self.subTest(name=name), tempfile.TemporaryDirectory() as temp:
@@ -55,6 +85,8 @@ class OktaSourceSecurityTests(unittest.TestCase):
                     text = text.replace(OLD + " v2.20.0", OLD + " v2.19.0")
                 elif name == "go.sum":
                     text = text.replace(OLD + " v2.20.0 h1:", OLD + " v2.20.0 h1:tampered")
+                elif name == "vault/workflow_store.go":
+                    text = text.replace("len(values) > 1", "len(values) > 2")
                 else:
                     text = text.replace('case "SUCCESS":', 'case "ACCEPT_ANYTHING":', 1)
                 path.write_text(text)
