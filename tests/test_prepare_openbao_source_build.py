@@ -128,6 +128,16 @@ require (
         final_sum = "\n".join(final_lines) + "\n"
         return original_mod, original_sum, final_mod, final_sum
 
+    def test_tidy_cannot_reintroduce_retired_crypto_packages(self) -> None:
+        original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
+        for module in ("github.com/go-jose/go-jose/v3", "golang.org/x/crypto/openpgp"):
+            with self.subTest(module=module), self.assertRaises(SystemExit):
+                MODULE.validate_tidy_result(original_mod, original_sum,
+                    final_mod + "\t" + module + " v3.0.5\n", final_sum)
+        with self.assertRaises(SystemExit):
+            MODULE.validate_tidy_result(original_mod, original_sum, final_mod,
+                final_sum + "github.com/go-jose/go-jose/v3 v3.0.5 h1:untrusted=\n")
+
     def test_tidy_validation_accepts_only_reviewed_transitive_updates(self) -> None:
         original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
         changes = MODULE.validate_tidy_result(

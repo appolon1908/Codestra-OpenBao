@@ -19,7 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class NetworkSourceImageGateTests(unittest.TestCase):
     def test_security_module_graph_is_complete_and_exact(self):
         graph = {
-            "github.com/hashicorp/cap": ("v0.13.0", "v0.14.0"),
+            "github.com/hashicorp/cap": ("v0.13.0", "v0.15.0"),
             "github.com/google/cel-go": ('v0.28.1', 'v0.30.0'),
             "github.com/go-logr/logr": ('v1.4.3', 'v1.4.4'),
             "go.opentelemetry.io/otel": ('v1.44.0', 'v1.45.0'),
@@ -27,7 +27,7 @@ class NetworkSourceImageGateTests(unittest.TestCase):
             "go.opentelemetry.io/otel/trace": ('v1.44.0', 'v1.45.0'),
             "go.opentelemetry.io/otel/metric": ('v1.44.0', 'v1.45.0'),
             "github.com/go-jose/go-jose/v4": ("v4.1.4", "v4.1.6"),
-            "golang.org/x/crypto": ("v0.55.0", "v0.58.0"),
+            "golang.org/x/crypto": ("v0.55.0", "v0.58.1-0.20261009181718-2f1f834330b2"),
             "golang.org/x/mod": ("v0.38.0", "v0.41.0"),
             "golang.org/x/net": ("v0.58.0", "v0.62.0"),
             "golang.org/x/sync": ("v0.22.0", "v0.24.0"),

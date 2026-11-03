@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import fnmatch
+import json
+import re
 import os
 import subprocess
 import tempfile
@@ -101,18 +103,49 @@ class AtomicSourceCiTests(unittest.TestCase):
         setup=next(s for s in steps if s.get("uses","").startswith("actions/setup-go@"))
         self.assertEqual(setup["with"],{"go-version":"1.26.10","cache":False})
 
-    def test_artifact_builder_vendors_before_backport_and_scans_both_before_gate(self):
+    def test_artifact_builder_vendors_fixed_modules_and_scans_both_before_gate(self):
         script=(ROOT/"scripts/validate_source_artifacts.sh").read_text()
         self.assertIn("scripts/prepare_openbao_test_fixtures.py",script)
         self.assertIn('tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"',script)
         self.assertLess(script.index("cp -a plugins/codestra-jwt-replay"),script.index("go mod vendor"))
-        self.assertLess(script.index("go mod vendor"),script.index("scripts/patch_jose_v3_vendor.py"))
-        self.assertLess(script.index("scripts/patch_jose_v3_vendor.py"),script.index("go test -count=1"))
+        self.assertLess(script.index("go mod vendor"),script.index("go list -deps"))
+        self.assertLess(script.index("go list -deps"),script.index("go test -count=1"))
+        self.assertNotIn("scripts/patch_jose_v3_vendor.py --", script)
+        self.assertIn("github.com/go-jose/go-jose/v4", script)
         self.assertIn("export GOFLAGS='-mod=vendor -p=2'",script)
         self.assertIn("trivy image --skip-db-update",script)
         self.assertIn("trivy rootfs --skip-db-update",script)
         self.assertNotRegex(script,r"--ignore-unfixed|--severity|docker push|cosign|docker login")
         self.assertNotIn("scripts/build_jti_plugin.sh",script)
+
+    def test_recorded_dependencies_use_actual_build_entrypoints_and_flags(self):
+        script = (ROOT / "scripts/validate_source_artifacts.sh").read_text().replace("\\\n", "")
+        commands = [line.strip() for line in script.splitlines()
+                    if re.match(r"^\s*go (?:list|build) ", line)]
+        flags = next(line for line in script.splitlines() if line.startswith("export GOFLAGS="))
+        self.assertEqual(len(commands), 4)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stub = root / "go"
+            stub.write_text("#!/usr/bin/python3\nimport json, os, sys\n"
+                            "with open(os.environ['GO_COMMAND_LOG'], 'a') as output:\n"
+                            " output.write(json.dumps([sys.argv[1:], os.environ.get('GOFLAGS')])+'\\n')\n")
+            stub.chmod(0o755)
+            log = root / "calls.jsonl"
+            subprocess.run(["bash", "-eu", "-c", flags+"\n"+"\n".join(commands)], check=True,
+                           cwd=root, env={"PATH":str(root)+":/usr/bin:/bin", "GO_COMMAND_LOG":str(log),
+                           "EVIDENCE_DIR":str(root), "EXPECTED_SHA":"a"*40, "commit_date":"2026-11-02T00:00:00Z"})
+            calls = [json.loads(line) for line in log.read_text().splitlines()]
+        targets = (".", "./codestra/plugins/codestra-jwt-replay/cmd")
+        for target in targets:
+            listed = next(call for call in calls if call[0][0] == "list" and call[0][-1] == target)
+            built = next(call for call in calls if call[0][0] == "build" and call[0][-1] == target)
+            listed_tags = [arg for arg in listed[0] if arg.startswith("-tags=")]
+            built_tags = [arg for arg in built[0] if arg.startswith("-tags=")]
+            self.assertEqual(listed_tags, built_tags, target)
+            self.assertEqual(built_tags, ["-tags=openbao"] if target == "." else [])
+            self.assertEqual(listed[1], built[1])
+            self.assertEqual(built[1], "-mod=vendor -p=2")
 
     def test_artifact_builder_uses_bash_without_executable_permission(self):
         script = ROOT / "scripts/validate_source_artifacts.sh"

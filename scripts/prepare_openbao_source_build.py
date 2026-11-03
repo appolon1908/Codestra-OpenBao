@@ -48,10 +48,10 @@ CAP_OLD_SUM_LINES = (
     CAP_MODULE + " v0.13.0/go.mod h1:Kbu5owAOJzQ/HH4Ba/76wsIXN2tRiJgToJKBO2MAEFE=",
 )
 CAP_NEW_SUM_LINES = (
-    CAP_MODULE + " v0.14.0 h1:IPWX/ewgw8tQPl0qpnCuNf6BFXOCz7ijSM5ikX27cNg=",
-    CAP_MODULE + " v0.14.0/go.mod h1:Kbu5owAOJzQ/HH4Ba/76wsIXN2tRiJgToJKBO2MAEFE=",
+    CAP_MODULE + " v0.15.0 h1:AvraJIQWPEbxm3m1mKtHEomWjMA22tKMG6jP/In9mG0=",
+    CAP_MODULE + " v0.15.0/go.mod h1:A+JiPqMWvppCWmehtcQHRN8iTcbI10qeJ0lavQt2dnw=",
 )
-REVIEWED_JOSE_GRAPH_VERSIONS = {JOSE_MODULE: "v4.1.6", CAP_MODULE: "v0.14.0"}
+REVIEWED_JOSE_GRAPH_VERSIONS = {JOSE_MODULE: "v4.1.6", CAP_MODULE: "v0.15.0"}
 
 REVIEWED_TRANSITIVE_VERSIONS = {
     "github.com/moby/patternmatcher": "v0.6.1",
@@ -60,7 +60,7 @@ REVIEWED_TRANSITIVE_VERSIONS = {
 }
 REVIEWED_GRPC_GRAPH_VERSIONS = {
     "cel.dev/expr": "v0.25.2",
-    "golang.org/x/crypto": "v0.58.0",
+    "golang.org/x/crypto": "v0.58.1-0.20261009181718-2f1f834330b2",
     "golang.org/x/mod": "v0.41.0",
     "golang.org/x/net": "v0.62.0",
     "golang.org/x/sync": "v0.24.0",
@@ -77,7 +77,7 @@ BUILD_GO_DIRECTIVE = "1.26.0"
 # Exact reviewed MVS dependency graph from the Go module checksum database.
 # This is a build-only transformation: imported upstream source stays byte-identical.
 SECURITY_GRAPH_UPGRADES = {
-    CAP_MODULE: ("v0.13.0", "v0.14.0"),
+    CAP_MODULE: ("v0.13.0", "v0.15.0"),
     'github.com/google/cel-go': ('v0.28.1', 'v0.30.0'),
     'github.com/go-logr/logr': ('v1.4.3', 'v1.4.4'),
     'go.opentelemetry.io/otel': ('v1.44.0', 'v1.45.0'),
@@ -86,7 +86,7 @@ SECURITY_GRAPH_UPGRADES = {
     'go.opentelemetry.io/otel/metric': ('v1.44.0', 'v1.45.0'),
 
     JOSE_MODULE: ("v4.1.4", "v4.1.6"),
-    "golang.org/x/crypto": ("v0.55.0", "v0.58.0"),
+    "golang.org/x/crypto": ("v0.55.0", "v0.58.1-0.20261009181718-2f1f834330b2"),
     "golang.org/x/mod": ("v0.38.0", "v0.41.0"),
     "golang.org/x/net": ("v0.58.0", "v0.62.0"),
     "golang.org/x/sync": ("v0.22.0", "v0.24.0"),
@@ -160,8 +160,8 @@ REVIEWED_SECURITY_SUM_LINES = {
 
     JOSE_MODULE: JOSE_NEW_SUM_LINES,
     "golang.org/x/crypto": (
-        "golang.org/x/crypto v0.58.0 h1:COkYLr4k7nDI4r6QtMML2AfzeIswWHAJthLS6K/M/54=",
-        "golang.org/x/crypto v0.58.0/go.mod h1:Xh+kl5A+M0gMiWDytH2Hhr5Z7WbNCpv/eB/EFgfSk+w=",
+        "golang.org/x/crypto v0.58.1-0.20261009181718-2f1f834330b2 h1:zGDaB+/Mus2mScKvZ23k+W9NAUbP56sNM9SptgvWI5A=",
+        "golang.org/x/crypto v0.58.1-0.20261009181718-2f1f834330b2/go.mod h1:Xh+kl5A+M0gMiWDytH2Hhr5Z7WbNCpv/eB/EFgfSk+w=",
     ),
     "golang.org/x/mod": (
         "golang.org/x/mod v0.41.0 h1:qJmnOUb4YB+FsEuM3HcWucdZASCPGhsX6uljO6pog0c=",
@@ -224,9 +224,11 @@ REVIEWED_TRANSITIVE_SUM_LINES = {
         "github.com/moby/sys/user v0.4.1/go.mod h1:E9QsW5WRe1kUAf7kW8hXKwu1uhsZEAdPLYHYSDudF4Y=",
     ),
 }
+RETIRED_JOSE_MODULE = "github.com/go-jose/go-jose/v3"
 REVIEWED_TIDY_MODULES = frozenset(
     {
         MODULE,
+        RETIRED_JOSE_MODULE,
         "github.com/klauspost/compress",
         "github.com/moby/patternmatcher",
         "github.com/moby/sys/mount",
@@ -307,6 +309,10 @@ def validate_tidy_result(
 
     original_versions = module_versions(original_mod)
     final_versions = module_versions(final_mod)
+    if RETIRED_JOSE_MODULE in final_versions or RETIRED_JOSE_MODULE in sum_records(final_sum):
+        fail("go mod tidy retained retired JOSE v3")
+    if "golang.org/x/crypto/openpgp" in final_versions:
+        fail("go mod tidy selected unmaintained OpenPGP module")
     changed_mod_modules = changed_keys(original_versions, final_versions)
     changed_sum_modules = changed_keys(sum_records(original_sum), sum_records(final_sum))
     unexpected = (changed_mod_modules | changed_sum_modules) - REVIEWED_TIDY_MODULES
@@ -402,12 +408,11 @@ def apply(
     for old, new in zip(OLD_SUM_LINES, NEW_SUM_LINES, strict=True):
         updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum archive checksum")
 
-    # The same advisory affects v3, which remains an unresolved upstream
-    # dependency. This exact v4-only replacement makes no v3 safety claim.
+    # CAP0.15 uses fixed JOSEv4; retired v3 must disappear from the selected graph.
     for old, new in zip(JOSE_OLD_SUM_LINES, JOSE_NEW_SUM_LINES, strict=True):
         updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum go-jose checksum")
 
-    # CAP0.14 rejects aliases of registered claims; retain its honest dependency identity.
+    # CAP0.15 retains claim-alias protection while migrating JWT/OIDC to JOSEv4.
     for old, new in zip(CAP_OLD_SUM_LINES, CAP_NEW_SUM_LINES, strict=True):
         updated_sum = replace_exactly_once(updated_sum, old, new, "go.sum CAP checksum")
 
@@ -436,6 +441,21 @@ def apply(
             lambda match: f"{match.group('indent')}{module} {new_version}{match.group('qualifier')}",
             updated_mod, count=1,
         )
+
+    # Imported upstream evidence remains unchanged. Remove only the reviewed
+    # legacy requirement/checksums from the build copy; tidy must not restore it.
+    retired_line = "\tgithub.com/go-jose/go-jose/v3 v3.0.5 // indirect\n"
+    if RETIRED_JOSE_MODULE in module_versions(updated_mod):
+        updated_mod = replace_exactly_once(updated_mod, retired_line, "", "retired JOSE requirement")
+    retired_sums = (
+        "github.com/go-jose/go-jose/v3 v3.0.5 h1:BLLJWbC4nMZOfuPVxoZIxeYsn6Nl2r1fITaJ78UQlVQ=",
+        "github.com/go-jose/go-jose/v3 v3.0.5/go.mod h1:5b+7YgP7ZICgJDBdfjZaIt+H/9L9T/YQrVfLAMboGkQ=",
+    )
+    if RETIRED_JOSE_MODULE in sum_records(updated_sum):
+        if sum_records(updated_sum)[RETIRED_JOSE_MODULE] != set(retired_sums):
+            fail("unexpected retired JOSE checksum baseline")
+        for line in retired_sums:
+            updated_sum = replace_exactly_once(updated_sum, line + "\n", "", "retired JOSE checksum")
 
     go_mod.write_text(updated_mod, encoding="utf-8")
     go_sum.write_text(updated_sum, encoding="utf-8")

@@ -1,4 +1,9 @@
-# go-jose/v3 candidate parser backport
+# Historical go-jose/v3 candidate parser backport
+
+The active candidate build now uses supported CAP v0.15.0 and JOSEv4.1.6, with
+explicit absence checks for v3. The following records the earlier backport
+approach; patch files remain historical evidence and are no longer applied by
+the candidate builder. See [current dependency contract](CAP-JWT-CLAIM-HARDENING.md).
 
 The isolated atomic source-artifact job backports the parser protections from
 [maintainer commit a0111f8](https://github.com/go-jose/go-jose/commit/a0111f82742fa92bceec9ede40845e73319e6230)

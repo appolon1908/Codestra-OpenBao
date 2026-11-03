@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Codestra
 // SPDX-License-Identifier: MPL-2.0
-package josev3security
+package josesecurity
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	jose "github.com/go-jose/go-jose/v3"
+	jose "github.com/go-jose/go-jose/v4"
 	capjwt "github.com/hashicorp/cap/jwt"
 )
 
@@ -170,5 +170,15 @@ func TestCAPOptionalTemporalClaimsRetainSeparateValidationContract(t *testing.T)
 	returned, err := validator.ValidateAllowMissingIatNbfExp(context.Background(), token, capExpected())
 	if err != nil || returned["sub"] != "builder" {
 		t.Fatalf("optional-time contract changed: %v %v", returned, err)
+	}
+}
+
+func TestCAPRejectsUnexpectedSigningAlgorithm(t *testing.T) {
+	validator, key := capValidator(t)
+	token := capToken(t, key, canonicalCAPClaims())
+	expected := capExpected()
+	expected.SigningAlgorithms = []capjwt.Alg{capjwt.RS256}
+	if _, err := validator.Validate(context.Background(), token, expected); err == nil {
+		t.Fatal("ES256 token accepted by RS256-only verifier")
 	}
 }

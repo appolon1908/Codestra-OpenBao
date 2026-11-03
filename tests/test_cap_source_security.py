@@ -33,9 +33,13 @@ class CapSourceSecurityTests(unittest.TestCase):
             root = self.source(Path(temp))
             proof = MODULE.apply(root)
             self.assertEqual(
-                MODULE.module_versions((root / "go.mod").read_text()).get(CAP), "v0.14.0"
+                MODULE.module_versions((root / "go.mod").read_text()).get(CAP), "v0.15.0"
             )
-            self.assertEqual(proof["reviewed_security_module_versions"].get(CAP), "v0.14.0")
+            self.assertEqual(proof["reviewed_security_module_versions"].get(CAP), "v0.15.0")
+            self.assertNotIn("github.com/go-jose/go-jose/v3", (root / "go.mod").read_text())
+            self.assertNotIn("github.com/go-jose/go-jose/v3", (root / "go.sum").read_text())
+            self.assertEqual(MODULE.module_versions((root / "go.mod").read_text()).get("golang.org/x/crypto"),
+                             "v0.58.1-0.20261009181718-2f1f834330b2")
             for line in MODULE.REVIEWED_SECURITY_SUM_LINES[CAP]:
                 self.assertIn(line, (root / "go.sum").read_text().splitlines())
         self.assertEqual(
@@ -78,7 +82,7 @@ class CapSourceSecurityTests(unittest.TestCase):
 
     def test_signed_cap_regressions_are_run_by_candidate_builder(self):
         source = (ROOT / "scripts/validate_source_artifacts.sh").read_text()
-        self.assertIn("tests/go/josev3security/cap_claims_test.go", source)
+        self.assertIn("tests/go/josesecurity/cap_claims_test.go", source)
         self.assertIn("./builtin/credential/jwt", source)
         self.assertIn("./codestra/plugins/codestra-jwt-replay", source)
 

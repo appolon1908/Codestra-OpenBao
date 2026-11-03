@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Codestra
 // SPDX-License-Identifier: MPL-2.0
-package josev3security
+package josesecurity
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	jose "github.com/go-jose/go-jose/v3"
+	jose "github.com/go-jose/go-jose/v4"
 	capjwt "github.com/hashicorp/cap/jwt"
 )
 
@@ -89,7 +89,7 @@ func TestPrivateHeadersRejectedInEveryJWSForm(t *testing.T) {
 					messages = append(messages, encoded(protected)+".e30.AQ")
 				}
 				for _, msg := range messages {
-					_, err := jose.ParseSigned(msg)
+					_, err := jose.ParseSigned(msg, []jose.SignatureAlgorithm{jose.RS256})
 					requireGuard(t, err, "JWK contains private parameters")
 				}
 			})
@@ -101,7 +101,7 @@ func TestGeneralHeaderAndPublicJWKPreserved(t *testing.T) {
 		"protected": encoded(map[string]interface{}{"alg": "RS256"}),
 		"header":    map[string]interface{}{"kid": "expected", "jwk": public(2048)}, "signature": "AQ"}}}
 	raw, _ := json.Marshal(msg)
-	parsed, err := jose.ParseSigned(string(raw))
+	parsed, err := jose.ParseSigned(string(raw), []jose.SignatureAlgorithm{jose.RS256})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,7 +202,7 @@ func TestJWEPrivateEPKRejectsOtherwiseValidMessage(t *testing.T) {
 		header["epk"].(map[string]interface{})["p"] = "AQ"
 	}
 	raw, _ := json.Marshal(message)
-	parsed, err := jose.ParseEncrypted(string(raw))
+	parsed, err := jose.ParseEncrypted(string(raw), []jose.KeyAlgorithm{jose.ECDH_ES_A128KW}, []jose.ContentEncryption{jose.A128GCM})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,8 +1,8 @@
 # CAP registered-claim hardening
 
 The isolated build overlay upgrades `github.com/hashicorp/cap` from v0.13.0
-to v0.14.0 with exact old/new archive and module-file checksums. Both releases
-have the same `go.mod`, so this change requires no companion upgrade. Imported
+to v0.15.0 with exact old/new archive and module-file checksums. This supported
+release also migrates CAP JWT/OIDC from retired JOSEv3 to fixed JOSEv4.1.6. Imported
 OpenBao source and accepted plugin identity stay unchanged.
 
 CAP's maintainer fix rejects noncanonical names that Unicode-fold to one of the
@@ -22,17 +22,28 @@ The selected existing Kubernetes Login/issuer/projected-token/cancellation tests
 use in-memory state and synthetic TokenReview; no live cluster is used. Full JWT,
 replay, JOSE, CEL and diagnose tests remain wired.
 
-The candidate evidence validator requires compiled CAP v0.14.0 and corresponding
-SBOM inventory in both image and replay plugin. Version drift fails closed.
-This upgrade does **not** remove go-jose/v3 or resolve its retained scanner
-finding: the maintainer-origin v3 backport and all attack regressions stay in
-place, and HIGH/CRITICAL/UNKNOWN policy is unchanged. A new source commit needs
-fresh exact-artifact evidence; earlier candidate assessments are not acceptance.
+The candidate evidence validator requires compiled CAP v0.15.0 and fixed
+JOSEv4.1.6 in both image and replay plugin. Actual selected-package inventories,
+vendor metadata, module files, compiled inventories and both SBOMs must exclude
+JOSEv3 and the unmaintained `golang.org/x/crypto/openpgp` module/packages. The
+build-only crypto overlay selects the official fixed parent-module boundary
+v0.58.1-0.20261009181718-2f1f834330b2 with checksum-database records. Imported
+upstream manifests and the accepted runtime plugin identity remain unchanged.
+
+The attack regressions now use fixed v4 APIs with explicit algorithm lists;
+RSA/JWK/JWS/JWE and signed claim tests remain active. Historical v3 patch files
+are preserved, but no patch acceptance substitutes for the dependency migration.
+Both actual candidates still require fresh builds, consumer tests and scans.
+HIGH/CRITICAL/UNKNOWN policy, scan freshness, stored exact-image/VEX gates and
+runtime restrictions are unchanged. No new dependency or source commit is
+accepted merely because these offline contract tests pass.
 
 Primary references:
 
-- [CAP v0.14.0 release](https://github.com/hashicorp/cap/releases/tag/v0.14.0)
+- [CAP v0.15.0 release](https://github.com/hashicorp/cap/releases/tag/v0.15.0)
 - [Maintainer claims-confusion fix](https://github.com/hashicorp/cap/pull/191)
-- [Fixed JWT implementation](https://raw.githubusercontent.com/hashicorp/cap/v0.14.0/jwt/jwt.go)
+- [Fixed JWT implementation](https://raw.githubusercontent.com/hashicorp/cap/v0.15.0/jwt/jwt.go)
 - [Old checksum record](https://sum.golang.org/lookup/github.com/hashicorp/cap@v0.13.0)
-- [New checksum record](https://sum.golang.org/lookup/github.com/hashicorp/cap@v0.14.0)
+- [New checksum record](https://sum.golang.org/lookup/github.com/hashicorp/cap@v0.15.0)
+- [Supported JOSEv4 migration](https://github.com/hashicorp/cap/pull/211)
+- [Official crypto advisory and fixed boundary](https://vuln.go.dev/ID/GO-2026-5932.json)

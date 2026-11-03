@@ -42,34 +42,36 @@ class CandidateEvidenceTests(unittest.TestCase):
             "layers":[{"digest":config["rootfs"]["diff_ids"][0]}]})
         write(root,"oci-descriptor.json",{"digest":"sha256:"+MODULE.sha(root/"oci-manifest.json"),
             "size":(root/"oci-manifest.json").stat().st_size})
-        for name in ("prepared-go.mod","prepared-go.sum","vendor-modules.txt","security.patch"):
+        for name in ("prepared-go.mod","prepared-go.sum","vendor-modules.txt"):
             (root/name).write_text("fixture\\n")
         write(root,"accepted-plugin-manifest.json",{"name":"codestra-jwt-replay"})
-        files={"jwk.go":{"before":"0"*64,"after":"1"*64}}
-        write(root,"backport-manifest.json",{"upstream_fix":"a0111f82742fa92bceec9ede40845e73319e6230",
-              "patch_sha256":MODULE.sha(root/"security.patch"),"files":files})
         write(root,"test-fixture-overlay.json",{"test_only":True,"assertions_removed":False,
                                                "reusable_private_key_material_stored":False})
+        dependency_pins = {"github.com/hashicorp/cap": "v0.15.0",
+                           "github.com/go-jose/go-jose/v4": "v4.1.6",
+                           "golang.org/x/crypto": "v0.58.1-0.20261009181718-2f1f834330b2"}
+        for name, target in (("bao", "github.com/openbao/openbao"),
+                             ("plugin", "github.com/openbao/openbao/codestra/plugins/codestra-jwt-replay/cmd")):
+            (root/(name+"-build-deps.txt")).write_text(target+" github.com/openbao/openbao\n"+
+                "".join(module+"/package "+module+" "+version+"\n" for module,version in dependency_pins.items()))
+        (root/"vendor-tree.sha256").write_text("d"*64+"\n")
         write(root,"build.json",{"source_sha":SOURCE,"source_tree":TREE,"run_id":1,"run_attempt":1,
             "go_version":"go1.26.10","runtime_authorized":False,"local_image":"candidate:test",
             "plugin_scan_root":"/fixture/plugin-root","vendor_tree_sha256":"d"*64,
             "repository":"appolon1908/Codestra-OpenBao","upstream":"dd9c19c37a878cf4a81b18efb8d6f0599c7da923",
             "go_mod_sha256":MODULE.sha(root/"prepared-go.mod"),"go_sum_sha256":MODULE.sha(root/"prepared-go.sum"),
             "plugin_manifest_sha256":MODULE.sha(root/"accepted-plugin-manifest.json"),"plugin_source_tree_sha256":"1"*64,"test_fixture_overlay_sha256":MODULE.sha(root/"test-fixture-overlay.json"),
-            "backport_patch_sha256":MODULE.sha(root/"security.patch"),"binaries":{n:MODULE.sha(root/n) for n in ("bao","plugin-root/codestra-jwt-replay")}})
-        write(root,"jose-v3-backport.json",{"module_version":"v3.0.5","vulnerability_acceptance":False,
-            "requires_go_mod_flag":"-mod=vendor","patch_sha256":MODULE.sha(root/"security.patch"),"vendor_tree_sha256":"d"*64,
-            "files":files,"vendor_modules_sha256":MODULE.sha(root/"vendor-modules.txt")})
+            "selected_dependencies_sha256":{name:MODULE.sha(root/(name+"-build-deps.txt")) for name in ("bao","plugin")},"binaries":{n:MODULE.sha(root/n) for n in ("bao","plugin-root/codestra-jwt-replay")}})
         write(root,"dependency-overlay.json",{"status":"PASS","go_mod_tidy_performed":True,
             "go_mod_sha256_after":MODULE.sha(root/"prepared-go.mod"),"go_sum_sha256_after":MODULE.sha(root/"prepared-go.sum")})
         for name in ("bao","plugin"):
             (root/(name+"-go-version.txt")).write_text(
                 "binary: go1.26.10\n"+
                 "\n".join(" dep "+m+" "+v for m,v in (
-                 ("github.com/go-jose/go-jose/v3","v3.0.5"),("github.com/go-jose/go-jose/v4","v4.1.6"),
+                 ("github.com/go-jose/go-jose/v4","v4.1.6"),
                  ("golang.org/x/net","v0.62.0"),("golang.org/x/text","v0.43.0"),
                  ("google.golang.org/grpc","v1.83.2")))+"\n")
-        fixed_pins={"github.com/hashicorp/cap":"v0.14.0",'github.com/google/cel-go': 'v0.30.0', 'github.com/go-logr/logr': 'v1.4.4', 'go.opentelemetry.io/otel': 'v1.45.0', 'go.opentelemetry.io/otel/metric': 'v1.45.0', 'go.opentelemetry.io/otel/trace': 'v1.45.0'}
+        fixed_pins={"github.com/hashicorp/cap":"v0.15.0", "golang.org/x/crypto":"v0.58.1-0.20261009181718-2f1f834330b2",'github.com/google/cel-go': 'v0.30.0', 'github.com/go-logr/logr': 'v1.4.4', 'go.opentelemetry.io/otel': 'v1.45.0', 'go.opentelemetry.io/otel/metric': 'v1.45.0', 'go.opentelemetry.io/otel/trace': 'v1.45.0'}
         for name in ("bao","plugin"):
             path=root/(name+"-go-version.txt")
             pins={**fixed_pins,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="bao" else {})}
@@ -87,7 +89,7 @@ class CandidateEvidenceTests(unittest.TestCase):
                 "CreatedAt":NOW.isoformat(),"ArtifactType":kind,"ArtifactName":artifact,
                 "Metadata":{"ImageID":config_id},
                 "Results":[{"Target":"/"+binary,"Type":"gobinary","Vulnerabilities":[]}]})
-        inventory={"github.com/go-jose/go-jose/v3":"v3.0.5","github.com/go-jose/go-jose/v4":"v4.1.6",
+        inventory={"github.com/go-jose/go-jose/v4":"v4.1.6",
                    "golang.org/x/net":"v0.62.0","golang.org/x/text":"v0.43.0",
                    "google.golang.org/grpc":"v1.83.2","stdlib":"go1.26.10"}
         inventory.update(fixed_pins)
@@ -132,7 +134,7 @@ class CandidateEvidenceTests(unittest.TestCase):
             ("test-fixture-overlay.json",lambda d:d.update(assertions_removed=True)),
             ("build.json",lambda d:d.pop("plugin_source_tree_sha256")),
             ("dependency-overlay.json",lambda d:d.update(go_mod_sha256_after="0"*64)),
-            ("backport-manifest.json",lambda d:d.update(upstream_fix="0"*40)),
+            ("build.json",lambda d:d.update(selected_dependencies_sha256={})),
             ("plugin-sbom.json",lambda d:d.update(components=[{"name":"fixture"}])),
             ("image-sbom.json",lambda d:d.update(packages=[{"name":"fixture"}])),
             ("image-syft.json",lambda d:d["source"]["metadata"].update(imageID="sha256:"+"0"*64)),
@@ -144,7 +146,7 @@ class CandidateEvidenceTests(unittest.TestCase):
             ("image-trivy.json",lambda d:d.update(CreatedAt="2026-09-19T00:00:00Z")),
             ("image-trivy.json",lambda d:d["Results"][0].update(Vulnerabilities=[{"Severity":"bad"}])),
             ("oci-descriptor.json",lambda d:d.update(digest="sha256:"+"0"*64)),
-            ("jose-v3-backport.json",lambda d:d.update(vulnerability_acceptance=True)),
+            ("build.json",lambda d:d.update(vendor_tree_sha256="0"*64)),
             ("db-metadata.json",lambda d:d.update(UpdatedAt="2026-09-19T00:00:00Z")),
             ("tool-versions.json",lambda d:d["trivy"].update(Version="0.75.0")),
         ]
@@ -161,6 +163,29 @@ class CandidateEvidenceTests(unittest.TestCase):
                 else: (root/name).write_bytes(b"tampered")
                 with self.assertRaises((ValueError,FileNotFoundError)):
                     self.evaluate(root)
+    def test_retired_dependencies_cannot_be_reintroduced(self):
+        for retired in ("github.com/go-jose/go-jose/v3", "golang.org/x/crypto/openpgp"):
+            for name in ("prepared-go.mod", "prepared-go.sum", "vendor-modules.txt", "bao-build-deps.txt", "plugin-build-deps.txt",
+                         "bao-go-version.txt", "plugin-go-version.txt"):
+                with self.subTest(retired=retired, name=name), tempfile.TemporaryDirectory() as tmp:
+                    root=Path(tmp);self.fixture(root)
+                    path=root/name;path.write_text(path.read_text()+retired+" "+retired+" v3.0.5\n")
+                    with self.assertRaises(ValueError): self.evaluate(root)
+            for subject,field in (("image","packages"),("plugin","components")):
+                with self.subTest(retired=retired, subject=subject), tempfile.TemporaryDirectory() as tmp:
+                    root=Path(tmp);self.fixture(root)
+                    change(root,subject+"-sbom.json",lambda d:d[field].append({"name":retired,"version":"v3.0.5","versionInfo":"v3.0.5"}))
+                    with self.assertRaisesRegex(ValueError,"retired SBOM"): self.evaluate(root)
+
+    def test_selected_dependencies_require_actual_targets_fixed_versions_and_unique_packages(self):
+        for subject in ("bao","plugin"):
+            for mutation in (lambda s:"", lambda s:s.replace("v0.15.0","v0.14.0"),
+                             lambda s:s+s.splitlines()[0]+"\n",lambda s:s+"invalid record has extra fields here\n"):
+                with self.subTest(subject=subject), tempfile.TemporaryDirectory() as tmp:
+                    root=Path(tmp);self.fixture(root);path=root/(subject+"-build-deps.txt")
+                    path.write_text(mutation(path.read_text()))
+                    with self.assertRaises(ValueError): MODULE.validate_selected_dependencies(root)
+
     def test_oci_snapshot_hashes_real_config_and_uncompressed_layers(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
@@ -236,22 +261,24 @@ class CandidateEvidenceTests(unittest.TestCase):
                         with self.assertRaisesRegex(ValueError,"SDK"):
                             self.evaluate(root)
 
-    def test_cap_compiled_and_sbom_versions_cannot_drift(self):
-        for subject in ("image","plugin"):
-            for target in ("metadata","sbom"):
-                with self.subTest(subject=subject,target=target),tempfile.TemporaryDirectory() as tmp:
-                    root=Path(tmp);self.fixture(root)
-                    if target=="metadata":
-                        path=root/(("bao" if subject=="image" else "plugin")+"-go-version.txt")
-                        path.write_text(path.read_text().replace("github.com/hashicorp/cap v0.14.0","github.com/hashicorp/cap v0.13.0"))
-                    else:
-                        def mutate(document):
-                            for entry in document["packages" if subject=="image" else "components"]:
-                                if entry["name"]=="github.com/hashicorp/cap":
-                                    entry["versionInfo" if subject=="image" else "version"]="v0.13.0"
-                        change(root,subject+"-sbom.json",mutate)
-                    with self.assertRaisesRegex(ValueError,"dependency"):
-                        self.evaluate(root)
+    def test_fixed_compiled_and_sbom_versions_cannot_drift(self):
+        for module, fixed, old in (("github.com/hashicorp/cap", "v0.15.0", "v0.14.0"),
+                                   ("golang.org/x/crypto", "v0.58.1-0.20261009181718-2f1f834330b2", "v0.58.0")):
+            for subject in ("image","plugin"):
+                for target in ("metadata","sbom"):
+                    with self.subTest(module=module,subject=subject,target=target),tempfile.TemporaryDirectory() as tmp:
+                        root=Path(tmp);self.fixture(root)
+                        if target=="metadata":
+                            path=root/(("bao" if subject=="image" else "plugin")+"-go-version.txt")
+                            path.write_text(path.read_text().replace(module+" "+fixed,module+" "+old))
+                        else:
+                            def mutate(document):
+                                for entry in document["packages" if subject=="image" else "components"]:
+                                    if entry["name"]==module:
+                                        entry["versionInfo" if subject=="image" else "version"]=old
+                            change(root,subject+"-sbom.json",mutate)
+                        with self.assertRaisesRegex(ValueError,"dependency"):
+                            self.evaluate(root)
 
 if __name__=="__main__":
     unittest.main()

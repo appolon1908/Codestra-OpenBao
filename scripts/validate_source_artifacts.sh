@@ -22,10 +22,10 @@ source_root="$work/source"
 cp -a upstream "$source_root"
 python3 scripts/prepare_openbao_test_fixtures.py --source-root "$source_root" \
   --report "$EVIDENCE_DIR/test-fixture-overlay.json"
-mkdir -p "$source_root/codestra/plugins" "$source_root/codestra/security/josev3" "$source_root/codestra/security/celotel"
+mkdir -p "$source_root/codestra/plugins" "$source_root/codestra/security/jose" "$source_root/codestra/security/celotel"
 cp -a plugins/codestra-jwt-replay "$source_root/codestra/plugins/"
-cp tests/go/josev3security/security_test.go tests/go/josev3security/cap_claims_test.go \
-  "$source_root/codestra/security/josev3/"
+cp tests/go/josesecurity/security_test.go tests/go/josesecurity/cap_claims_test.go \
+  "$source_root/codestra/security/jose/"
 cp tests/go/capclaims/kubernetes_test.go.fixture \
   "$source_root/builtin/credential/kubernetes/codestra_cap_claims_test.go"
 cp tests/go/celotelsecurity/security_test.go "$source_root/codestra/security/celotel/"
@@ -37,21 +37,30 @@ python3 scripts/prepare_openbao_source_build.py --source-root "$source_root" \
   go mod verify
   go mod vendor
 )
-cp tests/go/josev3security/epk_internal_test.go.fixture \
-  "$source_root/vendor/github.com/go-jose/go-jose/v3/codestra_security_test.go"
-python3 scripts/patch_jose_v3_vendor.py --source-root "$source_root" \
-  --report "$EVIDENCE_DIR/jose-v3-backport.json"
+cp tests/go/josesecurity/epk_internal_test.go.fixture \
+  "$source_root/vendor/github.com/go-jose/go-jose/v4/codestra_security_test.go"
 cp "$source_root/go.mod" "$EVIDENCE_DIR/prepared-go.mod"
 cp "$source_root/go.sum" "$EVIDENCE_DIR/prepared-go.sum"
 cp "$source_root/vendor/modules.txt" "$EVIDENCE_DIR/vendor-modules.txt"
-cp patches/go-jose-v3/manifest.json "$EVIDENCE_DIR/backport-manifest.json"
-cp patches/go-jose-v3/security.patch "$EVIDENCE_DIR/security.patch"
 cp plugins/codestra-jwt-replay/plugin.v1.json "$EVIDENCE_DIR/accepted-plugin-manifest.json"
 export GOFLAGS='-mod=vendor -p=2'
+# Preserve selected packages from the same vendor tree/flags used for both builds.
+(
+  cd "$source_root"
+  go list -deps -tags=openbao -f '{{.ImportPath}}{{with .Module}} {{.Path}} {{.Version}}{{end}}' . >"$EVIDENCE_DIR/bao-build-deps.txt"
+  go list -deps -f '{{.ImportPath}}{{with .Module}} {{.Path}} {{.Version}}{{end}}' ./codestra/plugins/codestra-jwt-replay/cmd >"$EVIDENCE_DIR/plugin-build-deps.txt"
+)
+python3 scripts/collect_openbao_candidate_evidence.py --evidence-dir "$EVIDENCE_DIR" --validate-dependencies
+python3 - "$source_root/vendor" "$EVIDENCE_DIR/vendor-tree.sha256" <<'PYHASH'
+from pathlib import Path
+import sys
+from scripts.patch_jose_v3_vendor import tree_hash
+Path(sys.argv[2]).write_text(tree_hash(Path(sys.argv[1]))+"\n")
+PYHASH
 commit_date="$(git show --no-show-signature -s --format=%cI HEAD)"
 (
   cd "$source_root"
-  if ! go test -count=1 -v ./codestra/security/josev3 github.com/go-jose/go-jose/v3 \
+  if ! go test -count=1 -v ./codestra/security/jose github.com/go-jose/go-jose/v4 \
     ./builtin/credential/jwt ./codestra/plugins/codestra-jwt-replay ./codestra/security/celotel \
     >"$EVIDENCE_DIR/consumer-tests.log" 2>&1; then
     tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"
@@ -101,8 +110,8 @@ from scripts.patch_jose_v3_vendor import tree_hash
 root=Path(os.environ["EVIDENCE_DIR"])
 source=Path(os.environ["CANDIDATE_SOURCE_ROOT"])
 sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
-backport=json.loads((root/"jose-v3-backport.json").read_text())
-assert tree_hash(source/"vendor")==backport["vendor_tree_sha256"], "vendor changed during build"
+vendor_hash=(root/"vendor-tree.sha256").read_text().strip()
+assert tree_hash(source/"vendor")==vendor_hash, "vendor changed during build"
 build={
  "source_sha":os.environ["EXPECTED_SHA"],
  "source_tree":subprocess.check_output(["git","rev-parse","HEAD^{tree}"],text=True).strip(),
@@ -112,8 +121,8 @@ build={
  "local_image":os.environ["LOCAL_IMAGE"],"plugin_scan_root":str(root/"plugin-root"),
  "binaries":{name:sha(root/name) for name in ("bao","plugin-root/codestra-jwt-replay")},
  "go_mod_sha256":sha(source/"go.mod"),"go_sum_sha256":sha(source/"go.sum"),
- "vendor_tree_sha256":backport["vendor_tree_sha256"],
- "backport_patch_sha256":backport["patch_sha256"],
+ "vendor_tree_sha256":vendor_hash,
+ "selected_dependencies_sha256":{name:sha(root/(name+"-build-deps.txt")) for name in ("bao","plugin")},
  "test_fixture_overlay_sha256":sha(root/"test-fixture-overlay.json"),
  "plugin_manifest_sha256":sha(Path("plugins/codestra-jwt-replay/plugin.v1.json")),
  "plugin_source_tree_sha256":tree_hash(Path("plugins/codestra-jwt-replay")),

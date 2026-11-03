@@ -19,7 +19,8 @@ DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 BLOCKED = {"CVE-2026-84304", "CVE-2026-84445", "CVE-2026-56851",
            "GHSA-gcjh-h69q-9w9g", "CVE-2026-81870"}
 FIXED_BUILD_MODULES = {
-    "github.com/hashicorp/cap": "v0.14.0",
+    "github.com/hashicorp/cap": "v0.15.0",
+    "golang.org/x/crypto": "v0.58.1-0.20261009181718-2f1f834330b2",
     "github.com/google/cel-go": "v0.30.0",
     "github.com/go-logr/logr": "v1.4.4",
     "go.opentelemetry.io/otel": "v1.45.0",
@@ -43,6 +44,38 @@ def write(path, obj):
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+RETIRED_MODULES = ("github.com/go-jose/go-jose/v3", "golang.org/x/crypto/openpgp")
+DEPENDENCY_TARGETS = {"bao": "github.com/openbao/openbao",
+                      "plugin": "github.com/openbao/openbao/codestra/plugins/codestra-jwt-replay/cmd"}
+
+
+def validate_selected_dependencies(root):
+    """Check actual go-list package inventories, not vulnerability reachability claims."""
+    for name in ("prepared-go.mod", "prepared-go.sum", "vendor-modules.txt"):
+        text = (root/name).read_text()
+        require(not any(module in text for module in RETIRED_MODULES), "retired module in selected graph")
+    fixed = {"github.com/hashicorp/cap": "v0.15.0",
+             "github.com/go-jose/go-jose/v4": "v4.1.6",
+             "golang.org/x/crypto": "v0.58.1-0.20261009181718-2f1f834330b2"}
+    for name, target in DEPENDENCY_TARGETS.items():
+        packages = set()
+        modules = {}
+        for line in (root/(name+"-build-deps.txt")).read_text().splitlines():
+            fields = line.split()
+            require(len(fields) in (1, 2, 3) and fields[0] not in packages, "malformed selected package inventory")
+            package = fields[0]
+            require(not any(package == module or package.startswith(module+"/") for module in RETIRED_MODULES),
+                    "retired selected package")
+            packages.add(package)
+            if len(fields) == 3:
+                module, version = fields[1:]
+                require(module not in RETIRED_MODULES, "retired selected module")
+                modules.setdefault(module, set()).add(version)
+        require(target in packages, "missing build entrypoint")
+        for module, version in fixed.items():
+            require(modules.get(module) == {version}, "selected dependency mismatch: "+module)
+
 
 def fresh(value, now):
     require(isinstance(value,str), "missing evidence timestamp")
@@ -107,7 +140,7 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
     require(build.get("repository")=="appolon1908/Codestra-OpenBao", "wrong source repository")
     require(build.get("upstream")=="dd9c19c37a878cf4a81b18efb8d6f0599c7da923", "wrong imported upstream identity")
     for field in ("go_mod_sha256","go_sum_sha256","plugin_manifest_sha256","plugin_source_tree_sha256",
-                  "vendor_tree_sha256","backport_patch_sha256","test_fixture_overlay_sha256"):
+                  "vendor_tree_sha256","test_fixture_overlay_sha256"):
         require(isinstance(build.get(field),str) and bool(re.fullmatch(r"[0-9a-f]{64}",build[field])),
                 "missing provenance digest: "+field)
     require(build.get("go_version")=="go1.26.10", "wrong candidate Go toolchain")
@@ -140,12 +173,12 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
     require(sha(root/"bao")==sha(root/"bao-from-image"), "image contains a different OpenBao binary")
     for name in ("bao","plugin-root/codestra-jwt-replay"):
         require(sha(root/name)==build["binaries"][name], "binary checksum mismatch: "+name)
-    backport = load(root/"jose-v3-backport.json")
-    require(backport.get("module_version")=="v3.0.5" and backport.get("vulnerability_acceptance") is False,
-            "backport must retain original module identity without acceptance")
-    require(backport.get("requires_go_mod_flag")=="-mod=vendor", "missing vendor build binding")
-    require(backport.get("patch_sha256")==build["backport_patch_sha256"], "backport patch identity mismatch")
-    require(backport.get("vendor_tree_sha256")==build["vendor_tree_sha256"], "vendor tree identity mismatch")
+    validate_selected_dependencies(root)
+    for name in ("bao", "plugin"):
+        require(sha(root/(name+"-build-deps.txt")) == build.get("selected_dependencies_sha256", {}).get(name),
+                "selected dependency identity mismatch")
+    require((root/"vendor-tree.sha256").read_text().strip() == build["vendor_tree_sha256"],
+            "vendor tree identity mismatch")
     overlay = load(root/"dependency-overlay.json")
     require(overlay.get("status")=="PASS" and overlay.get("go_mod_tidy_performed") is True,
             "missing reconciled dependency overlay")
@@ -154,18 +187,12 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
         require(sha(root/name)==build[build_key]==overlay.get(overlay_key), "prepared module identity mismatch")
     require(sha(root/"accepted-plugin-manifest.json")==build["plugin_manifest_sha256"],
             "accepted plugin manifest provenance mismatch")
-    manifest = load(root/"backport-manifest.json")
-    require(manifest.get("upstream_fix")=="a0111f82742fa92bceec9ede40845e73319e6230" and
-            manifest.get("patch_sha256")==sha(root/"security.patch")==build["backport_patch_sha256"],
-            "maintainer-origin patch identity mismatch")
-    require(manifest.get("files")==backport.get("files") and
-            sha(root/"vendor-modules.txt")==backport.get("vendor_modules_sha256"),
-            "vendor patch provenance mismatch")
     for name in ("bao","plugin"):
         version = (root/(name+"-go-version.txt")).read_text()
         require(re.search(r":\s+go1\.26\.10\s*$",version,re.M) is not None, "wrong compiled toolchain")
+        require(not any(module in version for module in RETIRED_MODULES), "retired compiled dependency")
         required={**FIXED_BUILD_MODULES,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="bao" else {})}
-        for module, version_pin in {**required,"github.com/go-jose/go-jose/v3":"v3.0.5",
+        for module, version_pin in {**required,
                                     "github.com/go-jose/go-jose/v4":"v4.1.6",
                                     "golang.org/x/net":"v0.62.0",
                                     "golang.org/x/text":"v0.43.0",
@@ -222,7 +249,8 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
         for package in inventory:
             versions.setdefault(package.get("name"),set()).add(package.get("versionInfo") if name=="image" else package.get("version"))
         required={**FIXED_BUILD_MODULES,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="image" else {})}
-        for module,version in {**required,"github.com/go-jose/go-jose/v3":"v3.0.5","github.com/go-jose/go-jose/v4":"v4.1.6",
+        require(not any(module in versions for module in RETIRED_MODULES), "retired SBOM dependency")
+        for module,version in {**required,"github.com/go-jose/go-jose/v4":"v4.1.6",
                                "golang.org/x/net":"v0.62.0","golang.org/x/text":"v0.43.0",
                                "google.golang.org/grpc":"v1.83.2","stdlib":"go1.26.10"}.items():
             require(versions.get(module)=={version}, "SBOM dependency identity mismatch: "+module)
@@ -246,11 +274,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--evidence-dir",type=Path,required=True)
     parser.add_argument("--docker-save",type=Path)
+    parser.add_argument("--validate-dependencies",action="store_true")
     parser.add_argument("--source-sha")
     parser.add_argument("--source-tree")
     parser.add_argument("--run-id",type=int)
     parser.add_argument("--run-attempt",type=int)
     args = parser.parse_args()
+    if args.validate_dependencies:
+        validate_selected_dependencies(args.evidence_dir)
+        print("OPENBAO_SELECTED_DEPENDENCIES=PASS")
+        return
     if args.docker_save:
         snapshot_image(args.docker_save,args.evidence_dir)
         return 0

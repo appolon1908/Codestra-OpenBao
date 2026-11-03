@@ -43,8 +43,8 @@ class JoseSourceImageSecurityTests(unittest.TestCase):
             for old, new in zip(OLD_SUMS, NEW_SUMS):
                 self.assertNotIn(old, sums)
                 self.assertEqual(sums.count(new), 1)
-            # v3 remains an actual, separately unresolved dependency.
-            self.assertIn("github.com/go-jose/go-jose/v3 v3.0.5", (source / "go.mod").read_text())
+            # The supported CAP migration removes the retired v3 build dependency.
+            self.assertNotIn("github.com/go-jose/go-jose/v3", (source / "go.mod").read_text())
         for name, digest in before.items():
             self.assertEqual(hashlib.sha256((ROOT / "upstream" / name).read_bytes()).hexdigest(), digest)
 
