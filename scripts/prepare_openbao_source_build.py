@@ -340,7 +340,20 @@ def validate_tidy_result(
     changed_sum_modules = changed_keys(sum_records(original_sum), sum_records(final_sum))
     unexpected = (changed_mod_modules | changed_sum_modules) - REVIEWED_TIDY_MODULES
     if unexpected:
-        fail("go mod tidy changed unreviewed modules: " + ",".join(sorted(unexpected)))
+        # Public module metadata only. Keep rejecting every unreviewed change,
+        # while distinguishing selected-version drift from removed stale sums.
+        before_records, after_records = sum_records(original_sum), sum_records(final_sum)
+        details = {
+            module: {
+                "version_before": original_versions.get(module),
+                "version_after": final_versions.get(module),
+                "checksums_removed": sorted(before_records.get(module, set()) - after_records.get(module, set())),
+                "checksums_added": sorted(after_records.get(module, set()) - before_records.get(module, set())),
+            }
+            for module in sorted(unexpected)
+        }
+        fail("go mod tidy changed unreviewed modules: " + ",".join(sorted(unexpected))
+             + "; details=" + json.dumps(details, sort_keys=True))
 
     if final_versions.get(MODULE) != NEW_VERSION:
         fail(f"tidied go.mod does not select {MODULE} {NEW_VERSION}")

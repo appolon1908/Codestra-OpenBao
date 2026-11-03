@@ -190,6 +190,37 @@ require (
                 original_mod, original_sum, final_mod, final_sum
             )
 
+    def test_unreviewed_tidy_diagnostics_preserve_denial_for_each_change_kind(self) -> None:
+        original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
+        module = "unreviewed.example/module"
+        old_sum = module + " v1.0.0/go.mod h1:old-public-checksum="
+        new_sum = module + " v2.0.0/go.mod h1:new-public-checksum="
+        for before, after, old_records, new_records in (
+            (None, "v2.0.0", [], [new_sum]),
+            ("v1.0.0", None, [old_sum], []),
+            ("v1.0.0", "v2.0.0", [old_sum], [new_sum]),
+            ("v1.0.0", "v1.0.0", [old_sum, new_sum], [old_sum]),
+        ):
+            with self.subTest(before=before, after=after, checksums=new_records):
+                before_mod = original_mod + (f"\t{module} {before}\n" if before else "")
+                after_mod = final_mod + (f"\t{module} {after}\n" if after else "")
+                output = io.StringIO()
+                with contextlib.redirect_stderr(output), self.assertRaises(SystemExit) as error:
+                    MODULE.validate_tidy_result(
+                        before_mod, original_sum + "\n".join(old_records) + "\n",
+                        after_mod, final_sum + "\n".join(new_records) + "\n",
+                    )
+                self.assertEqual(error.exception.code, 1)
+                self.assertIn("details=", output.getvalue())
+                self.assertEqual(json.loads(output.getvalue().split("details=", 1)[1]), {
+                    module: {
+                        "version_before": before,
+                        "version_after": after,
+                        "checksums_removed": sorted(set(old_records) - set(new_records)),
+                        "checksums_added": sorted(set(new_records) - set(old_records)),
+                    },
+                })
+
     def test_tidy_validation_rejects_go_directive_drift(self) -> None:
         original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
         final_mod = final_mod.replace("go 1.26.0", "go 1.26.1")

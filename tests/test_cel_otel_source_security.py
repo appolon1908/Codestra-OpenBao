@@ -17,12 +17,13 @@ PINS = {"github.com/google/cel-go":"v0.30.0", "github.com/go-logr/logr":"v1.4.4"
 
 class CelOtelSourceSecurityTests(unittest.TestCase):
     def source(self, root):
-        for name in ("go.mod","go.sum"):
+        for name in ("go.mod","go.sum","vault/login_mfa.go"):
+            (root/name).parent.mkdir(parents=True,exist_ok=True)
             (root/name).write_bytes((ROOT/"upstream"/name).read_bytes())
         return root
 
     def test_real_import_selects_maintainer_fixed_releases_without_mutating_upstream(self):
-        original={name:hashlib.sha256((ROOT/"upstream"/name).read_bytes()).hexdigest() for name in ("go.mod","go.sum")}
+        original={name:hashlib.sha256((ROOT/"upstream"/name).read_bytes()).hexdigest() for name in ("go.mod","go.sum","vault/login_mfa.go")}
         with tempfile.TemporaryDirectory() as tmp:
             root=self.source(Path(tmp)); result=MODULE.apply(root)
             selected=MODULE.module_versions((root/"go.mod").read_text())
@@ -41,7 +42,7 @@ class CelOtelSourceSecurityTests(unittest.TestCase):
             ("go.sum","go.opentelemetry.io/otel/sdk v1.44.0 h1:nHYwb9lK+fJPU/dnT6s7W7Z8itMWyqrnVfbheVYrZ58=","")):
             with self.subTest(old=old),tempfile.TemporaryDirectory() as tmp:
                 root=self.source(Path(tmp)); p=root/name;p.write_text(p.read_text().replace(old,new))
-                before={n:(root/n).read_bytes() for n in ("go.mod","go.sum")}
+                before={n:(root/n).read_bytes() for n in ("go.mod","go.sum","vault/login_mfa.go")}
                 with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
                     MODULE.apply(root)
                 self.assertEqual(before,{n:(root/n).read_bytes() for n in before})
