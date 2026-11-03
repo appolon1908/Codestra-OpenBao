@@ -209,6 +209,18 @@ REVIEWED_OPTIONAL_SUM_LINES = {
     ),
 }
 
+OKTA_OLD_MODULE = "github.com/okta/okta-sdk-golang/v2"
+OKTA_MODULE = "github.com/okta/okta-sdk-golang/v6"
+OKTA_PATCH_ROOT = Path(__file__).resolve().parents[1] / "patches/okta-v6"
+OKTA_GRAPH = json.loads((OKTA_PATCH_ROOT / "dependencies.json").read_text())['modules']
+REVIEWED_OPTIONAL_GRAPH_VERSIONS.update({module: item['version'] for module, item in OKTA_GRAPH.items()})
+REVIEWED_OPTIONAL_SUM_LINES.update({module: tuple(item['checksums']) for module, item in OKTA_GRAPH.items()})
+OKTA_OLD_SUM_LINES = (
+    OKTA_OLD_MODULE + " v2.20.0 h1:EDKM+uOPfihOMNwgHMdno+NAsIfyXkVnoFAYVPay0YU=",
+    OKTA_OLD_MODULE + " v2.20.0/go.mod h1:FMy5hN5G8Rd/VoS0XrfyPPhIfOVo78ZK7lvwiQRS2+U=",
+)
+OKTA_MFA_SOURCE_SHA256 = "76c2811dac10c2afacd24132d5c4073bb2d0904efd39db8d5fbee015fc63416c"
+
 
 REVIEWED_TRANSITIVE_SUM_LINES = {
     "github.com/moby/patternmatcher": (
@@ -229,6 +241,7 @@ REVIEWED_TIDY_MODULES = frozenset(
     {
         MODULE,
         RETIRED_JOSE_MODULE,
+        OKTA_OLD_MODULE,
         "github.com/klauspost/compress",
         "github.com/moby/patternmatcher",
         "github.com/moby/sys/mount",
@@ -309,8 +322,18 @@ def validate_tidy_result(
 
     original_versions = module_versions(original_mod)
     final_versions = module_versions(final_mod)
+    if OKTA_OLD_MODULE in final_versions or OKTA_OLD_MODULE in sum_records(final_sum):
+        fail("go mod tidy retained the retired Okta SDK")
+    if OKTA_OLD_MODULE in original_versions and final_versions.get(OKTA_MODULE) != "v6.1.7":
+        fail("go mod tidy did not select reviewed Okta v6.1.7")
     if RETIRED_JOSE_MODULE in final_versions or RETIRED_JOSE_MODULE in sum_records(final_sum):
-        fail("go mod tidy retained retired JOSE v3")
+        # Public dependency metadata only; distinguish a selected requirement
+        # from retained checksums without relaxing either denial.
+        details = {
+            "selected_version": final_versions.get(RETIRED_JOSE_MODULE),
+            "checksum_records": sorted(sum_records(final_sum).get(RETIRED_JOSE_MODULE, set())),
+        }
+        fail("go mod tidy retained retired JOSE v3; details=" + json.dumps(details, sort_keys=True))
     if "golang.org/x/crypto/openpgp" in final_versions:
         fail("go mod tidy selected unmaintained OpenPGP module")
     changed_mod_modules = changed_keys(original_versions, final_versions)
@@ -385,6 +408,28 @@ def run_tidy(source_root: Path, original_mod: str, original_sum: str) -> dict[st
     )
 
 
+def prepare_okta_mfa(source_root: Path) -> tuple[str, dict[str, str]]:
+    path = source_root / "vault/login_mfa.go"
+    if not path.is_file() or sha256(path) != OKTA_MFA_SOURCE_SHA256:
+        fail("Okta MFA source does not match the reviewed imported baseline")
+    original = path.read_text()
+    start = original.index("func (c *Core) validateOkta(")
+    end = original.index("func (c *Core) validatePingID(", start)
+    fragment = (OKTA_PATCH_ROOT / "validate_okta.go.fragment").read_text()
+    updated = original[:start] + fragment + "\n" + original[end:]
+    updated = replace_exactly_once(updated, '"' + OKTA_OLD_MODULE + '/okta"',
+                                  '"' + OKTA_MODULE + '/okta"', "Okta SDK import")
+    updated = replace_exactly_once(updated, '\t"' + OKTA_OLD_MODULE + '/okta/query"\n',
+                                  "", "retired Okta query import")
+    return updated, {
+        "source_sha256_before": OKTA_MFA_SOURCE_SHA256,
+        "source_sha256_after": hashlib.sha256(updated.encode()).hexdigest(),
+        "migration_sha256": hashlib.sha256(fragment.encode()).hexdigest(),
+        "module": OKTA_MODULE,
+        "version": "v6.1.7",
+    }
+
+
 def apply(
     source_root: Path,
     report: Path | None = None,
@@ -398,6 +443,8 @@ def apply(
 
     original_mod = go_mod.read_text(encoding="utf-8")
     original_sum = go_sum.read_text(encoding="utf-8")
+    okta_source = None
+    okta_proof = None
     if NEW_MOD_LINE in original_mod or any(line in original_sum for line in NEW_SUM_LINES):
         fail("build overlay appears to have been applied already")
 
@@ -457,8 +504,17 @@ def apply(
         for line in retired_sums:
             updated_sum = replace_exactly_once(updated_sum, line + "\n", "", "retired JOSE checksum")
 
+    if OKTA_OLD_MODULE in module_versions(original_mod):
+        updated_mod = replace_exactly_once(updated_mod, "\t" + OKTA_OLD_MODULE + " v2.20.0\n",
+                                          "\t" + OKTA_MODULE + " v6.1.7\n", "Okta SDK requirement")
+        for old, new in zip(OKTA_OLD_SUM_LINES, REVIEWED_OPTIONAL_SUM_LINES[OKTA_MODULE], strict=True):
+            updated_sum = replace_exactly_once(updated_sum, old, new, "Okta SDK checksum")
+        okta_source, okta_proof = prepare_okta_mfa(source_root)
+
     go_mod.write_text(updated_mod, encoding="utf-8")
     go_sum.write_text(updated_sum, encoding="utf-8")
+    if okta_source is not None:
+        source_root.joinpath("vault/login_mfa.go").write_text(okta_source, encoding="utf-8")
 
     if updated_mod.count(NEW_MOD_LINE) != 1:
         fail("updated go.mod does not contain the exact security-fixed requirement")
@@ -499,6 +555,8 @@ def apply(
         "source_tree_modified_for_build_only": True,
         "repository_source_mutated": False,
     }
+    if okta_proof is not None:
+        evidence["okta_mfa_overlay"] = okta_proof
     if report is not None:
         report.parent.mkdir(parents=True, exist_ok=True)
         report.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")

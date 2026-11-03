@@ -45,7 +45,8 @@ def require(condition, message):
     if not condition:
         raise ValueError(message)
 
-RETIRED_MODULES = ("github.com/go-jose/go-jose/v3", "golang.org/x/crypto/openpgp")
+RETIRED_MODULES = ("github.com/go-jose/go-jose/v3", "golang.org/x/crypto/openpgp", "github.com/okta/okta-sdk-golang/v2")
+OKTA_MODULE = "github.com/okta/okta-sdk-golang/v6"
 DEPENDENCY_TARGETS = {"bao": "github.com/openbao/openbao",
                       "plugin": "github.com/openbao/openbao/codestra/plugins/codestra-jwt-replay/cmd"}
 
@@ -75,6 +76,8 @@ def validate_selected_dependencies(root):
         require(target in packages, "missing build entrypoint")
         for module, version in fixed.items():
             require(modules.get(module) == {version}, "selected dependency mismatch: "+module)
+        if name == "bao" or OKTA_MODULE in modules:
+            require(modules.get(OKTA_MODULE) == {"v6.1.7"}, "selected Okta SDK mismatch")
 
 
 def fresh(value, now):
@@ -182,6 +185,11 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
     overlay = load(root/"dependency-overlay.json")
     require(overlay.get("status")=="PASS" and overlay.get("go_mod_tidy_performed") is True,
             "missing reconciled dependency overlay")
+    okta = overlay.get("okta_mfa_overlay", {})
+    require(okta.get("module") == OKTA_MODULE and okta.get("version") == "v6.1.7" and
+            re.fullmatch(r"[0-9a-f]{64}", str(okta.get("source_sha256_after", ""))) and
+            okta["source_sha256_after"] == build.get("okta_mfa_source_sha256"),
+            "missing exact Okta MFA source provenance")
     for name,overlay_key,build_key in (("prepared-go.mod","go_mod_sha256_after","go_mod_sha256"),
                                        ("prepared-go.sum","go_sum_sha256_after","go_sum_sha256")):
         require(sha(root/name)==build[build_key]==overlay.get(overlay_key), "prepared module identity mismatch")
@@ -191,7 +199,7 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
         version = (root/(name+"-go-version.txt")).read_text()
         require(re.search(r":\s+go1\.26\.10\s*$",version,re.M) is not None, "wrong compiled toolchain")
         require(not any(module in version for module in RETIRED_MODULES), "retired compiled dependency")
-        required={**FIXED_BUILD_MODULES,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="bao" else {})}
+        required={**FIXED_BUILD_MODULES,**({"go.opentelemetry.io/otel/sdk":"v1.45.0", OKTA_MODULE:"v6.1.7"} if name=="bao" else {})}
         for module, version_pin in {**required,
                                     "github.com/go-jose/go-jose/v4":"v4.1.6",
                                     "golang.org/x/net":"v0.62.0",
@@ -201,6 +209,8 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
                     "compiled dependency mismatch: "+module)
         sdk_versions=re.findall(r"dep\s+go\.opentelemetry\.io/otel/sdk\s+(\S+)",version)
         require(not sdk_versions or set(sdk_versions)=={"v1.45.0"}, "compiled optional SDK dependency mismatch")
+        okta_versions=re.findall(r"dep\s+"+re.escape(OKTA_MODULE)+r"\s+(\S+)",version)
+        require(not okta_versions or set(okta_versions)=={"v6.1.7"}, "compiled optional Okta dependency mismatch")
     tools = load(root/"tool-versions.json")
     require(tools["trivy"]["Version"]=="0.74.0" and tools["syft"]["version"]=="1.51.1",
             "unexpected scanner/SBOM tool version")
@@ -248,7 +258,7 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
         versions = {}
         for package in inventory:
             versions.setdefault(package.get("name"),set()).add(package.get("versionInfo") if name=="image" else package.get("version"))
-        required={**FIXED_BUILD_MODULES,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="image" else {})}
+        required={**FIXED_BUILD_MODULES,**({"go.opentelemetry.io/otel/sdk":"v1.45.0", OKTA_MODULE:"v6.1.7"} if name=="image" else {})}
         require(not any(module in versions for module in RETIRED_MODULES), "retired SBOM dependency")
         for module,version in {**required,"github.com/go-jose/go-jose/v4":"v4.1.6",
                                "golang.org/x/net":"v0.62.0","golang.org/x/text":"v0.43.0",
@@ -256,6 +266,8 @@ def evaluate(root, source_sha, source_tree, run_id, run_attempt, now=None):
             require(versions.get(module)=={version}, "SBOM dependency identity mismatch: "+module)
         require("go.opentelemetry.io/otel/sdk" not in versions or
                 versions["go.opentelemetry.io/otel/sdk"]=={"v1.45.0"}, "SBOM optional SDK dependency mismatch")
+        require(OKTA_MODULE not in versions or versions[OKTA_MODULE]=={"v6.1.7"},
+                "SBOM optional Okta dependency mismatch")
         findings = [v for result in report["Results"] for v in result.get("Vulnerabilities") or []]
         known = sorted({v["VulnerabilityID"] for v in findings if v["VulnerabilityID"] in BLOCKED})
         subjects[name] = {"critical":critical,"high":high,"unknown":unknown,

@@ -52,10 +52,12 @@ class CandidateEvidenceTests(unittest.TestCase):
                            "golang.org/x/crypto": "v0.58.1-0.20261009181718-2f1f834330b2"}
         for name, target in (("bao", "github.com/openbao/openbao"),
                              ("plugin", "github.com/openbao/openbao/codestra/plugins/codestra-jwt-replay/cmd")):
+            selected_pins = {**dependency_pins, **({MODULE.OKTA_MODULE: "v6.1.7"} if name == "bao" else {})}
             (root/(name+"-build-deps.txt")).write_text(target+" github.com/openbao/openbao\n"+
-                "".join(module+"/package "+module+" "+version+"\n" for module,version in dependency_pins.items()))
+                "".join(module+"/package "+module+" "+version+"\n" for module,version in selected_pins.items()))
         (root/"vendor-tree.sha256").write_text("d"*64+"\n")
         write(root,"build.json",{"source_sha":SOURCE,"source_tree":TREE,"run_id":1,"run_attempt":1,
+            "okta_mfa_source_sha256":"e"*64,
             "go_version":"go1.26.10","runtime_authorized":False,"local_image":"candidate:test",
             "plugin_scan_root":"/fixture/plugin-root","vendor_tree_sha256":"d"*64,
             "repository":"appolon1908/Codestra-OpenBao","upstream":"dd9c19c37a878cf4a81b18efb8d6f0599c7da923",
@@ -63,6 +65,7 @@ class CandidateEvidenceTests(unittest.TestCase):
             "plugin_manifest_sha256":MODULE.sha(root/"accepted-plugin-manifest.json"),"plugin_source_tree_sha256":"1"*64,"test_fixture_overlay_sha256":MODULE.sha(root/"test-fixture-overlay.json"),
             "selected_dependencies_sha256":{name:MODULE.sha(root/(name+"-build-deps.txt")) for name in ("bao","plugin")},"binaries":{n:MODULE.sha(root/n) for n in ("bao","plugin-root/codestra-jwt-replay")}})
         write(root,"dependency-overlay.json",{"status":"PASS","go_mod_tidy_performed":True,
+            "okta_mfa_overlay":{"module":MODULE.OKTA_MODULE,"version":"v6.1.7","source_sha256_after":"e"*64},
             "go_mod_sha256_after":MODULE.sha(root/"prepared-go.mod"),"go_sum_sha256_after":MODULE.sha(root/"prepared-go.sum")})
         for name in ("bao","plugin"):
             (root/(name+"-go-version.txt")).write_text(
@@ -74,7 +77,7 @@ class CandidateEvidenceTests(unittest.TestCase):
         fixed_pins={"github.com/hashicorp/cap":"v0.15.0", "golang.org/x/crypto":"v0.58.1-0.20261009181718-2f1f834330b2",'github.com/google/cel-go': 'v0.30.0', 'github.com/go-logr/logr': 'v1.4.4', 'go.opentelemetry.io/otel': 'v1.45.0', 'go.opentelemetry.io/otel/metric': 'v1.45.0', 'go.opentelemetry.io/otel/trace': 'v1.45.0'}
         for name in ("bao","plugin"):
             path=root/(name+"-go-version.txt")
-            pins={**fixed_pins,**({"go.opentelemetry.io/otel/sdk":"v1.45.0"} if name=="bao" else {})}
+            pins={**fixed_pins,**({"go.opentelemetry.io/otel/sdk":"v1.45.0",MODULE.OKTA_MODULE:"v6.1.7"} if name=="bao" else {})}
             path.write_text(path.read_text()+"".join(" dep "+m+" "+v+"\n" for m,v in pins.items()))
         write(root,"tool-versions.json",{"trivy":{"Version":"0.74.0"},"syft":{"version":"1.51.1"}})
         write(root,"trivy-version.json",{"Version":"0.74.0"})
@@ -94,7 +97,7 @@ class CandidateEvidenceTests(unittest.TestCase):
                    "google.golang.org/grpc":"v1.83.2","stdlib":"go1.26.10"}
         inventory.update(fixed_pins)
         write(root,"image-sbom.json",{"spdxVersion":"SPDX-2.3",
-            "packages":[{"name":name,"versionInfo":version} for name,version in {**inventory,"go.opentelemetry.io/otel/sdk":"v1.45.0"}.items()]})
+            "packages":[{"name":name,"versionInfo":version} for name,version in {**inventory,"go.opentelemetry.io/otel/sdk":"v1.45.0",MODULE.OKTA_MODULE:"v6.1.7"}.items()]})
         write(root,"plugin-sbom.json",{"bomFormat":"CycloneDX","specVersion":"1.7","components":[{"name":name,"version":version} for name,version in inventory.items()],
             "metadata":{"component":{"name":"codestra-jwt-replay","version":"sha256:"+MODULE.sha(root/"plugin-root/codestra-jwt-replay")},
                         "tools":{"components":[{"name":"syft","version":"1.51.1"}]}}})
@@ -279,6 +282,24 @@ class CandidateEvidenceTests(unittest.TestCase):
                             change(root,subject+"-sbom.json",mutate)
                         with self.assertRaisesRegex(ValueError,"dependency"):
                             self.evaluate(root)
+
+    def test_okta_selected_compiled_and_sbom_identity_cannot_drift(self):
+        for target in ("selected", "compiled", "sbom", "provenance"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);self.fixture(root)
+                if target == "selected":
+                    path=root/"bao-build-deps.txt"
+                    path.write_text(path.read_text().replace(MODULE.OKTA_MODULE+" v6.1.7", MODULE.OKTA_MODULE+" v6.1.6"))
+                elif target == "compiled":
+                    path=root/"bao-go-version.txt"
+                    path.write_text(path.read_text().replace(MODULE.OKTA_MODULE+" v6.1.7", MODULE.OKTA_MODULE+" v6.1.6"))
+                elif target == "sbom":
+                    change(root,"image-sbom.json",lambda d:d["packages"].append(
+                        {"name":MODULE.OKTA_MODULE,"versionInfo":"v6.1.6"}))
+                else:
+                    change(root,"build.json",lambda d:d.update(okta_mfa_source_sha256="f"*64))
+                with self.assertRaises(ValueError):
+                    self.evaluate(root)
 
 if __name__=="__main__":
     unittest.main()

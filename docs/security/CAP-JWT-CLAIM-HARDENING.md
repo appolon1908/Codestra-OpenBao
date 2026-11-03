@@ -5,6 +5,10 @@ to v0.15.0 with exact old/new archive and module-file checksums. This supported
 release also migrates CAP JWT/OIDC from retired JOSEv3 to fixed JOSEv4.1.6. Imported
 OpenBao source and accepted plugin identity stay unchanged.
 
+CAP is not the only JOSE importer. The isolated build also migrates the actual
+Okta MFA consumer to supported SDK v6.1.7; see
+[the MFA migration and its provider-free regressions](OKTA-SDK-MFA-MIGRATION.md).
+
 CAP's maintainer fix rejects noncanonical names that Unicode-fold to one of the
 seven registered JWT claims. Previously, a signed payload could contain
 `sub` and `ſub` (U+017F): struct validation read one value while the returned map

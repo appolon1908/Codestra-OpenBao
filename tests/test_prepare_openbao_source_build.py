@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import importlib.util
+import contextlib
+import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -154,6 +157,26 @@ require (
                 }
             ),
         )
+
+    def test_retired_jose_diagnostic_distinguishes_requirement_from_checksum(self) -> None:
+        original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
+        checksum = MODULE.RETIRED_JOSE_MODULE + " v3.0.5/go.mod h1:public-checksum="
+        for selected in (False, True):
+            with self.subTest(selected=selected):
+                mod = final_mod
+                if selected:
+                    mod += "\t" + MODULE.RETIRED_JOSE_MODULE + " v3.0.5 // indirect\n"
+                output = io.StringIO()
+                with contextlib.redirect_stderr(output), self.assertRaises(SystemExit) as error:
+                    MODULE.validate_tidy_result(original_mod, original_sum, mod,
+                                                final_sum + checksum + "\n")
+                self.assertEqual(error.exception.code, 1)
+                self.assertIn("details=", output.getvalue())
+                diagnostic = json.loads(output.getvalue().split("details=", 1)[1])
+                self.assertEqual(diagnostic, {
+                    "selected_version": "v3.0.5" if selected else None,
+                    "checksum_records": [checksum],
+                })
 
     def test_tidy_validation_rejects_unreviewed_module_change(self) -> None:
         original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()

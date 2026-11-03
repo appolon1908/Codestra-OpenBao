@@ -28,6 +28,7 @@ cp tests/go/josesecurity/security_test.go tests/go/josesecurity/cap_claims_test.
   "$source_root/codestra/security/jose/"
 cp tests/go/capclaims/kubernetes_test.go.fixture \
   "$source_root/builtin/credential/kubernetes/codestra_cap_claims_test.go"
+cp tests/go/oktamfa/security_test.go.fixture "$source_root/vault/codestra_okta_mfa_test.go"
 cp tests/go/celotelsecurity/security_test.go "$source_root/codestra/security/celotel/"
 cp tests/go/celotelsecurity/openbao_test.go.fixture "$source_root/codestra/security/celotel/openbao_test.go"
 python3 scripts/prepare_openbao_source_build.py --source-root "$source_root" \
@@ -67,6 +68,11 @@ commit_date="$(git show --no-show-signature -s --format=%cI HEAD)"
     exit 1
   fi
   if ! go test -count=1 -v -run '^TestDiagnoseOtelResults$' ./vault/diagnose \
+    >>"$EVIDENCE_DIR/consumer-tests.log" 2>&1; then
+    tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"
+    exit 1
+  fi
+  if ! go test -count=1 -v -run '^TestCodestraOktaMFABoundaries$' ./vault \
     >>"$EVIDENCE_DIR/consumer-tests.log" 2>&1; then
     tail -n 120 "$EVIDENCE_DIR/consumer-tests.log"
     exit 1
@@ -121,6 +127,7 @@ build={
  "local_image":os.environ["LOCAL_IMAGE"],"plugin_scan_root":str(root/"plugin-root"),
  "binaries":{name:sha(root/name) for name in ("bao","plugin-root/codestra-jwt-replay")},
  "go_mod_sha256":sha(source/"go.mod"),"go_sum_sha256":sha(source/"go.sum"),
+ "okta_mfa_source_sha256":sha(source/"vault/login_mfa.go"),
  "vendor_tree_sha256":vendor_hash,
  "selected_dependencies_sha256":{name:sha(root/(name+"-build-deps.txt")) for name in ("bao","plugin")},
  "test_fixture_overlay_sha256":sha(root/"test-fixture-overlay.json"),
