@@ -25,7 +25,12 @@ SDK through an isolated TLS HTTP server. Its transport rejects other origins;
 there are no real Okta calls. It covers the states above, an uncached WAITING to
 SUCCESS transition, quoted filter values, ambient configuration overrides and
 malformed/missing/cross-origin polling links. The hosted artifact job runs this
-suite before either binary is accepted for scanning.
+suite before either binary is accepted for scanning. SDK configuration uses
+`envconfig`, which allocates a fresh `http.Client` even without HTTP settings;
+the fixture intercepts its default transport rather than `http.DefaultClient`.
+Every case checks exact endpoint counts, and terminal/cancellation cases check
+the intended error, so an unrelated early network error cannot satisfy denial.
+The original global transport is restored after each sequential case.
 
 The 14 exact records in `patches/okta-v6/dependencies.json` describe the reviewed
 SDK/JWX metadata closure. They permit only those exact versions/checksums when
@@ -62,4 +67,11 @@ Primary sources:
 - [Typed factor API](https://github.com/okta/okta-sdk-golang/blob/v6.1.7/okta/api_user_factor.go)
 - [Official SDK checksums](https://sum.golang.org/lookup/github.com/okta/okta-sdk-golang/v6@v6.1.7)
 - [Retired SDK module](https://github.com/okta/okta-sdk-golang/blob/v2.20.0/go.mod)
+- [SDK configuration](https://github.com/okta/okta-sdk-golang/blob/v6.1.7/okta/configuration.go)
+- [envconfig pointer initialization](https://github.com/kelseyhightower/envconfig/blob/v1.4.0/envconfig.go#L75-L84)
 - [Go 1.26 printf analyzer](https://github.com/golang/go/blob/go1.26.10/src/cmd/vendor/golang.org/x/tools/go/analysis/passes/printf/printf.go#L832-L837)
+
+Failed source-image scans retain only the existing public dependency, compiled-module,
+SBOM and raw scan reports, plus scanner/database metadata and their hash-bound
+source/run identity. This diagnostic artifact is not runtime authorization or a
+success verdict; the unchanged vulnerability gate still fails the job.

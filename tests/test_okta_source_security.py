@@ -5,6 +5,9 @@ import contextlib
 import hashlib
 import importlib.util
 import io
+import os
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -94,6 +97,50 @@ class OktaSourceSecurityTests(unittest.TestCase):
                 with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                     MODULE.apply(source)
                 self.assertEqual(before, {item: (source / item).read_bytes() for item in FILES})
+
+    @unittest.skipUnless(shutil.which("go"), "standalone standard-library transport check needs local Go")
+    def test_fixture_intercepts_the_sdk_allocated_http_client(self):
+        fixture = (ROOT / "tests/go/oktamfa/security_test.go.fixture").read_text()
+        transport_type = fixture.split("type codestraOktaTransport", 1)[1].split("// Exercise", 1)[0]
+        setup = fixture.split("local, _ := url.Parse(server.URL)", 1)[1].split(
+            "// Exercise the production override", 1)[0]
+        # Execute the fixture's actual setup with the fresh empty HTTPClient that
+        # envconfig creates, rather than assuming the SDK uses DefaultClient.
+        source = r'''package vault
+import ("errors"; "io"; "net/http"; "net/http/httptest"; "net/url"; "testing")
+type codestraOktaTransport''' + transport_type + r'''
+func TestAllocatedSDKClientUsesFixtureTransport(t *testing.T) {
+    // A broken interception must fail locally rather than attempt external DNS.
+    originalTransport := http.DefaultTransport
+    http.DefaultTransport = codestraOktaTransport(func(*http.Request) (*http.Response, error) {
+        return nil, errors.New("test transport seam bypassed")
+    })
+    defer func() { http.DefaultTransport = originalTransport }()
+    calls := 0
+    server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        calls++
+        io.WriteString(w, "isolated-fixture")
+    }))
+    defer server.Close()
+    local, _ := url.Parse(server.URL)
+''' + setup + r'''
+    response, err := (&http.Client{}).Get("https://tenant.example.test/probe")
+    if err != nil { t.Fatal(err) }
+    defer response.Body.Close()
+    body, err := io.ReadAll(response.Body)
+    if err != nil || string(body) != "isolated-fixture" || calls != 1 {
+        t.Fatalf("request missed isolated server: calls=%d, body=%q, error=%v", calls, body, err)
+    }
+}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "transport_test.go").write_text(source)
+            env = {**os.environ, "GO111MODULE": "off", "GOTOOLCHAIN": "local", "CGO_ENABLED": "0",
+                   "GOPROXY": "off", "GOSUMDB": "off"}
+            result = subprocess.run([shutil.which("go"), "test", "-count=1", "-timeout=15s", "."],
+                                    cwd=root, env=env, text=True, capture_output=True, timeout=90)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_declared_okta_graph_rejects_other_versions_and_checksums(self):
         # Minimal valid reconciliation documents from the existing overlay suite.

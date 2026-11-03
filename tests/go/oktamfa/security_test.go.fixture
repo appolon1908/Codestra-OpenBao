@@ -63,7 +63,7 @@ func TestCodestraOktaMFABoundaries(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			var polls atomic.Int32
+			var requests [4]atomic.Int32
 			server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Header.Get("Authorization") != "SSWS synthetic-token" {
 					t.Errorf("missing exact SSWS authorization")
@@ -71,6 +71,9 @@ func TestCodestraOktaMFABoundaries(t *testing.T) {
 					return
 				}
 				w.Header().Set("Content-Type", "application/json")
+				if r.Method == "GET" && r.URL.Path == "/api/v1/users" {
+					requests[0].Add(1)
+				}
 				if tc.failHTTP {
 					w.WriteHeader(http.StatusForbidden)
 					fmt.Fprint(w, `{"errorCode":"E0000006","errorSummary":"synthetic denial"}`)
@@ -91,12 +94,14 @@ func TestCodestraOktaMFABoundaries(t *testing.T) {
 					}
 					fmt.Fprint(w, body)
 				case "GET /api/v1/users/user1/factors":
+					requests[1].Add(1)
 					body := tc.factors
 					if body == "" {
 						body = `[{"id":"factor1","factorType":"push","provider":"OKTA"}]`
 					}
 					fmt.Fprint(w, body)
 				case "POST /api/v1/users/user1/factors/factor1/verify":
+					requests[2].Add(1)
 					initial := tc.initial
 					if initial == "" {
 						initial = "WAITING"
@@ -111,7 +116,7 @@ func TestCodestraOktaMFABoundaries(t *testing.T) {
 						fmt.Fprintf(w, `{"factorResult":%q,"_links":{"poll":{"href":%q}}}`, initial, link)
 					}
 				case "GET " + pollPath:
-					n := polls.Add(1)
+					n := requests[3].Add(1)
 					state := tc.poll
 					if state == "" {
 						state = "SUCCESS"
@@ -135,8 +140,10 @@ func TestCodestraOktaMFABoundaries(t *testing.T) {
 			defer server.Close()
 			local, _ := url.Parse(server.URL)
 			transport := server.Client().Transport
-			oldClient := http.DefaultClient
-			http.DefaultClient = &http.Client{Transport: codestraOktaTransport(func(req *http.Request) (*http.Response, error) {
+			// envconfig allocates the SDK HTTPClient even when no client settings exist.
+			// Intercept its nil Transport, not the bypassed http.DefaultClient pointer.
+			oldTransport := http.DefaultTransport
+			http.DefaultTransport = codestraOktaTransport(func(req *http.Request) (*http.Response, error) {
 				if req.URL.Scheme != "https" || req.URL.Host != "tenant.example.test" {
 					t.Errorf("external request denied by test transport: %s", req.URL.Host)
 					return nil, errors.New("unexpected external origin")
@@ -144,8 +151,8 @@ func TestCodestraOktaMFABoundaries(t *testing.T) {
 				copy := req.Clone(req.Context())
 				copy.URL.Scheme, copy.URL.Host = local.Scheme, local.Host
 				return transport.RoundTrip(copy)
-			})}
-			defer func() { http.DefaultClient = oldClient }()
+			})
+			defer func() { http.DefaultTransport = oldTransport }()
 			// Exercise the production override, including accidental ambient modes.
 			t.Setenv("OKTA_CLIENT_AUTHORIZATIONMODE", "PrivateKey")
 			t.Setenv("OKTA_CLIENT_PROXY_HOST", "")
@@ -157,11 +164,36 @@ func TestCodestraOktaMFABoundaries(t *testing.T) {
 			if (err == nil) != tc.wantOK {
 				t.Fatalf("authorization result: error=%v, want success=%v", err, tc.wantOK)
 			}
-			if tc.waitOnce && polls.Load() != 2 {
-				t.Fatalf("poll response was cached: %d requests", polls.Load())
+			// Every rejection must reach its intended stage; an unrelated transport
+			// failure must not count as a successful authorization-boundary test.
+			wantRequests := [4]int32{1, 1, 1, 1}
+			switch {
+			case tc.users != "" || tc.failHTTP:
+				wantRequests = [4]int32{1, 0, 0, 0}
+			case tc.factors != "":
+				wantRequests = [4]int32{1, 1, 0, 0}
+			case tc.initial != "" || tc.link != "":
+				wantRequests = [4]int32{1, 1, 1, 0}
+			case tc.waitOnce:
+				wantRequests[3] = 2
 			}
-			if tc.link != "" && polls.Load() != 0 {
-				t.Fatalf("invalid poll link issued a transaction request")
+			for i, want := range wantRequests {
+				if got := requests[i].Load(); got != want {
+					t.Errorf("MFA stage %d: got %d requests, want %d (result: %v)", i, got, want, err)
+				}
+			}
+			if tc.cancel && (err == nil || !strings.Contains(err.Error(), "canceled")) {
+				t.Fatalf("cancellation did not produce a cancellation error: %v", err)
+			}
+			for state, message := range map[string]string{
+				"REJECTED": "push verification explicitly rejected",
+				"TIMEOUT":  "push verification timed out",
+				// Unknown discriminators produce no typed SDK union instance.
+				"OTHER": "missing Okta polling status",
+			} {
+				if tc.poll == state && (err == nil || err.Error() != message) {
+					t.Fatalf("wrong denial for %s: %v", state, err)
+				}
 			}
 		})
 	}
