@@ -221,6 +221,18 @@ OKTA_OLD_SUM_LINES = (
 )
 OKTA_MFA_SOURCE_SHA256 = "76c2811dac10c2afacd24132d5c4073bb2d0904efd39db8d5fbee015fc63416c"
 
+# Exact removals observed at signed94ab8d8 in hosted run41553692632.
+# These modules are deliberately NOT in the general tidy-change allowlist.
+OKTA_REVIEWED_PRUNING = {
+    "github.com/cenkalti/backoff/v4": ("v4.3.0", None, frozenset({
+        "github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=",
+        "github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=",
+    })),
+    "github.com/google/go-cmp": ("v0.7.0", "v0.7.0", frozenset({
+        "github.com/google/go-cmp v0.5.9/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=",
+    })),
+}
+
 
 REVIEWED_TRANSITIVE_SUM_LINES = {
     "github.com/moby/patternmatcher": (
@@ -337,12 +349,22 @@ def validate_tidy_result(
     if "golang.org/x/crypto/openpgp" in final_versions:
         fail("go mod tidy selected unmaintained OpenPGP module")
     changed_mod_modules = changed_keys(original_versions, final_versions)
-    changed_sum_modules = changed_keys(sum_records(original_sum), sum_records(final_sum))
+    before_records, after_records = sum_records(original_sum), sum_records(final_sum)
+    changed_sum_modules = changed_keys(before_records, after_records)
     unexpected = (changed_mod_modules | changed_sum_modules) - REVIEWED_TIDY_MODULES
+    if (original_versions.get(OKTA_OLD_MODULE) == "v2.20.0"
+            and final_versions.get(OKTA_MODULE) == "v6.1.7"):
+        for module, (before, after, removed) in OKTA_REVIEWED_PRUNING.items():
+            old_sums, new_sums = before_records.get(module, set()), after_records.get(module, set())
+            if (original_versions.get(module) == before
+                    and final_versions.get(module) == after
+                    and old_sums - new_sums == removed
+                    and not new_sums - old_sums
+                    and (after is not None or not new_sums)):
+                unexpected.discard(module)
     if unexpected:
         # Public module metadata only. Keep rejecting every unreviewed change,
         # while distinguishing selected-version drift from removed stale sums.
-        before_records, after_records = sum_records(original_sum), sum_records(final_sum)
         details = {
             module: {
                 "version_before": original_versions.get(module),

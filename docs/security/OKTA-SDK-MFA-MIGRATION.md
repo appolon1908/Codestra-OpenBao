@@ -34,6 +34,14 @@ the compiled graph. Unexpected versions, checksums or unrelated graph changes
 still fail. JOSE v3, legacy OpenPGP and the old Okta SDK remain denied in selected
 module/package inventories, binaries and SBOMs. The image must contain v6.1.7.
 
+[Hosted reconciliation at signed `94ab8d8`](https://github.com/appolon1908/Codestra-OpenBao/actions/runs/41553692632)
+observed two additional removals after the SDK migration: the unused
+`backoff/v4 v4.3.0` requirement and its two checksums, and only the historical
+`go-cmp v0.5.9/go.mod` checksum while selected `go-cmp v0.7.0` stayed unchanged.
+The validator permits precisely those version/checksum transitions only during
+the exact Okta v2.20.0 to v6.1.7 migration. New records, other versions or
+additional removals remain rejected; neither module receives a general allowance.
+
 Offline transform/provenance tests and Go syntax checks are source evidence.
 Actual Go 1.26.10 compilation, consumer execution and fresh scans of both
 subjects remain mandatory. No severity/freshness/VEX rules, accepted runtime

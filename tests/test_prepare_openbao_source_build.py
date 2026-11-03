@@ -229,6 +229,49 @@ require (
                 original_mod, original_sum, final_mod, final_sum
             )
 
+    def okta_pruning_documents(self):
+        before_mod, before_sum, after_mod, after_sum = self.reviewed_tidy_documents()
+        backoff = "github.com/cenkalti/backoff/v4"
+        cmp = "github.com/google/go-cmp"
+        before_mod += f"{backoff} v4.3.0\n{cmp} v0.7.0\n{MODULE.OKTA_OLD_MODULE} v2.20.0\n"
+        after_mod += f"{cmp} v0.7.0\n{MODULE.OKTA_MODULE} v6.1.7\n"
+        records = [line for line in (ROOT / "upstream/go.sum").read_text().splitlines()
+                   if line.startswith((backoff + " ", cmp + " "))]
+        before_sum += "\n".join(records + list(MODULE.OKTA_OLD_SUM_LINES)) + "\n"
+        after_sum += "\n".join(line for line in records
+                              if not line.startswith((backoff + " ", cmp + " v0.5.9/"))) + "\n"
+        after_sum += "\n".join(MODULE.REVIEWED_OPTIONAL_SUM_LINES[MODULE.OKTA_MODULE]) + "\n"
+        return before_mod, before_sum, after_mod, after_sum
+
+    def test_exact_hosted_okta_pruning_preserves_other_checksum_records(self) -> None:
+        documents = self.okta_pruning_documents()
+        changes = MODULE.validate_tidy_result(*documents)
+        self.assertIn("github.com/cenkalti/backoff/v4", changes["go_mod_changed_modules"])
+        self.assertNotIn("github.com/google/go-cmp", changes["go_mod_changed_modules"])
+        self.assertIn("github.com/google/go-cmp", changes["go_sum_changed_modules"])
+
+    def test_okta_pruning_rejects_other_versions_additions_removals_and_wrong_context(self) -> None:
+        before_mod, before_sum, after_mod, after_sum = self.okta_pruning_documents()
+        backoff = "github.com/cenkalti/backoff/v4"
+        cmp = "github.com/google/go-cmp"
+        kept_cmp = cmp + " v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=\n"
+        backoff_record = backoff + " v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=\n"
+        cases = (
+            (before_mod.replace(backoff + " v4.3.0", backoff + " v4.2.0"), before_sum, after_mod, after_sum),
+            (before_mod, before_sum, after_mod + backoff + " v4.3.0\n", after_sum),
+            (before_mod, before_sum, after_mod, after_sum + backoff_record),
+            (before_mod, before_sum + backoff + " v4.2.0/go.mod h1:extra=\n", after_mod, after_sum),
+            (before_mod, before_sum, after_mod.replace(cmp + " v0.7.0", cmp + " v0.8.0"), after_sum),
+            (before_mod.replace(cmp + " v0.7.0", cmp + " v0.6.0"), before_sum, after_mod, after_sum),
+            (before_mod, before_sum, after_mod, after_sum.replace(kept_cmp, "")),
+            (before_mod, before_sum, after_mod, after_sum + cmp + " v0.8.0/go.mod h1:extra=\n"),
+            (before_mod.replace(MODULE.OKTA_OLD_MODULE + " v2.20.0\n", ""), before_sum, after_mod, after_sum),
+            (before_mod, before_sum, after_mod + "unreviewed.example/module v1.0.0\n", after_sum),
+        )
+        for index, documents in enumerate(cases):
+            with self.subTest(index=index), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                MODULE.validate_tidy_result(*documents)
+
     def test_missing_reviewed_xnet_checksum_is_rejected(self) -> None:
         original_mod, original_sum, final_mod, final_sum = self.reviewed_tidy_documents()
         xnet_sum = MODULE.REVIEWED_SECURITY_SUM_LINES["golang.org/x/net"][0]
