@@ -69,6 +69,7 @@ jobs:
     env:
       EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       LOCAL_IMAGE: codestra-openbao:source-validation
+      TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
     steps:
       - name: Check out exact source
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09

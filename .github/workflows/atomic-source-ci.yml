@@ -108,6 +108,8 @@ jobs:
     needs: validate
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    env:
+      TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
