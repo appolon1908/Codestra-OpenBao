@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import datetime as dt
 import importlib.util
 import tempfile
 import unittest
@@ -53,6 +54,10 @@ def valid_evidence() -> dict[str, object]:
             "cve_present": False,
             "critical_count": 0,
             "high_count": 0,
+            "unknown_count": 0,
+            "scanned_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "scanner_version": "0.74.0",
+            "image_digest": IMAGE_DIGEST,
         },
         "signature": {
             "reference": "sigstore://openbao-image/signature.bundle.json",
@@ -152,6 +157,34 @@ class ExactImageGateTests(unittest.TestCase):
         evidence["vulnerability_scan"] = scan
         with self.assertRaises(ValueError):
             MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
+
+    def test_unknown_or_missing_or_malformed_severity_counts_are_rejected(self) -> None:
+        for unknown in (None, 1, False, "0"):
+            evidence = valid_evidence()
+            scan = evidence["vulnerability_scan"]
+            if unknown is None:
+                scan.pop("unknown_count", None)
+            else:
+                scan["unknown_count"] = unknown
+            with self.subTest(unknown=unknown), self.assertRaises(ValueError):
+                MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
+        for key in ("critical_count", "high_count"):
+            evidence = valid_evidence()
+            evidence["vulnerability_scan"]["unknown_count"] = 0
+            evidence["vulnerability_scan"][key] = False
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
+
+    def test_saved_scan_identity_freshness_and_scanner_are_rechecked(self) -> None:
+        for field, value in (("scanned_at", None), ("scanned_at", "2020-01-01T00:00:00Z"),
+                             ("scanned_at", "2099-01-01T00:00:00Z"),
+                             ("scanned_at", "2026-10-28T00:00:00"),
+                             ("scanner_version", "0.75.0"),
+                             ("image_digest", "sha256:" + "9" * 64)):
+            evidence = valid_evidence()
+            evidence["vulnerability_scan"][field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                MODULE.validate_image_evidence(evidence, "1.83.2", "1.83.2")
 
     def test_wrong_workflow_identity_is_rejected(self) -> None:
         evidence = valid_evidence()

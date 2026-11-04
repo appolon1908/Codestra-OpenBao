@@ -14,6 +14,7 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Callable, Protocol
 
 from .kernel import Attempt, ChangeKernel, KernelError, Lease, Principal
@@ -34,20 +35,25 @@ def bao_runner(argv: list[str], timeout: int) -> int:
     return result.returncode
 
 
-def _load_readback() -> Callable[[dict[str, Any]], None]:
+def _load_readback() -> ModuleType:
     spec = importlib.util.spec_from_file_location("verify_applied_plan", ROOT / "scripts/verify_applied_plan.py")
     if spec is None or spec.loader is None:
         raise RuntimeError("readback_module_unavailable")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.verify
+    return module
 
 
 def default_readback(operation: dict[str, Any]) -> bool:
+    verifier = _load_readback()
     try:
-        _load_readback()(operation)
-    except (ValueError, KeyError, json.JSONDecodeError):
+        verifier.verify(operation)
+    except verifier.ReadbackMismatch:
         return False
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, subprocess.TimeoutExpired) as exc:
+        # Never expose command output or turn an unavailable observation into
+        # proof that a mutation was absent.
+        raise KernelError("READBACK_UNAVAILABLE", 503) from exc
     return True
 
 
@@ -88,7 +94,14 @@ def execute(kernel: ChangeKernel, change_id: str, lease: Lease, principal: Princ
             for operation in ordered(attempt.operations):
                 if operation["status"] == "CONFIRMED":
                     continue
-                if readback(operation):
+                try:
+                    already_applied = readback(operation)
+                except KernelError as exc:
+                    if exc.code != "READBACK_UNAVAILABLE":
+                        raise
+                    # No intent or mutation: finalize through the retry budget.
+                    break
+                if already_applied:
                     kernel.confirm_without_dispatch(attempt, operation["operation_id"], lease,
                                                     "already_in_planned_state")
                     continue
@@ -104,7 +117,14 @@ def execute(kernel: ChangeKernel, change_id: str, lease: Lease, principal: Princ
                 finally:
                     for leftover in work.iterdir():
                         leftover.unlink()
-                if readback(operation):
+                try:
+                    observed = readback(operation)
+                except KernelError as exc:
+                    if exc.code != "READBACK_UNAVAILABLE":
+                        raise
+                    kernel.resolve_intent(intent_id, "UNKNOWN", "readback_unavailable")
+                    break
+                if observed:
                     kernel.resolve_intent(intent_id, "CONFIRMED", f"readback_match exit={exit_code}")
                 elif exit_code != 0:
                     kernel.resolve_intent(intent_id, "FAILED", f"readback_absent exit={exit_code}")

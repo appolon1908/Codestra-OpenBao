@@ -121,6 +121,10 @@ def production_roles(authority: dict) -> dict[str, dict]:
     return roles
 
 
+EXPECTED_DECISIONS_SHA256 = "012811c7bd39e865c1e94e83023ace7b1df6baf3787f967daaecb7544a44b2aa"
+EXPECTED_DECISION_ID = "R7-2026-09-16-monitoring-identities-admitted"
+
+
 def validate(contract: dict, authority: dict, authority_blob_sha: str) -> None:
     AUTHORITY_VALIDATOR.validate(authority)
     if set(contract) != {
@@ -137,6 +141,20 @@ def validate(contract: dict, authority: dict, authority_blob_sha: str) -> None:
         "decisions",
     }:
         fail("top-level fields drifted")
+    # The R7 monitoring admission is part of the reviewed security decision,
+    # not a free-form changelog field. Exact content drift requires new review.
+    decisions = contract["decisions"]
+    if not isinstance(decisions, list) or len(decisions) != 1 or not isinstance(decisions[0], dict):
+        fail("reviewed monitoring decision count or shape drifted")
+    if decisions[0].get("id") != EXPECTED_DECISION_ID:
+        fail("reviewed monitoring decision identity drifted")
+    if decisions[0].get("runtime_binding_authorized") is not False:
+        fail("monitoring admission cannot activate runtime bindings")
+    digest = hashlib.sha256(
+        json.dumps(decisions, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+    ).hexdigest()
+    if digest != EXPECTED_DECISIONS_SHA256:
+        fail("reviewed monitoring decision payload drifted")
     if contract["schema_version"] != "1.2":
         fail("schema version drifted")
     if contract["authority"] != "ingtrader21-spec/Codestra-OpenBao":
@@ -276,8 +294,8 @@ def main() -> int:
     validate(contract, authority, git_blob_sha(authority_bytes))
     print("OPENBAO_DEPENDENCY_CONTRACT=PASS")
     print("DEPENDENCY_PREFIXES_DERIVED_FROM_CANONICAL_AUTHORITY=YES")
-    print("DIRECT_OPENBAO_CONSUMERS=6")
-    print("NO_DIRECT_IDENTITY_INTEGRATIONS=4")
+    print(f"DIRECT_OPENBAO_CONSUMERS={len(REQUIRED_CONSUMERS)}")
+    print(f"NO_DIRECT_IDENTITY_INTEGRATIONS={len(NO_DIRECT_IDENTITY_REPOSITORIES)}")
     print("RUNTIME_BINDINGS_AUTHORIZED=NO")
     print("PROVIDER_BUSINESS_EFFECTS_ENABLED=NO")
     return 0

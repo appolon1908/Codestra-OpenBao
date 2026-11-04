@@ -1,0 +1,200 @@
+package vault
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/openbao/openbao/helper/identity/mfa"
+)
+
+type codestraOktaTransport func(*http.Request) (*http.Response, error)
+
+func (f codestraOktaTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+// Exercise the actual Core method and supported SDK against an isolated TLS
+// server. The transport rejects every origin other than the synthetic tenant.
+func TestCodestraOktaMFABoundaries(t *testing.T) {
+	const origin = "https://tenant.example.test"
+	const pollPath = "/api/v1/users/user1/factors/factor1/transactions/transaction1"
+	const username = `person"with-quote@example.test`
+	tests := []struct {
+		name, users, factors, initial, poll, link        string
+		wantOK, primaryEmail, waitOnce, cancel, failHTTP bool
+	}{
+		{name: "success", wantOK: true},
+		{name: "email-filter", primaryEmail: true, wantOK: true},
+		{name: "uncached-wait-then-success", waitOnce: true, wantOK: true},
+		{name: "rejected", poll: "REJECTED"},
+		{name: "timeout", poll: "TIMEOUT"},
+		{name: "unknown", poll: "OTHER"},
+		{name: "missing-status", poll: "EMPTY"},
+		{name: "zero-users", users: `[]`},
+		{name: "multiple-users", users: `[{"id":"user1"},{"id":"user2"}]`},
+		{name: "missing-user-id", users: `[{}]`},
+		{name: "invalid-user-id", users: `[{"id":"user/other"}]`},
+		{name: "zero-factors", factors: `[]`},
+		{name: "non-push", factors: `[{"id":"factor1","factorType":"sms","provider":"OKTA"}]`},
+		{name: "missing-factor-id", factors: `[{"factorType":"push","provider":"OKTA"}]`},
+		{name: "initial-success-is-not-accepted", initial: "SUCCESS"},
+		{name: "missing-poll", link: "MISSING"},
+		{name: "foreign-poll", link: "https://other.example.test" + pollPath},
+		{name: "http-poll", link: "http://tenant.example.test" + pollPath},
+		{name: "userinfo-poll", link: "https://other@tenant.example.test" + pollPath},
+		{name: "wrong-user-poll", link: origin + strings.Replace(pollPath, "user1", "user2", 1)},
+		{name: "wrong-factor-poll", link: origin + strings.Replace(pollPath, "factor1", "factor2", 1)},
+		{name: "extra-path-poll", link: origin + pollPath + "/other"},
+		{name: "query-poll", link: origin + pollPath + "?token=not-allowed"},
+		{name: "fragment-poll", link: origin + pollPath + "#not-allowed"},
+		{name: "escaped-poll", link: origin + strings.Replace(pollPath, "transaction1", "%74ransaction1", 1)},
+		{name: "cancel-waiting", cancel: true},
+		{name: "provider-error", failHTTP: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			var requests [4]atomic.Int32
+			server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("Authorization") != "SSWS synthetic-token" {
+					t.Errorf("missing exact SSWS authorization")
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				if r.Method == "GET" && r.URL.Path == "/api/v1/users" {
+					requests[0].Add(1)
+				}
+				if tc.failHTTP {
+					w.WriteHeader(http.StatusForbidden)
+					fmt.Fprint(w, `{"errorCode":"E0000006","errorSummary":"synthetic denial"}`)
+					return
+				}
+				switch r.Method + " " + r.URL.Path {
+				case "GET /api/v1/users":
+					field := "profile.login"
+					if tc.primaryEmail {
+						field = "profile.email"
+					}
+					if r.URL.Query().Get("filter") != fmt.Sprintf("%s eq %q", field, username) {
+						t.Errorf("filter did not preserve quoted username and configured field")
+					}
+					body := tc.users
+					if body == "" {
+						body = `[{"id":"user1"}]`
+					}
+					fmt.Fprint(w, body)
+				case "GET /api/v1/users/user1/factors":
+					requests[1].Add(1)
+					body := tc.factors
+					if body == "" {
+						body = `[{"id":"factor1","factorType":"push","provider":"OKTA"}]`
+					}
+					fmt.Fprint(w, body)
+				case "POST /api/v1/users/user1/factors/factor1/verify":
+					requests[2].Add(1)
+					initial := tc.initial
+					if initial == "" {
+						initial = "WAITING"
+					}
+					link := tc.link
+					if link == "" {
+						link = origin + pollPath
+					}
+					if link == "MISSING" {
+						fmt.Fprintf(w, `{"factorResult":%q}`, initial)
+					} else {
+						fmt.Fprintf(w, `{"factorResult":%q,"_links":{"poll":{"href":%q}}}`, initial, link)
+					}
+				case "GET " + pollPath:
+					n := requests[3].Add(1)
+					state := tc.poll
+					if state == "" {
+						state = "SUCCESS"
+					}
+					if tc.waitOnce && n == 1 || tc.cancel {
+						state = "WAITING"
+					}
+					if state == "EMPTY" {
+						fmt.Fprint(w, `{}`)
+					} else {
+						fmt.Fprintf(w, `{"factorResult":%q}`, state)
+					}
+					if tc.cancel {
+						cancel()
+					}
+				default:
+					t.Errorf("unexpected MFA request: %s %s", r.Method, r.URL.Path)
+					w.WriteHeader(http.StatusNotFound)
+				}
+			}))
+			defer server.Close()
+			local, _ := url.Parse(server.URL)
+			transport := server.Client().Transport
+			// envconfig allocates the SDK HTTPClient even when no client settings exist.
+			// Intercept its nil Transport, not the bypassed http.DefaultClient pointer.
+			oldTransport := http.DefaultTransport
+			http.DefaultTransport = codestraOktaTransport(func(req *http.Request) (*http.Response, error) {
+				if req.URL.Scheme != "https" || req.URL.Host != "tenant.example.test" {
+					t.Errorf("external request denied by test transport: %s", req.URL.Host)
+					return nil, errors.New("unexpected external origin")
+				}
+				copy := req.Clone(req.Context())
+				copy.URL.Scheme, copy.URL.Host = local.Scheme, local.Host
+				return transport.RoundTrip(copy)
+			})
+			defer func() { http.DefaultTransport = oldTransport }()
+			// Exercise the production override, including accidental ambient modes.
+			t.Setenv("OKTA_CLIENT_AUTHORIZATIONMODE", "PrivateKey")
+			t.Setenv("OKTA_CLIENT_PROXY_HOST", "")
+			t.Setenv("OKTA_CLIENT_CACHE_ENABLED", "true")
+			config := &mfa.Config{Name: "synthetic", Config: &mfa.Config_OktaConfig{OktaConfig: &mfa.OktaConfig{
+				OrgName: "tenant", BaseURL: "example.test", APIToken: "synthetic-token", PrimaryEmail: tc.primaryEmail,
+			}}}
+			err := (&Core{}).validateOkta(ctx, config, username)
+			if (err == nil) != tc.wantOK {
+				t.Fatalf("authorization result: error=%v, want success=%v", err, tc.wantOK)
+			}
+			// Every rejection must reach its intended stage; an unrelated transport
+			// failure must not count as a successful authorization-boundary test.
+			wantRequests := [4]int32{1, 1, 1, 1}
+			switch {
+			case tc.users != "" || tc.failHTTP:
+				wantRequests = [4]int32{1, 0, 0, 0}
+			case tc.factors != "":
+				wantRequests = [4]int32{1, 1, 0, 0}
+			case tc.initial != "" || tc.link != "":
+				wantRequests = [4]int32{1, 1, 1, 0}
+			case tc.waitOnce:
+				wantRequests[3] = 2
+			}
+			for i, want := range wantRequests {
+				if got := requests[i].Load(); got != want {
+					t.Errorf("MFA stage %d: got %d requests, want %d (result: %v)", i, got, want, err)
+				}
+			}
+			if tc.cancel && (err == nil || !strings.Contains(err.Error(), "canceled")) {
+				t.Fatalf("cancellation did not produce a cancellation error: %v", err)
+			}
+			for state, message := range map[string]string{
+				"REJECTED": "push verification explicitly rejected",
+				"TIMEOUT":  "push verification timed out",
+				// Unknown discriminators produce no typed SDK union instance.
+				"OTHER": "missing Okta polling status",
+			} {
+				if tc.poll == state && (err == nil || err.Error() != message) {
+					t.Fatalf("wrong denial for %s: %v", state, err)
+				}
+			}
+		})
+	}
+}

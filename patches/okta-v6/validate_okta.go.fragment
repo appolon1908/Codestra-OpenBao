@@ -1,0 +1,134 @@
+func (c *Core) validateOkta(ctx context.Context, mConfig *mfa.Config, username string) error {
+	oktaConfig := mConfig.GetOktaConfig()
+	if oktaConfig == nil {
+		return fmt.Errorf("failed to get Okta configuration for method %q", mConfig.Name)
+	}
+	baseURL := oktaConfig.BaseURL
+	if baseURL == "" {
+		baseURL = "okta.com"
+	}
+	orgURL, err := url.Parse(fmt.Sprintf("https://%s.%s", oktaConfig.OrgName, baseURL))
+	if err != nil {
+		return err
+	}
+	if orgURL.Host == "" || orgURL.User != nil || orgURL.Path != "" || orgURL.RawQuery != "" || orgURL.Fragment != "" {
+		return errors.New("invalid Okta organization URL")
+	}
+	configuration, err := okta.NewConfiguration(
+		okta.WithToken(oktaConfig.APIToken),
+		okta.WithAuthorizationMode("SSWS"),
+		okta.WithOrgUrl(orgURL.String()),
+		// Every poll must reach Okta; a cached WAITING response must not persist.
+		okta.WithCache(false),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating client: %s", err)
+	}
+	// The SDK derives Hostname(); preserve an explicitly configured HTTPS port.
+	configuration.Host = orgURL.Host
+	return validateOktaPush(ctx, okta.NewAPIClient(configuration), orgURL, oktaConfig.PrimaryEmail, username)
+}
+
+// validateOktaPush uses only the configured API origin. Tests supply an isolated
+// HTTP server through the supported SDK client; no provider is contacted.
+func validateOktaPush(ctx context.Context, client *okta.APIClient, orgURL *url.URL, primaryEmail bool, username string) error {
+	filterField := "profile.login"
+	if primaryEmail {
+		filterField = "profile.email"
+	}
+	filterQuery := fmt.Sprintf("%s eq %q", filterField, username)
+	users, _, err := client.UserAPI.ListUsers(ctx).Filter(filterQuery).Execute()
+	if err != nil {
+		return err
+	}
+	switch len(users) {
+	case 0:
+		return errors.New("no users found for e-mail address")
+	case 1:
+	default:
+		return errors.New("more than one user found for e-mail address")
+	}
+	userID := users[0].GetId()
+	if !validOktaPathID(userID) {
+		return errors.New("invalid Okta user ID")
+	}
+	factors, _, err := client.UserFactorAPI.ListFactors(ctx, userID).Execute()
+	if err != nil {
+		return err
+	}
+	if len(factors) == 0 {
+		return errors.New("no MFA factors found for user")
+	}
+	var factorID string
+	for _, factor := range factors {
+		if factor.UserFactorPush != nil && factor.UserFactorPush.GetFactorType() == "push" {
+			factorID = factor.UserFactorPush.GetId()
+			break
+		}
+	}
+	if !validOktaPathID(factorID) {
+		return errors.New("no valid push-type MFA factor found for user")
+	}
+	result, _, err := client.UserFactorAPI.VerifyFactor(ctx, userID, factorID).UserAgent("OpenBao").Execute()
+	if err != nil {
+		return err
+	}
+	if result == nil || result.GetFactorResult() != "WAITING" {
+		return errors.New("expected WAITING status for push status")
+	}
+	links := result.GetLinks()
+	pollLink := links.GetPoll()
+	pollURL, err := url.Parse(pollLink.GetHref())
+	if err != nil || pollURL.Scheme != "https" || !strings.EqualFold(pollURL.Host, orgURL.Host) ||
+		pollURL.User != nil || pollURL.RawQuery != "" || pollURL.Fragment != "" || pollURL.RawPath != "" {
+		return errors.New("invalid Okta polling origin or URL")
+	}
+	prefix := "/api/v1/users/" + userID + "/factors/" + factorID + "/transactions/"
+	transactionID, found := strings.CutPrefix(pollURL.Path, prefix)
+	if !found || !validOktaPathID(transactionID) {
+		return errors.New("invalid Okta polling transaction path")
+	}
+	for {
+		response, _, err := client.UserFactorAPI.GetFactorTransactionStatus(ctx, userID, factorID, transactionID).Execute()
+		if err != nil {
+			return err
+		}
+		if response == nil {
+			return errors.New("missing Okta polling response")
+		}
+		state, ok := response.GetActualInstance().(interface{ GetFactorResult() string })
+		if !ok {
+			return errors.New("missing Okta polling status")
+		}
+		switch state.GetFactorResult() {
+		case "WAITING":
+		case "SUCCESS":
+			return nil
+		case "REJECTED":
+			return errors.New("push verification explicitly rejected")
+		case "TIMEOUT":
+			return errors.New("push verification timed out")
+		default:
+			return errors.New("unknown status code")
+		}
+		timer := time.NewTimer(time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return errors.New("push verification operation canceled")
+		case <-timer.C:
+		}
+	}
+}
+
+func validOktaPathID(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, char := range value {
+		if !(char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' || char >= '0' && char <= '9' || char == '-' || char == '_') {
+			return false
+		}
+	}
+	return true
+}

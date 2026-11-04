@@ -239,8 +239,22 @@ def validate_image_evidence(
         raise ValueError("unsupported SBOM format")
     if scan.get("cve_present") is not False:
         raise ValueError("CVE-2026-84304 remains present in the image scan")
-    if scan.get("critical_count") != 0 or scan.get("high_count") != 0:
-        raise ValueError("critical/high image vulnerabilities remain unresolved")
+    if any(type(scan.get(key)) is not int or scan[key] != 0
+           for key in ("critical_count", "high_count", "unknown_count")):
+        raise ValueError("critical/high/unknown image vulnerabilities are unresolved or counts are invalid")
+    if scan.get("image_digest") != digest:
+        raise ValueError("vulnerability scan digest differs from the exact image")
+    if scan.get("scanner_version") != "0.74.0":
+        raise ValueError("vulnerability scan must use the reviewed scanner 0.74.0")
+    scanned_at = scan.get("scanned_at")
+    if not isinstance(scanned_at, str):
+        raise ValueError("vulnerability scan timestamp is missing")
+    scanned = dt.datetime.fromisoformat(scanned_at.replace("Z", "+00:00"))
+    if scanned.tzinfo is None:
+        raise ValueError("vulnerability scan timestamp must be timezone aware")
+    now = dt.datetime.now(dt.timezone.utc)
+    if scanned > now + dt.timedelta(minutes=10) or now - scanned > dt.timedelta(days=30):
+        raise ValueError("vulnerability scan is stale or dated in the future")
     if (
         signature.get("verified") is not True
         or signature.get("certificate_identity") != WORKFLOW_IDENTITY
