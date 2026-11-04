@@ -12,5 +12,7 @@
   "allow_production_effects": false,
   "allow_force_push": false,
   "canonical_worktree": "/home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-OpenBao",
-  "updated_at": "2026-09-28T01:19:00Z"
+  "updated_at": "2026-09-28T01:19:00Z",
+  "record_status": "historical_workstation_record",
+  "source_admission_authority": "GitHub Actions and effective repository protections"
 }

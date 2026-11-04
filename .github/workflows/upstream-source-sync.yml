@@ -1,182 +1,37 @@
-name: Codestra Upstream Source Sync
+name: Inspect upstream source identity
 
 on:
   push:
     branches: [main]
     paths:
       - CODESTRA_UPSTREAM.json
+      - scripts/inspect_upstream_source.py
       - .github/workflows/upstream-source-sync.yml
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
-concurrency:
-  group: codestra-upstream-source-sync
-  cancel-in-progress: false
+env:
+  EXPECTED_SHA: ${{ github.sha }}
 
 jobs:
-  sync:
-    if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
+  inspect:
+    name: OpenBao upstream / identity inspection
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - name: Checkout Codestra authority
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
-          fetch-depth: 0
-
-      - name: Import official upstream source snapshot
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          mapfile -t values < <(python3 - <<'PY'
-          import json
-          from pathlib import Path
-          data = json.loads(Path('CODESTRA_UPSTREAM.json').read_text())
-          print(data['upstream_clone_url'])
-          print(data['upstream_ref'])
-          print(data['import_path'])
-          PY
-          )
-
-          UPSTREAM_URL="${values[0]}"
-          UPSTREAM_REF="${values[1]}"
-          IMPORT_PATH="${values[2]}"
-
-          [[ "$UPSTREAM_URL" == "https://github.com/openbao/openbao.git" ]] || exit 2
-          [[ "$UPSTREAM_REF" == "main" ]] || exit 2
-          [[ "$IMPORT_PATH" == "upstream" ]] || exit 2
-
-          rm -rf .codestra-upstream-src "$IMPORT_PATH"
-          GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --branch "$UPSTREAM_REF" "$UPSTREAM_URL" .codestra-upstream-src
-          UPSTREAM_SHA="$(git -C .codestra-upstream-src rev-parse HEAD)"
-          rm -rf .codestra-upstream-src/.git
-          mv .codestra-upstream-src "$IMPORT_PATH"
-
-          export UPSTREAM_URL UPSTREAM_REF UPSTREAM_SHA
-          python3 - <<'PY'
-          import json, os, re
-          from datetime import datetime, timezone
-          from pathlib import Path
-
-          sanitizations=[]
-
-          def record(rule, path, replacements):
-              if replacements:
-                  sanitizations.append({
-                      'rule': rule,
-                      'files_changed': 1,
-                      'replacements': replacements,
-                      'path': str(path),
-                  })
-
-          def sanitize_text(path, replacements, rule):
-              p=Path(path)
-              if not p.exists() or not p.is_file():
-                  return
-              try:
-                  raw=p.read_bytes()
-                  text=raw.decode('utf-8', errors='surrogateescape')
-              except OSError:
-                  return
-              original=text
-              count=0
-              for pattern,repl,flags in replacements:
-                  text,n=re.subn(pattern,repl,text,flags=flags)
-                  count += n
-              if text != original:
-                  p.write_bytes(text.encode('utf-8', errors='surrogateescape'))
-                  record(rule,p,count)
-
-          # GitHub push protection correctly detects realistic credential/token
-          # fixtures shipped in upstream OpenBao tests/docs. Codestra preserves
-          # push protection and only neutralizes fixture material in explicitly
-          # non-production source paths. Production/runtime logic is untouched.
-          fixture_parts={
-              'test','tests','testdata','test-fixtures','fixtures','fixture',
-              'integrationtest','examples','example','docs','website','testhelpers'
-          }
-
-          common_replacements=[
-              # OpenBao/Vault token-shaped fixtures, including hmac token forms.
-              (r'(?<![A-Za-z0-9])(?:hvs|hvr|hvb|hvp|hvS)\.[A-Za-z0-9_.:-]{8,}', 'OPENBAO_TOKEN_FIXTURE_INVALID', 0),
-              (r'(?<![A-Za-z0-9])s\.[A-Za-z0-9_-]{16,}', 'OPENBAO_LEGACY_TOKEN_FIXTURE_INVALID', 0),
-              # AWS key-shaped examples not fully covered by the earlier pass.
-              (r'AKIA[0-9A-Z]{12,}', 'AWS_ACCESS_KEY_ID_FIXTURE_INVALID', 0),
-              (r'A3T_PROXY_TASK_TEST', 'AWS_ACCESS_KEY_ID_FIXTURE_INVALID', 0),
-              (r'wJalrXUtnFEMI/K7MDENG/[A-Za-z0-9/+_=.-]*', 'AWS_SECRET_ACCESS_KEY_FIXTURE_INVALID', 0),
-              # Known OAuth/high-entropy upstream test fixture values caught by push protection.
-              (r'xzskezlmu2pstaTZWQ2F', 'OAUTH_CLIENT_SECRET_FIXTURE_INVALID', 0),
-              (r'2BHSOxGaSIY1sI8r2FPs', 'OAUTH_CLIENT_SECRET_FIXTURE_INVALID', 0),
-              (r'AAjWUSXs35ZKWs[A-Za-z0-9/+_=.-]*', 'HIGH_ENTROPY_FIXTURE_INVALID', 0),
-              (r'82994529-1422-946c-7d3c-e7aaa3374a33', 'REKEY_FIXTURE_ID_INVALID', 0),
-              (r'48a2c2f9-0e52-34bc-d7e6-050925c06ced', 'REKEY_FIXTURE_ID_INVALID', 0),
-              # Common provider token shapes used in tests/examples.
-              (r'gh[pousr]_[A-Za-z0-9]{20,}', 'GITHUB_TOKEN_FIXTURE_INVALID', 0),
-              (r'SK[0-9a-fA-F]{32}', 'TWILIO_KEY_FIXTURE_INVALID', 0),
-              (r'xox(?:a|b|p|r|s)-[A-Za-z0-9-]{12,}', 'SLACK_TOKEN_FIXTURE_INVALID', 0),
-              (r'xapp-[A-Za-z0-9-]{12,}', 'SLACK_APP_TOKEN_FIXTURE_INVALID', 0),
-              # Private-key blocks are only neutralized in fixture/docs paths.
-              (r'-----BEGIN [^-\n]*PRIVATE KEY-----.*?-----END [^-\n]*PRIVATE KEY-----', 'PRIVATE_KEY_FIXTURE_REMOVED', re.DOTALL),
-              (r'-----BEGIN PGP PRIVATE KEY BLOCK-----.*?-----END PGP PRIVATE KEY BLOCK-----', 'PGP_PRIVATE_KEY_FIXTURE_REMOVED', re.DOTALL),
-          ]
-
-          for p in Path('upstream').rglob('*'):
-              if not p.is_file():
-                  continue
-              rel=p.relative_to('upstream')
-              lower_parts={part.lower() for part in rel.parts}
-              lower_text=str(rel).lower()
-              eligible=bool(lower_parts & fixture_parts) or any(token in lower_text for token in ('_test.', '-test.', '/test_', '/tests_', '.md', '.mdx'))
-              if not eligible:
-                  continue
-              # Binary PKCS#12 test fixture cannot be safely preserved in a
-              # secret-scanned Git mirror. Replace only the known test artifact.
-              if str(rel) == 'sdk/helper/testhelpers/pki/cert.p12':
-                  p.write_text('OPENBAO_PKCS12_TEST_FIXTURE_REMOVED_FOR_GITHUB_ARCHIVAL\n')
-                  record('replace known binary PKCS#12 upstream test fixture blocked by GitHub push protection',p,1)
-                  continue
-              sanitize_text(
-                  p,
-                  common_replacements,
-                  'neutralize secret-shaped values in upstream test/example/documentation fixture while retaining path and provenance'
-              )
-
-          # Known standalone key fixtures may not include a "test" directory
-          # token after path normalization, so neutralize them explicitly.
-          for path in [
-              'upstream/command/testdata/keybase',
-              'upstream/command/testdata/ossl-key.pem',
-          ]:
-              p=Path(path)
-              if p.exists():
-                  p.write_text('OPENBAO_PRIVATE_KEY_TEST_FIXTURE_REMOVED_FOR_GITHUB_ARCHIVAL\n')
-                  record('replace known upstream private-key test fixture blocked by GitHub push protection',p,1)
-
-          lock = {
-              'schema_version': '1.0',
-              'upstream_clone_url': os.environ['UPSTREAM_URL'],
-              'upstream_ref': os.environ['UPSTREAM_REF'],
-              'upstream_commit': os.environ['UPSTREAM_SHA'],
-              'import_path': 'upstream',
-              'synchronized_at': datetime.now(timezone.utc).isoformat(),
-              'deployment_enabled': False,
-              'secret_material_allowed_in_git': False,
-              'sanitization_scope': 'upstream test/example/documentation fixtures only; production/runtime logic is not intentionally modified',
-          }
-          if sanitizations:
-              lock['sanitizations']=sanitizations
-          Path('CODESTRA_UPSTREAM_LOCK.json').write_text(json.dumps(lock, indent=2) + '\n')
-          PY
-
-          git config user.name 'codestra-upstream-sync'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add -A upstream CODESTRA_UPSTREAM_LOCK.json
-          git diff --cached --quiet && exit 0
-          git commit -m "vendor: sync official OpenBao upstream ${UPSTREAM_SHA}"
-          git pull --rebase origin main
-          git push origin HEAD:main
-          git push origin HEAD:staging
-          git push origin HEAD:production
+          ref: ${{ env.EXPECTED_SHA }}
+          persist-credentials: false
+      - name: Inspect declared upstream without importing or updating refs
+        env:
+          REPORT_PATH: ${{ runner.temp }}/openbao-upstream-identity.json
+        run: python3 scripts/inspect_upstream_source.py --output "$REPORT_PATH"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: upstream-identity-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/openbao-upstream-identity.json
+          if-no-files-found: error
+          retention-days: 14
